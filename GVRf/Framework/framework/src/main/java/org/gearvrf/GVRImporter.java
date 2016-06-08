@@ -17,6 +17,7 @@ package org.gearvrf;
 
 import java.io.BufferedInputStream;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -31,6 +32,7 @@ import java.util.Vector;
 
 import org.gearvrf.GVRAndroidResource.TextureCallback;
 import org.gearvrf.GVRMaterial.GVRShaderType;
+import org.gearvrf.animation.keyframe.GVRKeyFrameAnimation;
 //import org.gearvrf.jassimp.AiColor;
 import org.gearvrf.jassimp.AiMaterial;
 import org.gearvrf.jassimp.AiNode;
@@ -45,6 +47,9 @@ import org.gearvrf.jassimp2.Jassimp;
 import org.gearvrf.scene_objects.GVRModelSceneObject;
 import org.gearvrf.utility.FileNameUtils;
 import org.gearvrf.utility.Log;
+import org.gearvrf.x3d.ShaderSettings;
+import org.gearvrf.x3d.X3Dobject;
+import org.gearvrf.x3d.X3DparseLights;
 
 import android.content.Context;
 import android.content.res.AssetManager;
@@ -131,13 +136,29 @@ final class GVRImporter {
         return new GVRAssimpImporter(gvrContext, nativeValue);
     }
 
-    static GVRModelSceneObject loadJassimpModel(final GVRContext context,
+    static GVRModelSceneObject loadModel(final GVRContext context,
+            String filePath, GVRResourceVolume.VolumeType volumeType,
+            EnumSet<GVRImportSettings> settings) throws IOException {
+    	String ext = filePath.substring(filePath.length() - 3).toLowerCase();
+    	if (ext.equals("x3d"))
+    		return loadX3DModel(context, filePath, volumeType, settings, false);
+    	else
+    		return loadJassimpModel(context, filePath, volumeType, settings, false);
+    }
+    
+    static protected GVRModelSceneObject loadJassimpModel(final GVRContext context,
             String filePath, GVRResourceVolume.VolumeType volumeType,
             EnumSet<GVRImportSettings> settings) throws IOException {
         return loadJassimpModel(context, filePath, volumeType, settings, false);
     }
 
-    static GVRModelSceneObject loadJassimpModel(final GVRContext context,
+    static protected GVRModelSceneObject loadX3DModel(final GVRContext context,
+            String filePath, GVRResourceVolume.VolumeType volumeType,
+            EnumSet<GVRImportSettings> settings) throws IOException {
+        return loadX3DModel(context, filePath, volumeType, settings, false);
+    }
+    
+    static protected GVRModelSceneObject loadJassimpModel(final GVRContext context,
             String filePath, GVRResourceVolume.VolumeType volumeType,
             EnumSet<GVRImportSettings> settings, boolean cacheEnabled)
                     throws IOException {
@@ -191,6 +212,7 @@ final class GVRImporter {
                         cacheEnabled), lightlist);
         return sceneOb;
     }
+    
     static void importLights(List<AiLight> lights,Hashtable<String, GVRLightBase> lightlist,final GVRContext context){
         for(AiLight light: lights){            
             AiLightType type = light.getType();
@@ -481,6 +503,60 @@ final class GVRImporter {
         return sceneObject;
     }
 
+    static GVRModelSceneObject loadX3DModel(final GVRContext context,
+            String filePath, GVRResourceVolume.VolumeType volumeType,
+            EnumSet<GVRImportSettings> settings, boolean cacheEnabled)
+                    throws IOException {
+    	String fileName = filePath;
+    	File tmpFile = null;
+        AssetManager assetManager = context.getContext().getAssets();
+        GVRModelSceneObject root = new GVRModelSceneObject(context);
+        switch (volumeType) {
+        	case ANDROID_SDCARD:
+        	fileName = Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator + filePath;
+        	break;
+
+        	case NETWORK:
+            // filePath is a URL in this case
+            tmpFile = downloadFile(context.getActivity(), filePath);
+            if (tmpFile == null)
+            	throw new IOException("Cannot load model " + fileName);
+            fileName = tmpFile.getAbsolutePath();
+            break;
+            
+        	default:
+			break;
+        }
+        InputStream inputStream = null;
+        org.gearvrf.x3d.X3Dobject x3dObject = new org.gearvrf.x3d.X3Dobject(context, root);
+        try {
+	         ShaderSettings shaderSettings = new ShaderSettings();
+	         if (!X3Dobject.UNIVERSAL_LIGHTS) {
+	            X3DparseLights x3dParseLights = new X3DparseLights(context, root);
+	            inputStream = assetManager.open(fileName);
+	            Log.d(TAG, "Parse: " + fileName);
+	            x3dParseLights.Parse(inputStream, shaderSettings);
+	            inputStream.close();
+	          }
+	          inputStream = assetManager.open(fileName);
+	          x3dObject.Parse(inputStream, shaderSettings);
+	          inputStream.close();
+        }
+        catch (FileNotFoundException e) {
+          	Log.d(TAG, "ERROR: FileNotFoundException: " + fileName);
+          }
+        catch (IOException e1) {
+          	Log.d(TAG, "Error IOException = " + e1);
+          }
+        catch (Exception e2) {
+          e2.printStackTrace();
+       }
+        if (tmpFile != null)
+        	tmpFile.delete();
+        assetManager.close();
+        return root;
+    }
+    
     /**
      * Retrieves the material for the mesh of the given node..
      * 
