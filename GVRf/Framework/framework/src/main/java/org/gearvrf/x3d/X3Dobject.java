@@ -17,6 +17,12 @@ package org.gearvrf.x3d;
 
 import android.content.Context;
 import android.graphics.Color;
+
+import org.gearvrf.GVRExternalScene;
+import org.gearvrf.GVRScene;
+import org.gearvrf.IAssetEvents;
+import org.gearvrf.ISceneEvents;
+import org.gearvrf.animation.GVRAnimator;
 import org.gearvrf.utility.Log;
 
 import java.io.FileNotFoundException;
@@ -266,7 +272,8 @@ public class X3Dobject {
 
             animationInteractivityManager = new AnimationInteractivityManager(
                     this, gvrContext, root, mDefinedItems, interpolators,
-                    sensors, timeSensors, eventUtilities, scriptObjects
+                    sensors, timeSensors, eventUtilities, scriptObjects,
+                    inlineObjects
             );
         } catch (Exception e) {
             Log.e(TAG, "X3Dobject constructor error: " + e);
@@ -2393,7 +2400,7 @@ public class X3Dobject {
                             lodManager.increment();
                         }
                         InlineObject inlineObject = new InlineObject(inlineGVRSceneObject,
-                                url);
+                                url, name);
                         inlineObjects.add(inlineObject);
                     }
 
@@ -3632,24 +3639,102 @@ public class X3Dobject {
                     InlineObject inlineObject = inlineObjects.get(i);
                     String[] urls = inlineObject.getURL();
                     for (int j = 0; j < urls.length; j++) {
-                        GVRAndroidResource gvrAndroidResource = null;
-                        try {
-                            gvrAndroidResource = new GVRAndroidResource(gvrContext, urls[j]);
-                            inputStream = gvrAndroidResource.getStream();
-                            currentSceneObject = inlineObject.getInlineGVRSceneObject();
-                            saxParser.parse(inputStream, userhandler);
-                        } catch (FileNotFoundException e) {
-                            Log.e(TAG,
-                                    "Inline file reading: GVRAndroidResource File Not Found Exception: "
-                                            + e);
-                        } catch (IOException ioException) {
-                            Log.e(TAG,
-                                    "Inline file reading: GVRAndroidResource IOException url["
-                                            + j + "] url " + urls[j]);
-                            Log.e(TAG, "Inline file reading: " + ioException.toString());
-                        } catch (Exception exception) {
-                            Log.e(TAG, "Inline file reading: GVRAndroidResource Exception: "
-                                    + exception);
+                        if ( urls[j].toLowerCase().endsWith(".x3d") ) {
+                            GVRAndroidResource gvrAndroidResource = null;
+                            try {
+                                gvrAndroidResource = new GVRAndroidResource(gvrContext, urls[j]);
+                                inputStream = gvrAndroidResource.getStream();
+                                currentSceneObject = inlineObject.getInlineGVRSceneObject();
+                                saxParser.parse(inputStream, userhandler);
+                            } catch (FileNotFoundException e) {
+                                Log.e(TAG,
+                                        "Inline file reading: GVRAndroidResource File Not Found Exception: "
+                                                + e);
+                            } catch (IOException ioException) {
+                                Log.e(TAG,
+                                        "Inline file reading: GVRAndroidResource IOException url["
+                                                + j + "] url " + urls[j]);
+                                Log.e(TAG, "Inline file reading: " + ioException.toString());
+                            } catch (Exception exception) {
+                                Log.e(TAG, "Inline file reading: GVRAndroidResource Exception: "
+                                        + exception);
+                            }
+                        }
+                        else {
+                            try {
+                                GVRExternalScene gvrExternalScene = new GVRExternalScene(gvrContext, urls[j], false);
+                                currentSceneObject = inlineObject.getInlineGVRSceneObject();
+                                currentSceneObject.attachComponent(gvrExternalScene);
+                                GVRScene gvrScene = gvrContext.getMainScene();
+                                gvrExternalScene.load(gvrScene);
+                                GVRAnimator gvrAnimator = gvrExternalScene.getAnimator();
+/*
+                                currentSceneObject.getEventReceiver().addListener(new IAssetEvents() {
+                                //gvrExternalScene.getEventReceiver().addListener(new IAssetEvents() {
+                                    @Override
+                                    public void onAssetLoaded(GVRContext context, GVRSceneObject model, String filePath, String errors) {
+                                        Log.e("X3D-fbx", "onAssetLoaded()");
+
+                                    }
+
+                                    @Override
+                                    public void onModelLoaded(GVRContext context, GVRSceneObject model, String filePath) {
+                                        Log.e("X3D-fbx", "onModelLoaded()");
+
+                                    }
+
+                                    @Override
+                                    public void onModelError(GVRContext context, String error, String filePath) {
+                                        Log.e("X3D-fbx", "onModelError()");
+
+                                    }
+
+                                    @Override
+                                    public void onTextureError(GVRContext context, String error, String filePath) {
+                                        Log.e("X3D-fbx", "onTextureError()");
+
+                                    }
+
+                                    @Override
+                                    public void onTextureLoaded(GVRContext context, GVRTexture texture, String filePath) {
+                                        Log.e("X3D-fbx", "onTextureLoaded()");
+
+                                    }
+                                });
+                                */
+                                /*
+                            interactiveObject.getSensor().addISensorEvents(new ISensorEvents() {
+                            boolean isRunning;
+
+                            @Override
+                            public void onSensorEvent(SensorEvent event) {
+                                //Setup SensorEvent callback here
+                                if ((event.isOver() && interactiveObjectFinal.getSensorFromField().equals(Sensor.IS_OVER)) ||
+                                        (event.isActive() && interactiveObjectFinal.getSensorFromField().equals(Sensor
+                                                .IS_ACTIVE))) {
+                                    if (!isRunning) {
+                                        isRunning = true;
+                                        interactiveObjectFinal.getSensor().setHitPoint(event.getHitPoint());
+                                        gvrKeyFrameAnimationFinal.start(gvrContext.getAnimationEngine())
+                                                .setOnFinish(new GVROnFinish() {
+                                                    @Override
+                                                    public void finished(GVRAnimation animation) {
+                                                        isRunning = false;
+                                                    }
+                                                });
+                                    }
+                                }
+                            }
+                        });
+
+                                 */
+                                //gvrExternalScene.onAttach(currentSceneObject);
+                                long compType = gvrExternalScene.getComponentType();
+                            }
+                            catch (Exception e) {
+                                Log.e(TAG,
+                                        "Inline file reading: GVRExternalScene File " + urls[j] + " Exception: " + e);
+                            }
                         }
                     }
                 }

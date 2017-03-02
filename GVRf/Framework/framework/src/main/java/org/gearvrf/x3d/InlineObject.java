@@ -29,15 +29,22 @@ public class InlineObject {
 
   private GVRSceneObject inlineGVRSceneObject = null;
   private String[] url = {};
+  private String name = null;
 
-  public InlineObject() { }
+  public InlineObject() { };
 
   public InlineObject(GVRSceneObject inlineGVRSceneObject, String[] url) {
      this.inlineGVRSceneObject = inlineGVRSceneObject;
      this.url = url;
   }
 
-  public String[] getURL() {
+  public InlineObject(GVRSceneObject inlineGVRSceneObject, String[] url, String name) {
+      this.inlineGVRSceneObject = inlineGVRSceneObject;
+      this.url = url;
+      this.name = name;
+  }
+
+    public String[] getURL() {
      return this.url;
   }
 
@@ -48,6 +55,11 @@ public class InlineObject {
   public GVRSceneObject getInlineGVRSceneObject() {
      return this.inlineGVRSceneObject;
   }
+
+    public String getName() {
+        return name;
+    }
+
 
 }
 

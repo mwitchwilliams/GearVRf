@@ -27,8 +27,11 @@ import org.gearvrf.GVRDirectLight;
 import org.gearvrf.GVRLightBase;
 import org.gearvrf.GVRSceneObject;
 import org.gearvrf.ISensorEvents;
+import org.gearvrf.IAssetEvents;
+
 import org.gearvrf.SensorEvent;
 import org.gearvrf.animation.GVRAnimation;
+import org.gearvrf.animation.GVRAnimator;
 import org.gearvrf.animation.GVROnFinish;
 import org.gearvrf.animation.GVRRepeatMode;
 import org.gearvrf.animation.keyframe.GVRAnimationBehavior;
@@ -101,6 +104,7 @@ public class AnimationInteractivityManager {
     private Vector<TimeSensor> timeSensors = null;
     private Vector<EventUtility> eventUtilities = null;
     private ArrayList<ScriptObject> scriptObjects = null;
+    private Vector<InlineObject> inlineObjects = null;
 
     private PerFrameScripting perFrameScripting = new PerFrameScripting();
 
@@ -116,7 +120,8 @@ public class AnimationInteractivityManager {
                                          Vector<Sensor> sensors,
                                          Vector<TimeSensor> timeSensors,
                                          Vector<EventUtility> eventUtilities,
-                                         ArrayList<ScriptObject> scriptObjects
+                                         ArrayList<ScriptObject> scriptObjects,
+                                         Vector<InlineObject> inlineObjects
     ) {
         this.x3dObject = x3dObject;
         this.gvrContext = gvrContext;
@@ -127,6 +132,7 @@ public class AnimationInteractivityManager {
         this.timeSensors = timeSensors;
         this.eventUtilities = eventUtilities;
         this.scriptObjects = scriptObjects;
+        this.inlineObjects = inlineObjects;
     }
 
     /**
@@ -158,6 +164,7 @@ public class AnimationInteractivityManager {
         DefinedItem routeFromDefinedItem = null; // used passing items into a Script
         ScriptObject routeFromScriptObject = null;
         ScriptObject routeToScriptObject = null;
+        InlineObject routeToInlineObject = null;
 
         // Get pointers to the Sensor, TimeSensor, Interpolator,
         // EventUtility (such as BooleanToggle), ScriptObject
@@ -205,6 +212,12 @@ public class AnimationInteractivityManager {
                 routeToDefinedItem = definedItem;
             } else if (definedItem.getName().equalsIgnoreCase(fromNode)) {
                 routeFromDefinedItem = definedItem;
+            }
+        }
+
+        for (InlineObject inlineObject : inlineObjects) {
+            if (inlineObject.getName().equalsIgnoreCase(toNode)) {
+                routeToInlineObject = inlineObject;
             }
         }
 
@@ -432,6 +445,13 @@ public class AnimationInteractivityManager {
                 interactiveObjects.add(interactiveObject);
             }
         }  //  end if routeToDefinedItem != null
+        if ( routeToInlineObject != null ) {
+            InteractiveObject interactiveObject = new InteractiveObject();
+            InlineObject inlineObject = routeToInlineObject;
+            interactiveObject.setInlineObject(inlineObject);
+            interactiveObject.setSensor(routeFromSensor, fromField);
+            interactiveObjects.add(interactiveObject);
+        }
     }  //  end buildInteractiveObject
 
     /**
@@ -573,9 +593,12 @@ public class AnimationInteractivityManager {
 
             // Sensor (such as TouchSensor) to an EventUnity (such as BoleanToggle)
             //   to a DEFined Object
-            else if ((interactiveObject.getSensor() != null) &&
+            else if (
+                    ((interactiveObject.getSensor() != null) &&
                     (interactiveObject.getEventUtility() != null) &&
-                    (interactiveObject.getDefinedItem() != null)) {
+                    (interactiveObject.getDefinedItem() != null))
+                    || ((interactiveObject.getSensor() != null) && (interactiveObject.getInlineObject() != null))
+                    ) {
                 // a sensor, eventUtility (such as BooleanToggle) and defined object found
                 final InteractiveObject interactiveObjectFinal = interactiveObject;
                 final Vector<InteractiveObject> interactiveObjectsFinal = interactiveObjects;
@@ -593,14 +616,28 @@ public class AnimationInteractivityManager {
                                 if (!stateChanged) {
                                     stateChanged = true;
                                     EventUtility eventUtility = interactiveObjectFinal.getEventUtility();
-                                    eventUtility.setToggle(!eventUtility.getToggle());
-                                    for (InteractiveObject interactiveObject : interactiveObjectsFinal) {
-                                        if (interactiveObject.getEventUtility() == interactiveObjectFinal.getEventUtility()) {
-                                            GVRSceneObject gvrSceneObject = root
-                                                    .getSceneObjectByName(interactiveObject.getDefinedItem().getName());
-                                            GVRComponent gvrComponent = gvrSceneObject.getComponent(GVRLightBase.getComponentType());
-                                            gvrComponent.setEnable(eventUtility.getToggle());
+                                    if ( eventUtility != null ) {
+                                        eventUtility.setToggle(!eventUtility.getToggle());
+                                        for (InteractiveObject interactiveObject : interactiveObjectsFinal) {
+                                            if (interactiveObject.getEventUtility() == interactiveObjectFinal.getEventUtility()) {
+                                                GVRSceneObject gvrSceneObject = root
+                                                        .getSceneObjectByName(interactiveObject.getDefinedItem().getName());
+                                                GVRComponent gvrComponent = gvrSceneObject.getComponent(GVRLightBase.getComponentType());
+                                                gvrComponent.setEnable(eventUtility.getToggle());
+                                            }
                                         }
+                                    }
+                                    else {
+                                        // this is an fbx or other non-X3D file for animation
+                                        InlineObject inlineObject = interactiveObjectFinal.getInlineObject();
+                                        GVRSceneObject inlineSceneObject = inlineObject.getInlineGVRSceneObject();
+                                        GVRAnimator animator = (GVRAnimator) inlineSceneObject.getComponent(GVRAnimator.getComponentType());
+                                        if ( animator != null ) {
+                                            //animator.stop();
+                                            animator.setRepeatMode( GVRRepeatMode.ONCE );
+                                            animator.start();
+                                        }
+                                        Log.e("X3D-fbx", "Inline Object " + inlineObject.getName());
                                     }
                                 }
                             } else if (!event.isActive() && interactiveObjectFinal.getSensorFromField().equals(Sensor.IS_ACTIVE)) {
