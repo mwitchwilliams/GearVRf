@@ -3666,10 +3666,11 @@ public class X3Dobject {
                                 currentSceneObject = inlineObject.getInlineGVRSceneObject();
                                 currentSceneObject.attachComponent(gvrExternalScene);
                                 GVRScene gvrScene = gvrContext.getMainScene();
-                                gvrExternalScene.load(gvrScene);
-                                GVRAnimator gvrAnimator = gvrExternalScene.getAnimator();
-/*
-                                currentSceneObject.getEventReceiver().addListener(new IAssetEvents() {
+                                //gvrExternalScene.load(gvrScene);
+                                //GVRAnimator gvrAnimator = gvrExternalScene.getAnimator();
+
+                                //currentSceneObject.getEventReceiver().addListener(new IAssetEvents() {
+                                gvrExternalScene.load(new IAssetEvents() {
                                 //gvrExternalScene.getEventReceiver().addListener(new IAssetEvents() {
                                     @Override
                                     public void onAssetLoaded(GVRContext context, GVRSceneObject model, String filePath, String errors) {
@@ -3701,7 +3702,7 @@ public class X3Dobject {
 
                                     }
                                 });
-                                */
+
                                 /*
                             interactiveObject.getSensor().addISensorEvents(new ISensorEvents() {
                             boolean isRunning;
