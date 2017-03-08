@@ -3665,72 +3665,29 @@ public class X3Dobject {
                                 GVRExternalScene gvrExternalScene = new GVRExternalScene(gvrContext, urls[j], false);
                                 currentSceneObject = inlineObject.getInlineGVRSceneObject();
                                 currentSceneObject.attachComponent(gvrExternalScene);
-                                GVRScene gvrScene = gvrContext.getMainScene();
-                                //gvrExternalScene.load(gvrScene);
-                                //GVRAnimator gvrAnimator = gvrExternalScene.getAnimator();
 
-                                //currentSceneObject.getEventReceiver().addListener(new IAssetEvents() {
                                 gvrExternalScene.load(new IAssetEvents() {
-                                //gvrExternalScene.getEventReceiver().addListener(new IAssetEvents() {
                                     @Override
                                     public void onAssetLoaded(GVRContext context, GVRSceneObject model, String filePath, String errors) {
-                                        Log.e("X3D-fbx", "onAssetLoaded()");
-
+                                        if ( errors.length() != 0 ) Log.e(TAG, "<Inline> node, loading " + filePath + " error: " + errors);
                                     }
 
                                     @Override
                                     public void onModelLoaded(GVRContext context, GVRSceneObject model, String filePath) {
-                                        Log.e("X3D-fbx", "onModelLoaded()");
-
                                     }
 
                                     @Override
                                     public void onModelError(GVRContext context, String error, String filePath) {
-                                        Log.e("X3D-fbx", "onModelError()");
-
+                                        if ( error.length() != 0 ) Log.e(TAG, "<Inline> node, loading " + filePath + " model error: " + error);
                                     }
-
                                     @Override
                                     public void onTextureError(GVRContext context, String error, String filePath) {
-                                        Log.e("X3D-fbx", "onTextureError()");
-
+                                        if ( error.length() != 0 ) Log.e(TAG, "<Inline> node, loading " + filePath + " texture error: " + error);
                                     }
-
                                     @Override
                                     public void onTextureLoaded(GVRContext context, GVRTexture texture, String filePath) {
-                                        Log.e("X3D-fbx", "onTextureLoaded()");
-
                                     }
                                 });
-
-                                /*
-                            interactiveObject.getSensor().addISensorEvents(new ISensorEvents() {
-                            boolean isRunning;
-
-                            @Override
-                            public void onSensorEvent(SensorEvent event) {
-                                //Setup SensorEvent callback here
-                                if ((event.isOver() && interactiveObjectFinal.getSensorFromField().equals(Sensor.IS_OVER)) ||
-                                        (event.isActive() && interactiveObjectFinal.getSensorFromField().equals(Sensor
-                                                .IS_ACTIVE))) {
-                                    if (!isRunning) {
-                                        isRunning = true;
-                                        interactiveObjectFinal.getSensor().setHitPoint(event.getHitPoint());
-                                        gvrKeyFrameAnimationFinal.start(gvrContext.getAnimationEngine())
-                                                .setOnFinish(new GVROnFinish() {
-                                                    @Override
-                                                    public void finished(GVRAnimation animation) {
-                                                        isRunning = false;
-                                                    }
-                                                });
-                                    }
-                                }
-                            }
-                        });
-
-                                 */
-                                //gvrExternalScene.onAttach(currentSceneObject);
-                                long compType = gvrExternalScene.getComponentType();
                             }
                             catch (Exception e) {
                                 Log.e(TAG,

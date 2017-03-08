@@ -628,16 +628,15 @@ public class AnimationInteractivityManager {
                                         }
                                     }
                                     else {
-                                        // this is an fbx or other non-X3D file for animation
+                                        // this is an FBX or other non-X3D file that an X3D TouchSensor
+                                        // invokes an animation inside the FBX file
                                         InlineObject inlineObject = interactiveObjectFinal.getInlineObject();
                                         GVRSceneObject inlineSceneObject = inlineObject.getInlineGVRSceneObject();
                                         GVRAnimator animator = (GVRAnimator) inlineSceneObject.getComponent(GVRAnimator.getComponentType());
                                         if ( animator != null ) {
-                                            //animator.stop();
                                             animator.setRepeatMode( GVRRepeatMode.ONCE );
                                             animator.start();
                                         }
-                                        Log.e("X3D-fbx", "Inline Object " + inlineObject.getName());
                                     }
                                 }
                             } else if (!event.isActive() && interactiveObjectFinal.getSensorFromField().equals(Sensor.IS_ACTIVE)) {
