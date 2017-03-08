@@ -3669,7 +3669,7 @@ public class X3Dobject {
                                 gvrExternalScene.load(new IAssetEvents() {
                                     @Override
                                     public void onAssetLoaded(GVRContext context, GVRSceneObject model, String filePath, String errors) {
-                                        if ( errors.length() != 0 ) Log.e(TAG, "<Inline> node, loading " + filePath + " error: " + errors);
+                                        if ( errors != null ) Log.e(TAG, "<Inline> node, loading " + filePath + " error: " + errors);
                                     }
 
                                     @Override
@@ -3678,7 +3678,7 @@ public class X3Dobject {
 
                                     @Override
                                     public void onModelError(GVRContext context, String error, String filePath) {
-                                        if ( error.length() != 0 ) Log.e(TAG, "<Inline> node, loading " + filePath + " model error: " + error);
+                                        if ( error != null ) Log.e(TAG, "<Inline> node, loading " + filePath + " model error: " + error);
                                     }
                                     @Override
                                     public void onTextureError(GVRContext context, String error, String filePath) {
