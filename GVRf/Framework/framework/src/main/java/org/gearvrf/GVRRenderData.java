@@ -215,8 +215,8 @@ public class GVRRenderData extends GVRComponent implements PrettyPrint {
                     }
                 };
 
-                getGVRContext().loadMesh(callback,
-                        ((FutureResource<GVRMesh>) mesh).getResource());
+                getGVRContext().getAssetLoader().loadMesh(callback,
+                        ((FutureResource<GVRMesh>) mesh).getResource(), GVRAssetLoader.DEFAULT_PRIORITY);
             } else {
                 Threads.spawn(new Runnable() {
                     @Override
@@ -379,7 +379,8 @@ public class GVRRenderData extends GVRComponent implements PrettyPrint {
      * @return The {@link GVRMaterial material} the {@link GVRMesh mesh} is
      *         being rendered with.
      */
-    public GVRMaterial getMaterial(int passIndex) {
+    public GVRMaterial getMaterial(int passIndex)
+    {
         if (passIndex < mRenderPassList.size()) {
             return mRenderPassList.get(passIndex).getMaterial();
         } else {
@@ -396,6 +397,7 @@ public class GVRRenderData extends GVRComponent implements PrettyPrint {
      */
     public void setMaterial(GVRMaterial material) {
         setMaterial(material, 0);
+        adjustRenderingOrderForTransparency(material);
     }
 
     /**
@@ -407,15 +409,39 @@ public class GVRRenderData extends GVRComponent implements PrettyPrint {
      *            The rendering pass this material will be assigned to.
      * 
      */
-    public void setMaterial(GVRMaterial material, int passIndex) {
-        if (passIndex < mRenderPassList.size()) {
+    public void setMaterial(GVRMaterial material, int passIndex)
+    {
+        if (passIndex < mRenderPassList.size())
+        {
             mRenderPassList.get(passIndex).setMaterial(material);
+            adjustRenderingOrderForTransparency(material);
         } else {
             Log.e(TAG, "Trying to set material from invalid pass. Pass " + passIndex + " was not created.");
         }
         
     }
-    
+   
+    private void adjustRenderingOrderForTransparency(GVRMaterial material) {
+        int renderingOrder = getRenderingOrder();
+
+        GVRTexture mainTexture = material.getMainTexture();
+        GVRTexture diffuseTexture = material.getTexture("diffuseTexture");
+
+        if((mainTexture != null && !mainTexture.hasTransparency()) ||
+            diffuseTexture != null && !diffuseTexture.hasTransparency()) {
+            // had transparency before, but is now opaque
+            if(renderingOrder > GVRRenderingOrder.GEOMETRY) {
+                setRenderingOrder(GVRRenderingOrder.GEOMETRY);
+            }
+            return;
+        }
+
+        // has transparency now, but was opaque before
+        if(renderingOrder < GVRRenderingOrder.TRANSPARENT) {
+            setRenderingOrder(GVRRenderingOrder.TRANSPARENT);
+        }
+    }
+
     /**
      * Set the shader template to use for rendering the mesh.
      * 
@@ -514,13 +540,16 @@ public class GVRRenderData extends GVRComponent implements PrettyPrint {
      * GVRLight.enable(). GVRLight.enable turns on a light, while this method
      * enables the lighting effect for the render_data.
      */
-    public void enableLight() {
-        if (!isLightEnabled) {
+    public void enableLight()
+    {
+        if (!isLightEnabled)
+        {
             NativeRenderData.enableLight(getNative());
             isLightEnabled = true;
             bindShader(getGVRContext().getMainScene());
         }
     }
+
 
     /**
      * Disable lighting effect for the render_data.
@@ -528,8 +557,10 @@ public class GVRRenderData extends GVRComponent implements PrettyPrint {
      * GVRLight.disable turns off a light, while this method
      * disables the lighting effect for the render_data.
      */
-    public void disableLight() {
-        if (isLightEnabled) {
+    public void disableLight()
+    {
+        if (isLightEnabled)
+        {
             NativeRenderData.disableLight(getNative());
             isLightEnabled = false;
             if (mShaderTemplate != null) {

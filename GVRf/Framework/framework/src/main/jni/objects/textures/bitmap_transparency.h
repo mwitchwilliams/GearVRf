@@ -1,5 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!--/* Copyright 2015 Samsung Electronics Co., LTD
+/* Copyright 2015 Samsung Electronics Co., LTD
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,12 +11,19 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- */-->
+ */
+
+/***************************************************************************
+ * JNI
+ ***************************************************************************/
+
+#include "android/bitmap.h"
+#include "util/gvr_jni.h"
+#include "util/gvr_log.h"
 
 
+namespace gvr {
 
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="org.gearvrf.oculus"
-    android:versionCode="1"
-    android:versionName="1.0" >
-</manifest>
+bool bitmap_has_transparency(JNIEnv *env, jobject jbitmap);
+
+}

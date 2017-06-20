@@ -58,7 +58,8 @@ public class GVRTexture extends GVRHybridObject {
                 cdl.countDown();
             }
         });
-        try {
+        try
+        {
             cdl.await();
         } catch (final Exception exc) {
             throw new IllegalStateException("Unable to obtain texture id");
@@ -141,6 +142,15 @@ public class GVRTexture extends GVRHybridObject {
 
     private volatile FutureBase mFuture;
     protected volatile int mTextureId;
+    protected boolean mHasTransparency = false;
+
+    protected boolean hasTransparency() {
+        return mHasTransparency;
+    }
+
+    protected void setHasTransparency(boolean hasTransparency) {
+        mHasTransparency = hasTransparency;
+    }
 
     private class FutureBase implements Future<Integer> {
         @Override
