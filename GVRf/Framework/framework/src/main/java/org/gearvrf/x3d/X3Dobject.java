@@ -17,7 +17,6 @@ package org.gearvrf.x3d;
 
 import android.content.Context;
 import android.graphics.Color;
-import android.graphics.Typeface;
 
 import org.gearvrf.GVRCursorController;
 import org.gearvrf.io.GVRControllerType;
@@ -226,6 +225,11 @@ public class X3Dobject {
     private boolean parseJavaScript = false;
     // holds complete JavaScript code per <SCRIPT> tag
     private String javaScriptCode = "";
+
+    // contains the directory structure for inlines to be appended in front of
+    // references to texture map file names (plus their own sub-directory.
+    private String inlineSubdirectory = "";
+
 
 
     // The Text_Font Params class and Reset() function handle
@@ -887,10 +891,10 @@ public class X3Dobject {
 
 
             /********** Shape **********/
-            else if (qName.equalsIgnoreCase("shape")) {
+            else if (qName.equalsIgnoreCase("Shape")) {
 
                 gvrRenderData = new GVRRenderData(gvrContext);
-               // gvrRenderData.setAlphaToCoverage(true);
+                gvrRenderData.setAlphaToCoverage(true);
                 gvrRenderData.setRenderingOrder(GVRRenderingOrder.TRANSPARENT);
                 gvrRenderData.setCullFace(GVRCullFaceEnum.Back);
                 shaderSettings.initializeTextureMaterial(new GVRMaterial(gvrContext, GVRMaterial.GVRShaderType.BeingGenerated.ID));
@@ -919,9 +923,7 @@ public class X3Dobject {
                     }
                     if (useItem != null) {
                         // GVRRenderingData doesn't seem to be shared, but instead has an
-
                         // owner.  Thus share the GVRMesh and GVRMaterial attached to
-
                         // GVRRenderingData.
                         GVRRenderData gvrRenderDataDEFined = useItem.getGVRRenderData();
                         gvrRenderData.setMaterial(gvrRenderDataDEFined.getMaterial());
@@ -943,7 +945,7 @@ public class X3Dobject {
 
 
             /********** Appearance **********/
-            else if (qName.equalsIgnoreCase("appearance")) {
+            else if (qName.equalsIgnoreCase("Appearance")) {
         /* This gives the X3D-only Shader */
                 if (!UNIVERSAL_LIGHTS)
 
@@ -1019,16 +1021,12 @@ public class X3Dobject {
                             .getValue("ambientIntensity");
                     if (ambientIntensityAttribute != null) {
                         Log.e(TAG, "ambientIntensity currently not implemented.");
-
-
                         shaderSettings
                                 .setAmbientIntensity(parseSingleFloatString(ambientIntensityAttribute,
                                         true, false));
                     }
                     String shininessAttribute = attributes.getValue("shininess");
                     if (shininessAttribute != null) {
-
-
                         shaderSettings
                                 .setShininess(parseSingleFloatString(shininessAttribute, true,
                                         false));
@@ -1071,7 +1069,6 @@ public class X3Dobject {
                         urlAttribute = urlAttribute.replace("\"", ""); // remove double and
                         // single quotes
                         urlAttribute = urlAttribute.replace("\'", "");
-                        urlAttribute = urlAttribute.toLowerCase();
 
                         final String filename = urlAttribute;
                         String repeatSAttribute = attributes.getValue("repeatS");
@@ -1091,7 +1088,7 @@ public class X3Dobject {
 
                         final String defValue = attributes.getValue("DEF");
                         GVRAssetLoader.TextureRequest request = new GVRAssetLoader.TextureRequest(assetRequest,
-                                filename, gvrTextureParameters);
+                                (inlineSubdirectory + filename), gvrTextureParameters);
                         Future<GVRTexture> texture = assetRequest
                                 .loadFutureTexture(request);
                         shaderSettings.setTexture(texture);
@@ -1107,6 +1104,7 @@ public class X3Dobject {
 
             /********** TextureTransform **********/
             else if (qName.equalsIgnoreCase("TextureTransform")) {
+                Log.e(TAG, "X3D TextureTransform not currently implemented");
                 attributeValue = attributes.getValue("DEF");
                 if (attributeValue != null) {
                     Log.e(TAG,
@@ -1166,24 +1164,27 @@ public class X3Dobject {
                     }
                     attributeValue = attributes.getValue("solid");
                     if (attributeValue != null) {
-                        Log.e(TAG, "IndexedFaceSet solid attribute not implemented. ");
+                        if (parseBooleanString(attributeValue)) {
+                            Log.e(TAG, "IndexedFaceSet solid=true attribute not implemented. ");
+                        }
                     }
                     attributeValue = attributes.getValue("ccw");
                     if (attributeValue != null) {
-                        Log.e(TAG, "IndexedFaceSet ccw attribute not implemented. ");
+                        if ( !parseBooleanString(attributeValue)) {
+                            Log.e(TAG, "IndexedFaceSet ccw=false attribute not implemented. ");
+                        }
                     }
                     attributeValue = attributes.getValue("colorPerVertex");
                     if (attributeValue != null) {
-
                         Log.e(TAG,
                                 "IndexedFaceSet colorPerVertex attribute not implemented. ");
-
                     }
                     attributeValue = attributes.getValue("normalPerVertex");
                     if (attributeValue != null) {
-
-                        Log.e(TAG,
-                                "IndexedFaceSet normalPerVertex attribute not implemented. ");
+                        if ( !parseBooleanString(attributeValue)) {
+                            Log.e(TAG,
+                                    "IndexedFaceSet normalPerVertex=false attribute not implemented. ");
+                        }
 
                     }
                     String coordIndexAttribute = attributes.getValue("coordIndex");
@@ -1257,9 +1258,7 @@ public class X3Dobject {
                         for (int i = 0; i < vertices.size(); i++) {
                             Vertex vertex = vertices.get(i);
                             for (int j = 0; j < 3; j++) {
-
                                 vertexList[i * 3 + j] = vertex.getVertexCoord(j);
-
                             }
                         }
                         gvrMesh.setVertices(vertexList);
@@ -1379,8 +1378,6 @@ public class X3Dobject {
                         char[] ifs = gvrMesh.getIndices();
 
                         float[] normalVectorList = new float[ifs.length * 3];
-
-
                         // check if an indexedVertexNormals list is present
                         normalIndices.clear();
                         if (indexedVertexNormals.size() != 0) {
@@ -2389,7 +2386,7 @@ public class X3Dobject {
 
                 /********** Billboard **********/
                 else if (qName.equalsIgnoreCase("Billboard")) {
-                    Log.e(TAG, "Billboard currently not implemented. ");
+                    Log.e(TAG, "X3D Billboard currently not implemented. ");
                     //TODO: Billboard not currently implemented
                     String name = "";
                     float[] axisOfRotation =
@@ -2413,14 +2410,15 @@ public class X3Dobject {
                 else if (qName.equalsIgnoreCase("Inline")) {
                     // Inline data saved, and added after the inital .x3d program is parsed
                     String name = "";
-                    String[] url = {};
+                    String[] url = new String[1];
                     attributeValue = attributes.getValue("DEF");
                     if (attributeValue != null) {
                         name = attributeValue;
                     }
                     attributeValue = attributes.getValue("url");
                     if (attributeValue != null) {
-                        url = parseMFString(attributeValue);
+                        //url = parseMFString(attributeValue);
+                        url[0] = attributeValue;
                         GVRSceneObject inlineGVRSceneObject = currentSceneObject; // preserve
                         // the
                         // currentSceneObject
@@ -2662,6 +2660,7 @@ public class X3Dobject {
 
                 /********** ElevationGrid **********/
                 else if (qName.equalsIgnoreCase("ElevationGrid")) {
+                    Log.e(TAG, "X3D ElevationGrid not currently implemented. ");
                     String name = "";
                     float creaseAngle = 0;
                     float[] height = null;
@@ -3676,21 +3675,25 @@ public class X3Dobject {
                     for (int j = 0; j < urls.length; j++) {
                         GVRAndroidResource gvrAndroidResource = null;
                         try {
+                            inlineSubdirectory = "";
+                            int lastIndex = urls[j].lastIndexOf('/');
+                            if (lastIndex != -1) {
+                                inlineSubdirectory = urls[j].substring(0, urls[j].lastIndexOf('/')+1);
+                            }
                             gvrAndroidResource = new GVRAndroidResource(gvrContext, urls[j]);
                             inputStream = gvrAndroidResource.getStream();
                             currentSceneObject = inlineObject.getInlineGVRSceneObject();
                             saxParser.parse(inputStream, userhandler);
                         } catch (FileNotFoundException e) {
                             Log.e(TAG,
-                                    "Inline file reading: GVRAndroidResource File Not Found Exception: "
+                                    "Inline file reading: File Not Found: url " + urls[j] + ", Exception "
                                             + e);
                         } catch (IOException ioException) {
                             Log.e(TAG,
-                                    "Inline file reading: GVRAndroidResource IOException url["
-                                            + j + "] url " + urls[j]);
-                            Log.e(TAG, "Inline file reading: " + ioException.toString());
+                                    "Inline file reading url " + urls[j]);
+                            Log.e(TAG, "IOException: " + ioException.toString());
                         } catch (Exception exception) {
-                            Log.e(TAG, "Inline file reading: GVRAndroidResource Exception: "
+                            Log.e(TAG, "Inline file reading error: Exception "
                                     + exception);
                         }
                     }
