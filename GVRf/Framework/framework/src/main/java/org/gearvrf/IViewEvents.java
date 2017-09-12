@@ -1,4 +1,4 @@
-<!--/* Copyright 2015 Samsung Electronics Co., LTD
+/* Copyright 2016 Samsung Electronics Co., LTD
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -11,19 +11,19 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- */-->
+ */
 
+package org.gearvrf;
 
+import android.view.View;
 
-<resources>
+import org.gearvrf.scene_objects.GVRViewSceneObject;
 
-    <!--
-        Base application theme for API 14+. This theme completely replaces
-        AppBaseTheme from BOTH res/values/styles.xml and
-        res/values-v11/styles.xml on API 14+ devices.
-    -->
-    <style name="AppBaseTheme" parent="android:Theme.Holo.Light.DarkActionBar">
-        <!-- API 14 theme customizations can go here. -->
-    </style>
-
-</resources>
+/**
+ * This interface defines the callback interface of an Android {@code View}
+ * that is inflated by a {@link GVRViewSceneObject}.
+ */
+public interface IViewEvents extends IEvents {
+    void onInitView(GVRViewSceneObject sceneObject, View view);
+    void onStartDraw(GVRViewSceneObject sceneObject, View view);
+}
