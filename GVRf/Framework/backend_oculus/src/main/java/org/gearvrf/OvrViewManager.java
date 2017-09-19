@@ -23,6 +23,7 @@ import org.gearvrf.debug.GVRMethodCallTracer;
 import org.gearvrf.debug.GVRStatsLine;
 import org.gearvrf.utility.Log;
 import org.gearvrf.utility.VrAppSettings;
+import org.gearvrf.io.GearCursorController;
 
 /*
  * This is the most important part of gvrf.
@@ -141,8 +142,6 @@ class OvrViewManager extends GVRViewManager implements OvrRotationSensorListener
         mStatsLine.addColumn(mTracerDrawEyes1.getStatColumn());
         mStatsLine.addColumn(mTracerDrawEyes2.getStatColumn());
         mStatsLine.addColumn(mTracerAfterDrawEyes.getStatColumn());
-
-        mGearController = new GearCursorController(this, new OvrControllerReader(gvrActivity.getActivityNative().getNative()));
     }
 
     /*
@@ -314,6 +313,8 @@ class OvrViewManager extends GVRViewManager implements OvrRotationSensorListener
     void onSurfaceCreated() {
         super.onSurfaceCreated();
         mRotationSensor.onResume();
+        mGearController = mInputManager.getGearController();
+        mGearController.attachReader(new OvrControllerReader(mActivity.getActivityNative().getNative()));
     }
 
     /*
