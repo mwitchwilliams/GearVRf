@@ -15,6 +15,9 @@
 
 package org.gearvrf.io;
 
+import android.content.Intent;
+import android.content.res.Configuration;
+import android.graphics.PointF;
 import android.os.Handler;
 import android.os.Handler.Callback;
 import android.os.HandlerThread;
@@ -25,8 +28,13 @@ import android.view.MotionEvent;
 import org.gearvrf.GVRContext;
 import org.gearvrf.GVRCursorController;
 import org.gearvrf.GVRDrawFrameListener;
+import org.gearvrf.GVREventListeners;
+import org.gearvrf.GVRMain;
 import org.gearvrf.GVRScene;
 import org.gearvrf.GVRTransform;
+import org.gearvrf.IActivityEvents;
+import org.gearvrf.IEvents;
+import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
 import java.util.concurrent.CountDownLatch;
@@ -81,6 +89,7 @@ final public class GVRGazeCursorController extends GVRCursorController implement
         connected = true;
         context.getInputManager().activateCursorController(this);
         context.registerDrawFrameListener(this);
+        context.getActivity().getEventReceiver().addListener(activityHandler);
     }
 
     private void stop()
@@ -88,6 +97,7 @@ final public class GVRGazeCursorController extends GVRCursorController implement
         connected = false;
         context.getInputManager().deactivateCursorController(this);
         context.unregisterDrawFrameListener(this);
+        context.getActivity().getEventReceiver().removeListener(activityHandler);
     }
 
     /**
@@ -227,6 +237,18 @@ final public class GVRGazeCursorController extends GVRCursorController implement
             thread.quitSafely();
         }
     }
+
+    private IActivityEvents activityHandler = new GVREventListeners.ActivityEvents()
+    {
+        public void onTouchEvent(MotionEvent event) { }
+
+        public void onControllerEvent(Vector3f position, Quaternionf orientation, PointF touchpadPoint) { }
+
+        public void dispatchTouchEvent(MotionEvent event)
+        {
+            GVRGazeCursorController.this.dispatchMotionEvent(event);
+        }
+    };
 
     private final class EventHandlerThread extends HandlerThread {
         private static final String THREAD_NAME = "GVRGazeEventHandlerThread";
