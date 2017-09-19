@@ -98,7 +98,7 @@ public final class GearCursorController extends GVRCursorController
     private long prevATime;
     private boolean touching = false;
 
-    GearCursorController(GVRContext context, ControllerReader controllerReader) {
+    public GearCursorController(GVRContext context, ControllerReader controllerReader) {
         super(context, GVRControllerType.CONTROLLER);
         pivot = new GVRSceneObject(context);
         thread = new EventHandlerThread();
