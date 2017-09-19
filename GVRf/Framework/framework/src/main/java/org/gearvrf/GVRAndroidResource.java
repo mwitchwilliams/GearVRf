@@ -205,7 +205,7 @@ public class GVRAndroidResource {
      * @param name        a String for uniquely identifying this resource
      * @param inputStream an already open {@link InputStream} for this resource
      */
-    GVRAndroidResource(String name, InputStream inputStream) {
+    public GVRAndroidResource(String name, InputStream inputStream) {
         inputStreamName = name;
         stream = inputStream;
         streamState = StreamStates.NEW;
@@ -649,7 +649,7 @@ public class GVRAndroidResource {
      * Callback for asynchronous texture loads.
      * 
      * Both compressed and bitmapped textures, using the
-     * {@link GVRContext#loadTexture(GVRAndroidResource.TextureCallback, GVRAndroidResource)}
+     * {@link GVRAssetLoader#loadTexture(GVRAndroidResource, GVRAndroidResource.TextureCallback)}
      * APIs.
      * 
      * @since 1.6.7
