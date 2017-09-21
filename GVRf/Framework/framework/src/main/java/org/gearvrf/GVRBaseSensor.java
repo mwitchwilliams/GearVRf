@@ -165,9 +165,12 @@ public class GVRBaseSensor extends GVRBehavior
             mHit = collision;
         }
         controller = collision.picker.getController();
+        if (controller != null)
+        {
+            event.setCursorController(controller);
+            controller.setEventHandledBySensor();
+        }
         event.setActive(collision.touched);
-        event.setCursorController(controller);
-        controller.setEventHandledBySensor();
         event.setPickedObject(collision);
         event.setOver(over);
         getGVRContext().getEventManager().sendEvent(ownerCopy, ISensorEvents.class, "onSensorEvent", event);

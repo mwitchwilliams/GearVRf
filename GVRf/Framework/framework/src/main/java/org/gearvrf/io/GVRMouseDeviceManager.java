@@ -89,7 +89,6 @@ final class GVRMouseDeviceManager implements GVRDrawFrameListener {
         private static final KeyEvent BUTTON_1_UP = new KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_BUTTON_1);
 
         private GVRMouseDeviceManager deviceManager;
-        private GVRContext context;
         private final Vector3f position;
         private final Quaternionf rotation;
         private final Matrix4f scratchMatrix = new Matrix4f();
