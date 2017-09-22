@@ -152,10 +152,6 @@ public class X3Dobject {
     // this variable will be the active ScriptObject being built
     private ScriptObject currentScriptObject = null;
 
-    // points to a sensor that wraps around other nodes.
-    private Sensor currentSensor = null;
-
-
     private GVRSceneObject meshAttachedSceneObject = null;
     private GVRRenderData gvrRenderData = null;
     private GVRMesh gvrMesh = null;
@@ -2578,8 +2574,6 @@ public class X3Dobject {
                     sensor.setAnchorURL(url);
                     sensors.add(sensor);
                     animationInteractivityManager.BuildInteractiveObjectFromAnchor(sensor, url);
-
-                    currentSensor = sensor;
                 } // end <Anchor> node
 
 
@@ -2603,7 +2597,6 @@ public class X3Dobject {
 
                     Sensor sensor = new Sensor(name, Sensor.Type.TOUCH, currentSceneObject);
                     sensors.add(sensor);
-                    currentSensor = sensor;
                     // add colliders to all objects under the touch sensor
                     currentSceneObject.attachCollider(new GVRMeshCollider(gvrContext, true));
                 } // end <TouchSensor> node
@@ -3100,16 +3093,6 @@ public class X3Dobject {
                 throws SAXException {
             if (qName.equalsIgnoreCase("Transform")) {
                 if (!gvrGroupingNodeUSEd) {
-                    if (currentSensor != null) {
-                        // A GVRScene object was added between the parent and it's children.
-                        // If the currentSensor points to the currentSceneObject, go up to
-                        //   it's parent thus skipping past the sensor's sensor's GVRSceneObject
-                        if (currentSensor.getOwnerObject() == currentSceneObject) {
-                            currentSensor = null;
-                            currentSceneObject = currentSceneObject.getParent();
-                        }
-                    }
-
                     if (currentSceneObject.getParent() == root)
                         currentSceneObject = null;
                     else {
@@ -3134,15 +3117,6 @@ public class X3Dobject {
                 gvrGroupingNodeUSEd = false;
             } // end </Transform> parsing
             else if (qName.equalsIgnoreCase("Group")) {
-                if (currentSensor != null) {
-                    // A GVRScene object was added between the parent and it's children.
-                    // If the currentSensor points to the currentSceneObject, go up to
-                    //   it's parent thus skipping past the sensor's sensor's GVRSceneObject
-                    if (currentSensor.getOwnerObject() == currentSceneObject) {
-                        currentSensor = null;
-                        currentSceneObject = currentSceneObject.getParent();
-                    }
-                }
                 if (currentSceneObject.getParent() == root)
                     currentSceneObject = null;
                 else
@@ -3367,7 +3341,7 @@ public class X3Dobject {
             } else if (qName.equalsIgnoreCase("TouchSensor")) {
                 ;
             } else if (qName.equalsIgnoreCase("ProximitySensor")) {
-                currentSensor = null;
+                ;
             } else if (qName.equalsIgnoreCase("Text")) {
                 gvrTextViewSceneObject = new GVRTextViewSceneObject(gvrContext,
                         Text_FontParams.nameFontStyle,
@@ -3389,7 +3363,6 @@ public class X3Dobject {
                     currentSceneObject = null;
                 else
                     currentSceneObject = currentSceneObject.getParent();
-                currentSensor = null;
             } else if (qName.equalsIgnoreCase("Inline")) {
                 ;
             } else if (qName.equalsIgnoreCase("LOD")) {
