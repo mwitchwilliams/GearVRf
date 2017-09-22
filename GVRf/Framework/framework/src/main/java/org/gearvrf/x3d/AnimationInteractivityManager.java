@@ -81,6 +81,7 @@ public class AnimationInteractivityManager {
     private static final String ORIENTATION = "orientation";
     private static final String TRANSLATION = "translation";
     private static final String POSITION = "position";
+    private static final String LOCATION = "location";
     private static final String SCALE = "scale";
     private static final String KEY_FRAME_ANIMATION = "KeyFrameAnimation_";
     private static final String INITIALIZE_FUNCTION = "initialize";
@@ -490,20 +491,31 @@ public class AnimationInteractivityManager {
                 // Set up the animation objects, properties
                 //   first construct the animation channel based on translation, rotation, scale, etc.
                 if ((interactiveObject.getDefinedItemToField().toLowerCase().endsWith(TRANSLATION)) ||
-                        (interactiveObject.getDefinedItemToField().toLowerCase().endsWith(POSITION))) {
+                        (interactiveObject.getDefinedItemToField().toLowerCase().endsWith(POSITION)) ||
+                    (interactiveObject.getDefinedItemToField().toLowerCase().endsWith(LOCATION)))
+                {
                     gvrAnimatedObject = root
                             .getSceneObjectByName((interactiveObject.getDefinedItem().getName() + x3dObject.TRANSFORM_TRANSLATION_));
-                    gvrAnimationChannel = new GVRAnimationChannel(
-                            gvrAnimatedObject.getName(),
-                            interactiveObject.getInterpolator().key.length, 0, 0,
-                            GVRAnimationBehavior.LINEAR, GVRAnimationBehavior.LINEAR);
-                    for (int j = 0; j < interactiveObject.getInterpolator().key.length; j++) {
-                        gvrAnimationChannel.setPosKeyVector(j,
-                                interactiveObject.getInterpolator().key[j]
-                                        * interactiveObject.getTimeSensor().getCycleInterval()
-                                        * FRAMES_PER_SECOND, interactiveObject.getInterpolator().keyValue[j * 3],
-                                interactiveObject.getInterpolator().keyValue[j * 3 + 1],
-                                interactiveObject.getInterpolator().keyValue[j * 3 + 2]);
+                    if ( gvrAnimatedObject == null ) {
+                        gvrAnimatedObject = root
+                                .getSceneObjectByName(interactiveObject.getDefinedItem().getName() );
+                    }
+                    if ( gvrAnimatedObject != null ) {
+                        gvrAnimationChannel = new GVRAnimationChannel(
+                                gvrAnimatedObject.getName(),
+                                interactiveObject.getInterpolator().key.length, 0, 0,
+                                GVRAnimationBehavior.LINEAR, GVRAnimationBehavior.LINEAR);
+                        for (int j = 0; j < interactiveObject.getInterpolator().key.length; j++) {
+                            gvrAnimationChannel.setPosKeyVector(j,
+                                    interactiveObject.getInterpolator().key[j]
+                                            * interactiveObject.getTimeSensor().getCycleInterval()
+                                            * FRAMES_PER_SECOND, interactiveObject.getInterpolator().keyValue[j * 3],
+                                    interactiveObject.getInterpolator().keyValue[j * 3 + 1],
+                                    interactiveObject.getInterpolator().keyValue[j * 3 + 2]);
+                        }
+                    }
+                    else {
+                        Log.e(TAG, "'" + interactiveObject.getDefinedItemToField() + "' not found in ROUTE translation/postion/location animation.");
                     }
                 }  //  end translation
 
