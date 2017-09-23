@@ -676,7 +676,15 @@ public class AnimationInteractivityManager {
 
                 if (interactiveObject.getSensor() != null) {
                     if (interactiveObject.getSensor().getSensorType() == Sensor.Type.TOUCH) {
-
+                        interactiveObject.getSensor().getOwnerObject().forAllDescendants(
+                                new GVRSceneObject.SceneVisitor()
+                                {
+                                    public boolean visit (GVRSceneObject obj)
+                                    {
+                                        obj.attachCollider(new GVRMeshCollider(gvrContext, true));
+                                        return true;
+                                    }
+                                });
                         interactiveObject.getSensor().addISensorEvents(new ISensorEvents() {
                             boolean stateChanged = false;
                             boolean isActiveDone = false;
