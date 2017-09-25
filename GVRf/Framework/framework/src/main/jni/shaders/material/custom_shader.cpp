@@ -32,7 +32,6 @@ void CustomShader::initializeOnDemand(RenderState* rstate) {
     if (nullptr == program_)
     {
         if(rstate->is_multiview && !(strstr(vertexShader_.c_str(),"gl_ViewID_OVR")
-                                     && strstr(vertexShader_.c_str(),"GL_OVR_multiview2")
                                      && strstr(vertexShader_.c_str(),"GL_OVR_multiview2"))){
             LOGE("Your shaders are not multiview");
             std::terminate();
@@ -43,6 +42,7 @@ void CustomShader::initializeOnDemand(RenderState* rstate) {
             u_view_ = glGetUniformLocation(program_->id(), "u_view_[0]");
             u_mv_ = glGetUniformLocation(program_->id(), "u_mv_[0]");
             u_mv_it_ = glGetUniformLocation(program_->id(), "u_mv_it_[0]");
+            u_render_mask_ = glGetUniformLocation(program_->id(), "u_render_mask");
         }
         else {
             u_mvp_ = glGetUniformLocation(program_->id(), "u_mvp");
@@ -301,6 +301,8 @@ void CustomShader::render(RenderState* rstate, RenderData* render_data, Material
             }
         }
     }
+    if( u_render_mask_!= -1)
+        glUniform1ui(u_render_mask_,render_data->render_mask());
 
     if (u_model_ != -1){
     	glUniformMatrix4fv(u_model_, 1, GL_FALSE, glm::value_ptr(rstate->uniforms.u_model));
@@ -329,7 +331,7 @@ void CustomShader::render(RenderState* rstate, RenderData* render_data, Material
         else
             glUniformMatrix4fv(u_mv_it_, 1, GL_FALSE, glm::value_ptr(rstate->uniforms.u_mv_it));
     }
-    if (u_right_ != 0) {
+    if (u_right_ != -1) {
         glUniform1i(u_right_, rstate->uniforms.u_right ? 1 : 0);
     }
     /*
