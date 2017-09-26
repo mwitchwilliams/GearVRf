@@ -74,7 +74,6 @@ public class GVRPicker extends GVRBehavior implements IEventReceiver {
     private final Vector3f mRayOrigin = new Vector3f(0, 0, 0);
     private final Vector3f mRayDirection = new Vector3f(0, 0, -1);
     private final float[] mPickRay = new float[6];
-    private boolean mPropagateEventsToTarget = false;
     private PickTask mPickTask = null;
     protected volatile boolean mTouched = false;
     protected volatile MotionEvent mMotionEvent = null;
@@ -346,36 +345,11 @@ public class GVRPicker extends GVRBehavior implements IEventReceiver {
      * pick or touch events. To add a listener, call
      * {@code @getEventReceiver().addListener(IEvents)} with
      * the {@link IPickEvents} or {@ITouchEvents} interface.
-     * <p>
-     * The events for all collisions are sent to each listener.
-     * You can route the touch events for a collider to it's
-     * owner with {@link #propagateEventsToTarget(boolean)}.
-     * In this case, each scene object only gets touch events
-     * which involve its collider component.
      * @return {@link GVREventReceiver} that dispatches pick events
      * @see IPickEvents
      * @see ITouchEvents
      */
     public final GVREventReceiver getEventReceiver() { return mListeners; }
-
-    /**
-     * Propagate touch events to the scene objects that are picked.
-     * <p>
-     * By default, pick and touch events are sent only to listeners on
-     * the scene and attached to the picker. If event propagation is
-     * enabled, touch events only are sent to the scene object owner of
-     * each collider.
-     * <p>
-     * To listen for pick or touch events from all colliders, you can
-     * add a listener to the event receiver for this picker.
-     * @param flag true to enable event propagation to the scene object,
-     *             false to propagate events only to listeners
-     * @see IPickEvents
-     * @see ITouchEvents
-     * @see #getEventReceiver()
-     */
-    public void propagateEventsToTarget(boolean flag) { mPropagateEventsToTarget = flag; }
-
 
     public void runOnUiThread(boolean flag)
     {
@@ -597,10 +571,6 @@ public class GVRPicker extends GVRBehavior implements IEventReceiver {
             else if (IPickEvents.class.isAssignableFrom(listener.getClass()))
                 ((IPickEvents) listener).onEnter(hitObject, hit);
         }
-        if (mPropagateEventsToTarget)
-        {
-            getGVRContext().getEventManager().sendEvent(hitObject, ITouchEvents.class, "onEnter", hitObject, hit);
-        }
     }
 
     /**
@@ -616,10 +586,6 @@ public class GVRPicker extends GVRBehavior implements IEventReceiver {
             if (ITouchEvents.class.isAssignableFrom(listener.getClass()))
                 ((ITouchEvents) listener).onTouchStart(hitObject, hit);
         }
-        if (mPropagateEventsToTarget)
-        {
-            getGVRContext().getEventManager().sendEvent(hitObject, ITouchEvents.class, "onTouchStart", hitObject, hit);
-        }
     }
 
     /**
@@ -634,10 +600,6 @@ public class GVRPicker extends GVRBehavior implements IEventReceiver {
         {
             if (ITouchEvents.class.isAssignableFrom(listener.getClass()))
                 ((ITouchEvents) listener).onTouchEnd(hitObject, hit);
-        }
-        if (mPropagateEventsToTarget)
-        {
-            getGVRContext().getEventManager().sendEvent(hitObject, ITouchEvents.class, "onTouchEnd", hitObject, hit);
         }
     }
 
@@ -660,10 +622,6 @@ public class GVRPicker extends GVRBehavior implements IEventReceiver {
             else if (IPickEvents.class.isAssignableFrom(listener.getClass()))
                 ((IPickEvents) listener).onInside(hitObject, hit);
         }
-        if (mPropagateEventsToTarget)
-        {
-            getGVRContext().getEventManager().sendEvent(hitObject, ITouchEvents.class, "onInside", hitObject, hit);
-        }
     }
 
     /**
@@ -683,10 +641,6 @@ public class GVRPicker extends GVRBehavior implements IEventReceiver {
                 ((ITouchEvents) listener).onExit(obj, hit);
             else if (IPickEvents.class.isAssignableFrom(listener.getClass()))
                 ((IPickEvents) listener).onExit(obj);
-        }
-        if (mPropagateEventsToTarget)
-        {
-            getGVRContext().getEventManager().sendEvent(obj, ITouchEvents.class, "onExit", obj, hit);
         }
     }
 
