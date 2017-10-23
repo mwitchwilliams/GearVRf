@@ -28,6 +28,8 @@ import org.gearvrf.GVRSceneObject;
 import org.gearvrf.IScriptEvents;
 import org.gearvrf.script.javascript.RhinoScriptEngineFactory;
 
+import org.gearvrf.script.javascript.GVRJavascriptV8File;
+
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
@@ -61,6 +63,9 @@ public class GVRScriptManager {
     public static final String TARGET_PREFIX = "@";
     public static final String TARGET_GVRMAIN = "@GVRMain";
     public static final String TARGET_GVRACTIVITY = "@GVRActivity";
+
+    public static final boolean V8JavaScriptEngine = true;
+    //public static final boolean V8JavaScriptEngine = false;
 
     interface TargetResolver {
         IScriptable getTarget(GVRContext gvrContext, String name);
@@ -114,10 +119,27 @@ public class GVRScriptManager {
 
         // Add languages
         mEngines.put(LANG_LUA, new LuaScriptEngineFactory().getScriptEngine());
-        mEngines.put(LANG_JAVASCRIPT, new RhinoScriptEngineFactory().getScriptEngine());
+        if (!V8JavaScriptEngine) {
+            mEngines.put(LANG_JAVASCRIPT, new RhinoScriptEngineFactory().getScriptEngine());
 
-        // Add variables to engines
-        refreshGlobalBindings();
+            // Add variables to engines
+            refreshGlobalBindings();
+        }
+
+        else {
+            // test of V8 engine
+            //mEngines.put(LANG_JAVASCRIPT, new GVRJavascriptV8File(mGvrContext).getScriptEngine() );
+            //refreshGlobalBindings();
+
+            mGvrContext.runOnGlThread(new Runnable() {
+                @Override
+                public void run() {
+                    mEngines.put(LANG_JAVASCRIPT, new GVRJavascriptV8File(mGvrContext).getScriptEngine() );
+                    refreshGlobalBindings();
+                }
+            });
+
+        }
     }
 
     private void refreshGlobalBindings() {

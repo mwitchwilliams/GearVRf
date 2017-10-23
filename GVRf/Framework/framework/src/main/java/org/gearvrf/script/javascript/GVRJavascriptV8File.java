@@ -49,10 +49,21 @@ public class GVRJavascriptV8File {
         mScriptText = scriptText;
         mGvrContext = gvrContext;
     }
+    public GVRJavascriptV8File(GVRContext gvrContext) {
+        if ( mEngine == null ) {
+            mEngine = new V8ScriptEngineFactory().getScriptEngine();
+        }
+    }
+
+    public ScriptEngine getScriptEngine() {
+        return mEngine;
+    }
 
     public void setInputValues(Map inputValues) {
         inputVars = inputValues;
     }
+
+
 
     public boolean invokeFunction(String funcName, Object[] parameters, String paramString) {
         boolean runs = false;
