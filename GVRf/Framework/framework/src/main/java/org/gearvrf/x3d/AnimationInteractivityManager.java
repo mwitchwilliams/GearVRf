@@ -38,6 +38,7 @@ import org.gearvrf.animation.keyframe.GVRKeyFrameAnimation;
 import org.gearvrf.script.GVRJavascriptScriptFile;
 
 import org.gearvrf.GVRDrawFrameListener;
+import org.gearvrf.script.GVRScriptManager;
 import org.gearvrf.script.javascript.GVRJavascriptV8File;
 import org.gearvrf.utility.Log;
 import org.gearvrf.x3d.data_types.SFBool;
@@ -87,7 +88,8 @@ public class AnimationInteractivityManager {
     private static final String INITIALIZE_FUNCTION = "initialize";
     private static final String GEARVR_INIT_JAVASCRIPT_FUNCTION_NAME = "GearVRinitJavaScript";
 
-    public static final boolean V8JavaScriptEngine = true;
+    public static final boolean V8JavaScriptEngine = GVRScriptManager.V8JavaScriptEngine;
+    //public static final boolean V8JavaScriptEngine = false;
 
 
     private X3Dobject x3dObject = null;
@@ -1213,6 +1215,7 @@ public class AnimationInteractivityManager {
                 if (interactiveObject.getScriptObject().getTimeStampParameter()) parameters[1] = 0;
 
                 if ( V8JavaScriptEngine ) {
+                    Log.e("X3DDBG", "running v8 Engine JS: InitializeScript() BGN");
                     // Using V8 JavaScript compiler and run-time engine
                     GVRJavascriptV8File gvrJavascriptV8File = interactiveObject.getScriptObject().getGVRJavascriptV8File();
                     // Append the X3D data type constructors to the end of the JavaScript file
@@ -1243,10 +1246,12 @@ public class AnimationInteractivityManager {
                         }  // ! per frame script
                     }
                     interactiveObject.getScriptObject().setInitializationDone(true);
+                    Log.e("X3DDBG", "running v8 Engine JS: InitializeScript() END");
 
                 } //  end of running initialize functions in V8 JavaScript engine
                 else {
                     // Using older Mozilla Rhino engine
+                    Log.e("X3DDBG", "running Rhino Engine JavaScript");
                     GVRJavascriptScriptFile gvrJavascriptFile = interactiveObject.getScriptObject().getGVRJavascriptScriptFile();
 
                     // Append the X3D data type constructors to the end of the JavaScript file
@@ -1287,6 +1292,7 @@ public class AnimationInteractivityManager {
 
         // Get the parameters on X3D data types that are included with this JavaScript
         if ( V8JavaScriptEngine ) {
+            Log.e("X3DDBG", "running v8 Engine JS: BuildInitJavaScript() BGN");
             for (ScriptObject.Field field : scriptObject.getFieldsArrayList()) {
                 String fieldType = scriptObject.getFieldType(field);
                 if (scriptObject.getFromDefinedItem(field) != null) {
@@ -1323,9 +1329,11 @@ public class AnimationInteractivityManager {
                     }  // end if SFFloat
                 }  //  end scriptObject.getFromTimeSensor(field) != null
             }  // for loop checking for parameters passed to the JavaScript parser
+            Log.e("X3DDBG", "running v8 Engine JS: BuildInitJavaScript() END");
         }  //  end if V8 engine
         else {
             // Mozilla Rhino engine
+            Log.e("X3DDBG", "running Rhino Engine JavaScript");
             for (ScriptObject.Field field : scriptObject.getFieldsArrayList()) {
                 String fieldType = scriptObject.getFieldType(field);
 
@@ -1398,6 +1406,7 @@ public class AnimationInteractivityManager {
     private void RunScript(InteractiveObject interactiveObject, String functionName, Object[] parameters) {
         boolean complete = false;
         if ( V8JavaScriptEngine) {
+            Log.e("X3DDBG", "running v8 Engine JS: RunScript()");
             GVRJavascriptV8File gvrJavascriptV8File = interactiveObject.getScriptObject().getGVRJavascriptV8File();
             String paramString = "var params =[";
             for (int i = 0; i < parameters.length; i++ ) {
@@ -1410,15 +1419,19 @@ public class AnimationInteractivityManager {
             final String functionNameFinal = functionName;
             final Object[] parametersFinal = parameters;
             final String paramStringFinal = paramString;
+            Log.e("X3DDBG", "running v8 Engine JS: RunScript():: Runnable");
             gvrContext.runOnGlThread(new Runnable() {
                 @Override
                 public void run() {
+                    Log.e("X3DDBG", "running v8 Engine JS: RunScriptThread() BGN");
                     RunScriptThread (gvrJavascriptV8FileFinal, interactiveObjectFinal, functionNameFinal, parametersFinal, paramStringFinal);
+                    Log.e("X3DDBG", "running v8 Engine JS: RunScriptThread() END");
                 }
             });
         }  // end V8JavaScriptEngine
         else {
             // Mozilla Rhino engine
+            Log.e("X3DDBG", "RunScript() running Rhino Engine JavaScript");
             GVRJavascriptScriptFile gvrJavascriptFile = interactiveObject.getScriptObject().getGVRJavascriptScriptFile();
 
             complete = gvrJavascriptFile.invokeFunction(functionName, parameters);
