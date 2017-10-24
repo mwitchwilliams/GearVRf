@@ -1423,7 +1423,8 @@ public class AnimationInteractivityManager {
             gvrContext.runOnGlThread(new Runnable() {
                 @Override
                 public void run() {
-                    Log.e("X3DDBG", "running v8 Engine JS: RunScriptThread() BGN");
+                    Log.e("X3DDBG", "running v8 Engine JS: RunScriptThread() BGN ");
+                    Log.e("X3DDBG", "     functionName: " + functionNameFinal + " ; paramStringFinal: " + paramStringFinal);
                     RunScriptThread (gvrJavascriptV8FileFinal, interactiveObjectFinal, functionNameFinal, parametersFinal, paramStringFinal);
                     Log.e("X3DDBG", "running v8 Engine JS: RunScriptThread() END");
                 }

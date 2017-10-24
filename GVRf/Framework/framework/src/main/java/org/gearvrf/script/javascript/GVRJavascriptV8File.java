@@ -40,7 +40,8 @@ public class GVRJavascriptV8File {
     static protected ScriptEngine mEngine = null;
     protected Bindings bindings = null;
     protected Invocable invocable = null;
-    protected Bindings inputBindings = null;
+    //protected Bindings inputBindings = null;
+    static protected Bindings inputBindings = null;
     Map inputVars = null;
 
 
@@ -63,6 +64,16 @@ public class GVRJavascriptV8File {
         inputVars = inputValues;
     }
 
+    public void setInputValuesAndBindings(Map inputValues) {
+        inputVars = inputValues;
+        if ( inputVars != null ) {
+            //Bindings inputBindings = mEngine.createBindings();
+            if (inputBindings == null) inputBindings = mEngine.createBindings();
+            inputBindings.putAll(inputVars);
+            Log.e("X3DDBG", "GVRJavascriptV8File::setInputValuesAndBindings" );
+        }
+    }
+
 
 
     public boolean invokeFunction(String funcName, Object[] parameters, String paramString) {
@@ -72,7 +83,8 @@ public class GVRJavascriptV8File {
                 mEngine = new V8ScriptEngineFactory().getScriptEngine();
             }
             if ( inputVars != null ) {
-                Bindings inputBindings = mEngine.createBindings();
+                //Bindings inputBindings = mEngine.createBindings();
+                if (inputBindings == null) inputBindings = mEngine.createBindings();
                 inputBindings.putAll(inputVars);
             }
 
