@@ -1,6 +1,8 @@
 package org.gearvrf.script.javascript;
 
+import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 
 import org.gearvrf.utility.Log;
 
@@ -63,6 +65,19 @@ public class GVRJavascriptV8File {
         }
     }
 
+    public void displayInputBindings () {
+        Log.e("X3DDBG", "GVRJavascriptV8File::displayInputBindings" );
+        Log.e("X3DDBG", "   inputBindings.size(): " + inputBindings.size() );
+        Log.e("X3DDBG", "   inputBindings.containsKey(player): " + inputBindings.containsKey("player") +
+                "; value: " + inputBindings.get("player").toString() );
+
+        //Set<String> inputBindingsSet = inputBindings.keySet();
+        //for (int i = 0; i < inputBindingsSet.size(); i++ ) {
+        //    Log.e("X3DDBG", "   inputBindings.size(): " + inputBindingsSet. );
+
+        //}
+    }
+
     public ScriptEngine getScriptEngine() {
         return mEngine;
     }
@@ -89,17 +104,48 @@ public class GVRJavascriptV8File {
             if ( mEngine == null ) {
                 mEngine = new V8ScriptEngineFactory().getScriptEngine();
             }
+            Log.e("X3DDBG", "GVRJavascriptV8File::invokeFunction BEFORE inputVars != null" );
+            displayInputBindings();
             if ( inputVars != null ) {
                 //Bindings inputBindings = mEngine.createBindings();
                 if (inputBindings == null) inputBindings = mEngine.createBindings();
                 inputBindings.putAll(inputVars);
             }
+            Log.e("X3DDBG", "GVRJavascriptV8File::invokeFunction AFTER inputVars != null" );
+            displayInputBindings();
+
+            // test oode
+            /*
+            ScriptContext scriptContext = mEngine.getContext();
+            //Bindings binding0 = scriptContext.getBindings(0); // gives illegal argument
+            //Bindings binding1 = scriptContext.getBindings(1);
+            Bindings bindingsGlobal = mEngine.getBindings(ScriptContext.GLOBAL_SCOPE);
+            Set set = bindingsGlobal.entrySet();
+            int setSize = set.size();
+            Iterator iteratorSet = set.iterator();
+            while (iteratorSet.hasNext() ) {
+                String str = "var " + iteratorSet.next().toString();
+                mEngine.eval( str );
+                Log.e("X3DDBG", "GVRJavascriptV8File::invokeFunction iterator " + str);
+
+            }
+            //String testString = "var player = new PlayerInterface(gvrContext)";
+            //mEngine.eval( testString );
+            */
+
+
 
             mEngine.eval( paramString );
             mEngine.eval( mScriptText );
 
             invocable = (Invocable) mEngine;
-             invocable.invokeFunction(funcName, parameters);
+            Log.e("X3DDBG", "GVRJavascriptV8File::BEFORE invocable.invokeFunction" );
+            displayInputBindings();
+            invocable.invokeFunction(funcName, parameters);
+            Log.e("X3DDBG", "GVRJavascriptV8File::AFTER invocable.invokeFunction" );
+            //Object returnObject = invocable.invokeFunction(funcName, parameters);
+            //Log.e("X3DDBG", "GVRJavascriptV8File::AFTER invocable.invokeFunction, returnObject=" + returnObject.toString());
+            displayInputBindings();
             bindings = mEngine.getBindings( ScriptContext.ENGINE_SCOPE);
             runs = true;
         } catch (ScriptException e) {
