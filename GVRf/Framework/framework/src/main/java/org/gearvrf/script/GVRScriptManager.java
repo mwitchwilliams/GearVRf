@@ -44,6 +44,7 @@ import java.util.TreeMap;
 import javax.script.Bindings;
 import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
+import javax.script.ScriptException;
 
 import org.gearvrf.utility.Log;
 
@@ -121,6 +122,18 @@ public class GVRScriptManager {
         initializeEngines();
     }
 
+    public void createPlayerInterface() {
+        Log.e("X3DDBG", "createPlayerInterface BGN");
+        ScriptEngine engine = getEngine(LANG_JAVASCRIPT);
+        String script = "var player = new org.gearvrf.gvrx3d360video.PlayerInterface(gvrf)";
+        try {
+            engine.eval(script);
+        } catch (Exception ex) {
+            Log.e("X3DDBG", "createPlayerInterface ScriptException: " + ex);
+        }
+        Log.e("X3DDBG", "createPlayerInterface END");
+    }
+
     private void initializeEngines() {
         mEngines = new TreeMap<String, ScriptEngine>();
 
@@ -142,7 +155,7 @@ public class GVRScriptManager {
             mGvrContext.runOnGlThread(new Runnable() {
                 @Override
                 public void run() {
-                    mEngines.put(LANG_LUA, new LuaScriptEngineFactory().getScriptEngine());
+                    //mEngines.put(LANG_LUA, new LuaScriptEngineFactory().getScriptEngine());
                     gvrJavascriptV8File = new GVRJavascriptV8File(mGvrContext);
                     //mEngines.put(LANG_JAVASCRIPT, new GVRJavascriptV8File(mGvrContext).getScriptEngine() );
                     mEngines.put(LANG_JAVASCRIPT, gvrJavascriptV8File.getScriptEngine() );
@@ -160,26 +173,62 @@ public class GVRScriptManager {
     }
 
     protected void addGlobalBindings(final ScriptEngine engine) {
-        Bindings bindings = engine.getBindings(ScriptContext.GLOBAL_SCOPE);
-        if (bindings == null) {
-            bindings = engine.createBindings();
-            engine.setBindings(bindings, ScriptContext.GLOBAL_SCOPE);
-        }
-
-        synchronized (mGlobalVariables) {
-            for (Map.Entry<String, Object> ent : mGlobalVariables.entrySet()) {
-                bindings.put(ent.getKey(), ent.getValue());
+        if (!V8JavaScriptEngine) {
+            Bindings bindings = engine.getBindings(ScriptContext.GLOBAL_SCOPE);
+            if (bindings == null) {
+                bindings = engine.createBindings();
+                engine.setBindings(bindings, ScriptContext.GLOBAL_SCOPE);
             }
-            mBindingsClosers.add(new Runnable() {
+
+            synchronized (mGlobalVariables) {
+                for (Map.Entry<String, Object> ent : mGlobalVariables.entrySet()) {
+                    bindings.put(ent.getKey(), ent.getValue());
+                }
+                mBindingsClosers.add(new Runnable() {
+                    @Override
+                    public void run() {
+                        final Bindings bindings = engine.getBindings(ScriptContext.GLOBAL_SCOPE);
+                        if (null != bindings) {
+                            bindings.clear();
+                        }
+                        engine.setBindings(null, ScriptContext.GLOBAL_SCOPE);
+                    }
+                });
+            }
+        }
+        else {
+            Log.e("X3DDBG", "GVRScriptMgr addGlobalBindings BGN" );
+            mGvrContext.runOnGlThread(new Runnable() {
                 @Override
                 public void run() {
-                    final Bindings bindings = engine.getBindings(ScriptContext.GLOBAL_SCOPE);
-                    if (null != bindings) {
-                        bindings.clear();
+                    Bindings bindings = engine.getBindings(ScriptContext.GLOBAL_SCOPE);
+                    if (bindings == null) {
+                        bindings = engine.createBindings();
+                        engine.setBindings(bindings, ScriptContext.GLOBAL_SCOPE);
                     }
-                    engine.setBindings(null, ScriptContext.GLOBAL_SCOPE);
+
+                    Bindings bindingsEngineScope = engine.getBindings(ScriptContext.ENGINE_SCOPE);
+                    if (bindingsEngineScope == null) {
+                        bindingsEngineScope = engine.createBindings();
+                        engine.setBindings(bindings, ScriptContext.ENGINE_SCOPE);
+                    }
+
+                    for (Map.Entry<String, Object> ent : mGlobalVariables.entrySet()) {
+                        bindings.put(ent.getKey(), ent.getValue());
+                        bindingsEngineScope.put(ent.getKey(), ent.getValue());
+                        Log.e("X3DDBG", "   addGlobalBindings: " + ent.getKey());
+                    }
+                    //ScriptEngine engine = getEngine(LANG_JAVASCRIPT);
+                    //final Bindings bindings = getEngine(LANG_JAVASCRIPT).getBindings(ScriptContext.GLOBAL_SCOPE);
+                    //if (null != bindings) {
+                    //    bindings.clear();
+                    //}
+                    //engine.setBindings(null, ScriptContext.GLOBAL_SCOPE);
+
+                    Log.e("X3DDBG", "GVRScriptMgr addGlobalBindings END" );
                 }
             });
+
         }
     }
 
@@ -211,20 +260,32 @@ public class GVRScriptManager {
             refreshGlobalBindings();
         }
         else {
-            ScriptEngine engine = getEngine(LANG_JAVASCRIPT);
-            //Bindings bindings = getEngine(LANG_JAVASCRIPT).getBindings(ScriptContext.GLOBAL_SCOPE);
-            Bindings bindings = engine.getBindings(ScriptContext.GLOBAL_SCOPE);
-            //Bindings bindingsEngineScope = engine.getBindings(ScriptContext.ENGINE_SCOPE);
-            //.getBindings(ScriptContext.GLOBAL_SCOPE);
-            //Map inputValue = new Map()
-                    //new Map.Entry<String, Object>(varName, value);
-           // bindings.put(varName, value);
-            Map<String, Object> inputValue =new HashMap<String, Object>();
-            inputValue.put(varName, value);
-            gvrJavascriptV8File.setInputValuesAndBindings( inputValue );
-            //bindings.put(varName, value);
-            Bindings bindingsLocal = gvrJavascriptV8File.getLocalBindings();
-            Log.e("X3DDBG", "GVRScriptMgr varName, value" + varName + ", " + value.toString() );
+            final String varNameFinal = varName;
+            final Object valueFinal = value;
+            mGvrContext.runOnGlThread(new Runnable() {
+                @Override
+                public void run() {
+                    ScriptEngine engine = getEngine(LANG_JAVASCRIPT);
+
+                    createPlayerInterface();
+                    Bindings bindings = getEngine(LANG_JAVASCRIPT).getBindings(ScriptContext.GLOBAL_SCOPE);
+             //       Bindings bindings = engine.getBindings(ScriptContext.GLOBAL_SCOPE);
+                    //Bindings bindingsEngineScope = engine.getBindings(ScriptContext.ENGINE_SCOPE);
+                    //.getBindings(ScriptContext.GLOBAL_SCOPE);
+                    //Map inputValue = new Map()
+                            //new Map.Entry<String, Object>(varName, value);
+            //        bindings.put(varNameFinal, valueFinal);
+            //        engine.setBindings(bindings, ScriptContext.GLOBAL_SCOPE);
+
+
+                    gvrJavascriptV8File.setInputValuesAndBindings( bindings );
+                    Map<String, Object> inputValue =new HashMap<String, Object>();
+                    inputValue.put(varNameFinal, valueFinal);
+                    gvrJavascriptV8File.setInputValuesAndBindings( inputValue );
+
+                    Log.e("X3DDBG", "GVRScriptMgr varName: " + varNameFinal + "; value: " + valueFinal.toString() );
+                }
+            });
         }
     }
 
