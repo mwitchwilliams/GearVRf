@@ -140,7 +140,7 @@ public class GVRScriptManager {
         // Add languages
         //mEngines.put(LANG_LUA, new LuaScriptEngineFactory().getScriptEngine());
         if (!V8JavaScriptEngine) {
-            mEngines.put(LANG_LUA, new LuaScriptEngineFactory().getScriptEngine());
+            //mEngines.put(LANG_LUA, new LuaScriptEngineFactory().getScriptEngine());
             mEngines.put(LANG_JAVASCRIPT, new RhinoScriptEngineFactory().getScriptEngine());
 
             // Add variables to engines
@@ -267,8 +267,16 @@ public class GVRScriptManager {
                 public void run() {
                     ScriptEngine engine = getEngine(LANG_JAVASCRIPT);
 
-                    createPlayerInterface();
-                    Bindings bindings = getEngine(LANG_JAVASCRIPT).getBindings(ScriptContext.GLOBAL_SCOPE);
+            //        createPlayerInterface();
+
+
+                    synchronized (mGlobalVariables) {
+                        mGlobalVariables.put(varNameFinal, valueFinal);
+                    }
+                    refreshGlobalBindings();
+
+             //       Bindings bindings = getEngine(LANG_JAVASCRIPT).getBindings(ScriptContext.GLOBAL_SCOPE);
+
              //       Bindings bindings = engine.getBindings(ScriptContext.GLOBAL_SCOPE);
                     //Bindings bindingsEngineScope = engine.getBindings(ScriptContext.ENGINE_SCOPE);
                     //.getBindings(ScriptContext.GLOBAL_SCOPE);
@@ -277,11 +285,13 @@ public class GVRScriptManager {
             //        bindings.put(varNameFinal, valueFinal);
             //        engine.setBindings(bindings, ScriptContext.GLOBAL_SCOPE);
 
-
+/*
                     gvrJavascriptV8File.setInputValuesAndBindings( bindings );
+                    */
                     Map<String, Object> inputValue =new HashMap<String, Object>();
                     inputValue.put(varNameFinal, valueFinal);
                     gvrJavascriptV8File.setInputValuesAndBindings( inputValue );
+
 
                     Log.e("X3DDBG", "GVRScriptMgr varName: " + varNameFinal + "; value: " + valueFinal.toString() );
                 }

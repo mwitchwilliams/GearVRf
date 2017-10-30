@@ -96,6 +96,7 @@ public class X3Dobject {
 
     //private final static String JAVASCRIPT_IMPORT_PACKAGE = "importPackage(org.gearvrf.x3d.data_types)\nimportPackage(org.joml)";
     private final static String JAVASCRIPT_IMPORT_PACKAGE = "importPackage(org.gearvrf.x3d.data_types)\nimportPackage(org.joml)\nimportPackage(org.gearvrf)\nimportPackage(org.gearvrf.gvrx3d360video)";
+    //private final static String JAVASCRIPT_IMPORT_PACKAGE = "importPackage(org.gearvrf.x3d.data_types)\nimportPackage(org.joml)\nimportPackage(org.gearvrf)";
 
     // Strings appended to GVRScene names when there are multiple
     // animations on the same <Transform> or GVRSceneObject
