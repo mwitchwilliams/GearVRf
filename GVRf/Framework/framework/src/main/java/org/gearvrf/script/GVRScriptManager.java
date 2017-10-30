@@ -122,6 +122,7 @@ public class GVRScriptManager {
         initializeEngines();
     }
 
+    /*
     public void createPlayerInterface() {
         Log.e("X3DDBG", "createPlayerInterface BGN");
         ScriptEngine engine = getEngine(LANG_JAVASCRIPT);
@@ -133,6 +134,7 @@ public class GVRScriptManager {
         }
         Log.e("X3DDBG", "createPlayerInterface END");
     }
+    */
 
     private void initializeEngines() {
         mEngines = new TreeMap<String, ScriptEngine>();
@@ -218,13 +220,6 @@ public class GVRScriptManager {
                         bindingsEngineScope.put(ent.getKey(), ent.getValue());
                         Log.e("X3DDBG", "   addGlobalBindings: " + ent.getKey());
                     }
-                    //ScriptEngine engine = getEngine(LANG_JAVASCRIPT);
-                    //final Bindings bindings = getEngine(LANG_JAVASCRIPT).getBindings(ScriptContext.GLOBAL_SCOPE);
-                    //if (null != bindings) {
-                    //    bindings.clear();
-                    //}
-                    //engine.setBindings(null, ScriptContext.GLOBAL_SCOPE);
-
                     Log.e("X3DDBG", "GVRScriptMgr addGlobalBindings END" );
                 }
             });
@@ -260,6 +255,7 @@ public class GVRScriptManager {
             refreshGlobalBindings();
         }
         else {
+            Log.e("X3DDBG", "GVRScriptMgr::addVariable BGN varName: " + varName + "; value: " + value.toString() );
             final String varNameFinal = varName;
             final Object valueFinal = value;
             mGvrContext.runOnGlThread(new Runnable() {
@@ -267,6 +263,12 @@ public class GVRScriptManager {
                 public void run() {
                     ScriptEngine engine = getEngine(LANG_JAVASCRIPT);
 
+                    int lastPeriod = valueFinal.toString().lastIndexOf('.');
+                    String importStatement = valueFinal.toString().substring(0, lastPeriod);
+                    Log.e("X3DDBG", "   GVRScriptMgr::addVariable 1-importStatement: " + importStatement );
+                    importStatement = "importPackage(" + importStatement + ")\n";
+                    Log.e("X3DDBG", "   GVRScriptMgr::addVariable 2-importStatement: " + importStatement );
+                    gvrJavascriptV8File.setExternalImportStatement(importStatement);
             //        createPlayerInterface();
 
 
@@ -293,7 +295,7 @@ public class GVRScriptManager {
                     gvrJavascriptV8File.setInputValuesAndBindings( inputValue );
 
 
-                    Log.e("X3DDBG", "GVRScriptMgr varName: " + varNameFinal + "; value: " + valueFinal.toString() );
+                    Log.e("X3DDBG", "GVRScriptMgr::addVariable varNameFinal: " + varNameFinal + "; valueFinal: " + valueFinal.toString() );
                 }
             });
         }
