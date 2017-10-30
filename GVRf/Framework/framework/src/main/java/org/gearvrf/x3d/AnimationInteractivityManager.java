@@ -1385,7 +1385,7 @@ public class AnimationInteractivityManager {
             gvrJavascriptV8FileFinal.setInputValues(gvrFunctionBindingValues);
             // Now run this Script's actual function
             Log.e("X3DDBG", "RunScriptThread()");
-            gvrJavascriptV8FileFinal.displayInputBindings ();
+            //gvrJavascriptV8FileFinal.displayInputBindings ();
             complete = gvrJavascriptV8FileFinal.invokeFunction(functionNameFinal, parametersFinal, paramStringFinal);
 
             if (complete) {
@@ -1410,7 +1410,7 @@ public class AnimationInteractivityManager {
         if ( V8JavaScriptEngine) {
             Log.e("X3DDBG", "running v8 Engine JS: RunScript()");
             GVRJavascriptV8File gvrJavascriptV8File = interactiveObject.getScriptObject().getGVRJavascriptV8File();
-            gvrJavascriptV8File.displayInputBindings ();
+            //gvrJavascriptV8File.displayInputBindings ();
             String paramString = "var params =[";
             for (int i = 0; i < parameters.length; i++ ) {
                 paramString += (parameters[i] + ", ");
@@ -1419,7 +1419,7 @@ public class AnimationInteractivityManager {
 
             final GVRJavascriptV8File gvrJavascriptV8FileFinal = gvrJavascriptV8File;
             Log.e("X3DDBG", "   RunScript::gvrJavascriptV8FileFinal.displayInputBindings ()");
-            gvrJavascriptV8FileFinal.displayInputBindings ();
+            //gvrJavascriptV8FileFinal.displayInputBindings ();
             final InteractiveObject interactiveObjectFinal = interactiveObject;
             final String functionNameFinal = functionName;
             final Object[] parametersFinal = parameters;
@@ -1430,7 +1430,7 @@ public class AnimationInteractivityManager {
                 public void run() {
                     Log.e("X3DDBG", "running v8 Engine JS: RunScriptThread() BGN ");
                     Log.e("X3DDBG", "     functionName: " + functionNameFinal + " ; paramStringFinal: " + paramStringFinal);
-                    gvrJavascriptV8FileFinal.displayInputBindings ();
+                    //gvrJavascriptV8FileFinal.displayInputBindings ();
                     RunScriptThread (gvrJavascriptV8FileFinal, interactiveObjectFinal, functionNameFinal, parametersFinal, paramStringFinal);
                     Log.e("X3DDBG", "running v8 Engine JS: RunScriptThread() END");
                 }
