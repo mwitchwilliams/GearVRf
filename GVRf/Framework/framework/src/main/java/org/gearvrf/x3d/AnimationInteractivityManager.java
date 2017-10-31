@@ -1292,7 +1292,7 @@ public class AnimationInteractivityManager {
 
         // Get the parameters on X3D data types that are included with this JavaScript
         if ( V8JavaScriptEngine ) {
-            Log.e("X3DDBG", "running v8 Engine JS: BuildInitJavaScript() BGN");
+            //Log.e("X3DDBG", "running v8 Engine JS: BuildInitJavaScript() BGN");
             for (ScriptObject.Field field : scriptObject.getFieldsArrayList()) {
                 String fieldType = scriptObject.getFieldType(field);
                 if (scriptObject.getFromDefinedItem(field) != null) {
@@ -1329,7 +1329,7 @@ public class AnimationInteractivityManager {
                     }  // end if SFFloat
                 }  //  end scriptObject.getFromTimeSensor(field) != null
             }  // for loop checking for parameters passed to the JavaScript parser
-            Log.e("X3DDBG", "running v8 Engine JS: BuildInitJavaScript() END");
+            //Log.e("X3DDBG", "running v8 Engine JS: BuildInitJavaScript() END");
         }  //  end if V8 engine
         else {
             // Mozilla Rhino engine
@@ -1384,8 +1384,6 @@ public class AnimationInteractivityManager {
             //set the bindings from X3D Script field with inputOnly / inputOutput
             gvrJavascriptV8FileFinal.setInputValues(gvrFunctionBindingValues);
             // Now run this Script's actual function
-            Log.e("X3DDBG", "RunScriptThread()");
-            //gvrJavascriptV8FileFinal.displayInputBindings ();
             complete = gvrJavascriptV8FileFinal.invokeFunction(functionNameFinal, parametersFinal, paramStringFinal);
 
             if (complete) {
@@ -1408,9 +1406,7 @@ public class AnimationInteractivityManager {
     private void RunScript(InteractiveObject interactiveObject, String functionName, Object[] parameters) {
         boolean complete = false;
         if ( V8JavaScriptEngine) {
-            Log.e("X3DDBG", "running v8 Engine JS: RunScript()");
             GVRJavascriptV8File gvrJavascriptV8File = interactiveObject.getScriptObject().getGVRJavascriptV8File();
-            //gvrJavascriptV8File.displayInputBindings ();
             String paramString = "var params =[";
             for (int i = 0; i < parameters.length; i++ ) {
                 paramString += (parameters[i] + ", ");
@@ -1418,21 +1414,15 @@ public class AnimationInteractivityManager {
             paramString = paramString.substring(0, (paramString.length()-2)) + "];";
 
             final GVRJavascriptV8File gvrJavascriptV8FileFinal = gvrJavascriptV8File;
-            Log.e("X3DDBG", "   RunScript::gvrJavascriptV8FileFinal.displayInputBindings ()");
-            //gvrJavascriptV8FileFinal.displayInputBindings ();
             final InteractiveObject interactiveObjectFinal = interactiveObject;
             final String functionNameFinal = functionName;
             final Object[] parametersFinal = parameters;
             final String paramStringFinal = paramString;
-            Log.e("X3DDBG", "running v8 Engine JS: RunScript():: Runnable");
             gvrContext.runOnGlThread(new Runnable() {
                 @Override
                 public void run() {
-                    Log.e("X3DDBG", "running v8 Engine JS: RunScriptThread() BGN ");
-                    Log.e("X3DDBG", "     functionName: " + functionNameFinal + " ; paramStringFinal: " + paramStringFinal);
-                    //gvrJavascriptV8FileFinal.displayInputBindings ();
                     RunScriptThread (gvrJavascriptV8FileFinal, interactiveObjectFinal, functionNameFinal, parametersFinal, paramStringFinal);
-                    Log.e("X3DDBG", "running v8 Engine JS: RunScriptThread() END");
+                    Log.e("X3DDBG", "running v8 Engine JS: RunScriptThread() END " + functionNameFinal + " ; paramStringFinal: " + paramStringFinal);
                 }
             });
         }  // end V8JavaScriptEngine
