@@ -1,8 +1,6 @@
 package org.gearvrf.script.javascript;
 
-import java.util.Iterator;
 import java.util.Map;
-import java.util.Set;
 
 import org.gearvrf.utility.Log;
 
@@ -42,19 +40,10 @@ public class GVRJavascriptV8File {
     static protected ScriptEngine mEngine = null;
     protected Bindings bindings = null;
     protected Invocable invocable = null;
-    //protected Bindings inputBindings = null;
     static protected Bindings inputBindings = null;
     private Map inputVars = null;
     static private String externalImportStatement = "";
 
-/*
-    public GVRJavascriptV8File(GVRContext gvrContext, String scriptText) {
-
-        mScriptText = scriptText;
-        //mScriptText = externalImportStatement + scriptText;
-        mGvrContext = gvrContext;
-    }
-    */
     public GVRJavascriptV8File(GVRContext gvrContext) {
         mGvrContext = gvrContext;
         if ( mEngine == null ) {
@@ -64,13 +53,11 @@ public class GVRJavascriptV8File {
 
     public void setExternalImportStatement(String externalImportStatement) {
         this.externalImportStatement = externalImportStatement;
-        Log.e("X3DDBG", "GVRJavascriptV8File::setExternalImportStatement  externalImportStatement = " + externalImportStatement);
     }
 
 
     public String buildImportStatement(String scriptText) {
         mScriptText = this.externalImportStatement + scriptText;
-        Log.e("X3DDBG", "GVRJavascriptV8File::buildImportStatement " + mScriptText);
         return mScriptText;
     }
 
@@ -83,20 +70,6 @@ public class GVRJavascriptV8File {
         inputVars = inputValues;
     }
 
-    /*
-    public void setInputValuesAndBindings(Map inputValues) {
-        inputVars = inputValues;
-        if ( inputVars != null ) {
-            //Bindings inputBindings = mEngine.createBindings();
-            if (inputBindings == null) inputBindings = mEngine.createBindings();
-            inputBindings.putAll(inputVars);
-            Log.e("X3DDBG", "GVRJavascriptV8File::setInputValuesAndBindings" );
-        }
-    }
-    */
-
-
-
     public boolean invokeFunction(String funcName, Object[] parameters, String paramString) {
         boolean runs = false;
         try {
@@ -104,7 +77,6 @@ public class GVRJavascriptV8File {
                 mEngine = new V8ScriptEngineFactory().getScriptEngine();
             }
             if ( inputVars != null ) {
-                //Bindings inputBindings = mEngine.createBindings();
                 if (inputBindings == null) inputBindings = mEngine.createBindings();
                 inputBindings.putAll(inputVars);
             }
@@ -113,12 +85,7 @@ public class GVRJavascriptV8File {
             mEngine.eval( mScriptText );
 
             invocable = (Invocable) mEngine;
-            //Log.e("X3DDBG", "GVRJavascriptV8File::BEFORE invocable.invokeFunction" );
             invocable.invokeFunction(funcName, parameters);
-            Log.e("X3DDBG", "GVRJavascriptV8File::AFTER invocable.invokeFunction.");
-            // this produces error with return value
-            //Object invocableInvokeFunctionReturnObject = invocable.invokeFunction(funcName, parameters);
-            //Log.e("X3DDBG", "GVRJavascriptV8File::AFTER invocable.invokeFunction: "+ invocableInvokeFunctionReturnObject.toString());
             bindings = mEngine.getBindings( ScriptContext.ENGINE_SCOPE);
             runs = true;
         } catch (ScriptException e) {

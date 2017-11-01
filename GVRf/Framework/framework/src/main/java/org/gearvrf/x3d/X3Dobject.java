@@ -3404,13 +3404,9 @@ public class X3Dobject {
                 ;
             } else if (qName.equalsIgnoreCase("Script")) {
                 javaScriptCode = JAVASCRIPT_IMPORT_PACKAGE + '\n' + javaScriptCode  + '\n';
-                //currentScriptObject.setJavaScriptCode(javaScriptCode);
                 if ( animationInteractivityManager.V8JavaScriptEngine) {
-                    //GVRJavascriptV8File gvrJavascriptV8File = new GVRJavascriptV8File(gvrContext, javaScriptCode);
                     GVRJavascriptV8File gvrJavascriptV8File = new GVRJavascriptV8File(gvrContext);
                     javaScriptCode = gvrJavascriptV8File.buildImportStatement(javaScriptCode);
-                   //Log.e("X3DDBG", "X3Dobject::Script javaScriptCode:\n" + javaScriptCode);
-
                     currentScriptObject.setJavaScriptCode(javaScriptCode);
                     currentScriptObject.setGVRJavascriptV8File( gvrJavascriptV8File );
                 }

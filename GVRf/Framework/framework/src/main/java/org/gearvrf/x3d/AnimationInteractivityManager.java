@@ -1215,7 +1215,6 @@ public class AnimationInteractivityManager {
                 if (interactiveObject.getScriptObject().getTimeStampParameter()) parameters[1] = 0;
 
                 if ( V8JavaScriptEngine ) {
-                    Log.e("X3DDBG", "running v8 Engine JS: InitializeScript() BGN");
                     // Using V8 JavaScript compiler and run-time engine
                     GVRJavascriptV8File gvrJavascriptV8File = interactiveObject.getScriptObject().getGVRJavascriptV8File();
                     // Append the X3D data type constructors to the end of the JavaScript file
@@ -1246,8 +1245,6 @@ public class AnimationInteractivityManager {
                         }  // ! per frame script
                     }
                     interactiveObject.getScriptObject().setInitializationDone(true);
-                    Log.e("X3DDBG", "running v8 Engine JS: InitializeScript() END");
-
                 } //  end of running initialize functions in V8 JavaScript engine
                 else {
                     // Using older Mozilla Rhino engine
@@ -1292,7 +1289,6 @@ public class AnimationInteractivityManager {
 
         // Get the parameters on X3D data types that are included with this JavaScript
         if ( V8JavaScriptEngine ) {
-            //Log.e("X3DDBG", "running v8 Engine JS: BuildInitJavaScript() BGN");
             for (ScriptObject.Field field : scriptObject.getFieldsArrayList()) {
                 String fieldType = scriptObject.getFieldType(field);
                 if (scriptObject.getFromDefinedItem(field) != null) {
@@ -1329,7 +1325,6 @@ public class AnimationInteractivityManager {
                     }  // end if SFFloat
                 }  //  end scriptObject.getFromTimeSensor(field) != null
             }  // for loop checking for parameters passed to the JavaScript parser
-            //Log.e("X3DDBG", "running v8 Engine JS: BuildInitJavaScript() END");
         }  //  end if V8 engine
         else {
             // Mozilla Rhino engine
@@ -1422,7 +1417,6 @@ public class AnimationInteractivityManager {
                 @Override
                 public void run() {
                     RunScriptThread (gvrJavascriptV8FileFinal, interactiveObjectFinal, functionNameFinal, parametersFinal, paramStringFinal);
-                    Log.e("X3DDBG", "running v8 Engine JS: RunScriptThread() END " + functionNameFinal + " ; paramStringFinal: " + paramStringFinal);
                 }
             });
         }  // end V8JavaScriptEngine
