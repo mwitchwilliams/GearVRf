@@ -3402,18 +3402,10 @@ public class X3Dobject {
                 ;
             } else if (qName.equalsIgnoreCase("Script")) {
                 javaScriptCode = JAVASCRIPT_IMPORT_PACKAGE + '\n' + javaScriptCode  + '\n';
-                if ( animationInteractivityManager.V8JavaScriptEngine) {
-                    GVRJavascriptV8File gvrJavascriptV8File = new GVRJavascriptV8File(gvrContext);
-                    javaScriptCode = gvrJavascriptV8File.buildImportStatement(javaScriptCode);
-                    currentScriptObject.setJavaScriptCode(javaScriptCode);
-                    currentScriptObject.setGVRJavascriptV8File( gvrJavascriptV8File );
-                }
-                else {
-                    // using Mozila Rhino js engine
-                    currentScriptObject.setJavaScriptCode(javaScriptCode);
-                    GVRJavascriptScriptFile gvrJavascriptScriptFile = new GVRJavascriptScriptFile(gvrContext, javaScriptCode);
-                    currentScriptObject.setGVRJavascriptScriptFile(gvrJavascriptScriptFile);
-                }
+                GVRJavascriptV8File gvrJavascriptV8File = new GVRJavascriptV8File(gvrContext);
+                javaScriptCode = gvrJavascriptV8File.buildImportStatement(javaScriptCode);
+                currentScriptObject.setJavaScriptCode(javaScriptCode);
+                currentScriptObject.setGVRJavascriptV8File( gvrJavascriptV8File );
                 scriptObjects.add(currentScriptObject);
 
                 parseJavaScript = false;
