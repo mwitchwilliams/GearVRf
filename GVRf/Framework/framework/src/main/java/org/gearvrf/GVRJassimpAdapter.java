@@ -615,7 +615,8 @@ class GVRJassimpAdapter {
         /* Diffuse color & Opacity */
         AiColor diffuseColor = material.getDiffuseColor(sWrapperProvider);        /* Opacity */
         float opacity = diffuseColor.getAlpha();
-        if (material.getOpacity() > 0) {
+        if (material.getOpacity() > 0)
+        {
             opacity *= material.getOpacity();
         }
         meshMaterial.setVec4("diffuse_color",diffuseColor.getRed(),
@@ -725,6 +726,11 @@ class GVRJassimpAdapter {
         if (uvIndex > 0)
         {
             texCoordKey += uvIndex;
+        }
+        if (texIndex > 1)
+        {
+            assetRequest.onTextureError(mContext, "Layering only supported for two textures, ignoring " + mFileName, mFileName);
+            return;
         }
         if (texIndex > 0)
         {
