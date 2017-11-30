@@ -25,6 +25,7 @@ import android.view.InputDevice;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
 
+import org.gearvrf.GVRActivity;
 import org.gearvrf.GVRComponent;
 import org.gearvrf.GVRContext;
 import org.gearvrf.GVRCursorController;
@@ -39,6 +40,9 @@ import org.gearvrf.GVRTexture;
 import org.gearvrf.GVRTransform;
 import org.gearvrf.IActivityEvents;
 import org.gearvrf.IAssetEvents;
+import org.gearvrf.IEvents;
+import org.gearvrf.IPickEvents;
+import org.gearvrf.ITouchEvents;
 import org.gearvrf.scene_objects.GVRLineSceneObject;
 import org.gearvrf.utility.Log;
 import org.joml.Quaternionf;
@@ -67,6 +71,22 @@ import java.util.EnumSet;
  */
 public final class GearCursorController extends GVRCursorController
 {
+    public interface ControllerReader
+    {
+        boolean isConnected();
+
+        boolean isTouched();
+
+        void updateRotation(Quaternionf quat);
+
+        void updatePosition(Vector3f vec);
+
+        int getKey();
+
+        float getHandedness();
+
+        void updateTouchpad(PointF pt);
+    }
 
     public enum CONTROLLER_KEYS
     {
@@ -104,36 +124,19 @@ public final class GearCursorController extends GVRCursorController
     private GVRSceneObject mRayModel;
     private GVRSceneObject mPivotRoot;
     private GVRSceneObject mControllerGroup;
-    private EventHandlerThread thread;
-    private boolean initialized;
+    private boolean mSendEventsToActivity = false;
     private ControllerReader mControllerReader;
     private boolean mShowControllerModel = false;
+
     private final Vector3f FORWARD = new Vector3f(0, 0, -1);
-
-    public interface ControllerReader
-    {
-        boolean isConnected();
-
-        boolean isTouched();
-
-        void updateRotation(Quaternionf quat);
-
-        void updatePosition(Vector3f vec);
-
-        int getKey();
-
-        float getHandedness();
-
-        void updateTouchpad(PointF pt);
-    }
-
+    private EventHandlerThread thread;
+    private boolean initialized;
     private final MotionEvent.PointerCoords pointerCoords = new MotionEvent.PointerCoords();
     private final MotionEvent.PointerProperties[] pointerPropertiesArray;
     private final MotionEvent.PointerCoords[] pointerCoordsArray;
     private long prevEnterTime;
     private long prevATime;
     private boolean actionDown = false;
-    private boolean touchDown = false;
     private float touchDownX = 0.0f;
     private static final float DEPTH_SENSITIVITY = 0.01f;
 
@@ -164,6 +167,51 @@ public final class GearCursorController extends GVRCursorController
 
     public GVRSceneObject getControllerModel() { return mControllerModel; }
 
+    /**
+     * Enable or disable routing controller MotionEvents to GVRActivity.
+     * <p>
+     * By default, Android MotionEvents from the controller are generated internally
+     * but not explicitly routed to your application. You can listen for
+     * {@link IPickEvents} or {@link ITouchEvents} emitted by the
+     * {@link GVRPicker} associated with the controller. The
+     * {@link GVRPicker.GVRPickedObject} associated with the
+     * event may have an Android MotionEvent attached.
+     * You can also use a {@link GVRCursorController.ControllerEventListener}
+     * to listen for controller events. You can get the motion event
+     * with {@link GVRCursorController#getMotionEvent()}.
+     * <p>
+     * If you enable this option, your application doesn't have
+     * to specifically listen for controller events. Instead
+     * they are routed through {@link GVRActivity#dispatchTouchEvent}
+     * and can be handled with Android APIs.
+     * <p>
+     * Do not enable this option if you are using {@link org.gearvrf.scene_objects.GVRViewSceneObject}
+     * or {@GVRWidgetPlugin}. These classes route events to the activity for you.
+     *
+     * @param flag true to send events to GVRActivity, false to not send them
+     * @see #sendingEventsToActivity
+     * @see GVRCursorController.ControllerEventListener
+     * @see #addPickEventListener(IEvents)
+     * @see ITouchEvents
+     */
+    public void sendEventsToActivity(boolean flag)
+    {
+        mSendEventsToActivity = flag;
+    }
+
+    /**
+     * Determine whether controller events are being routed to GVRActivity.
+     * @return true if events are sent to the activity, else false
+     */
+    public boolean sendingEventsToActivity() { return mSendEventsToActivity; }
+
+
+    /**
+     * Show or hide the controller model and picking ray.
+     *
+     * The scene objects remain in the scene but they are not rendered.
+     * @param flag true to show the model and ray, false to hide it.
+     */
     public void showControllerModel(boolean flag)
     {
         boolean show = flag && isEnabled();
@@ -275,13 +323,13 @@ public final class GearCursorController extends GVRCursorController
     {
         if (mRayModel == null)
         {
-            mRayModel = new GVRLineSceneObject(context, 1, new Vector4f(1, 0, 0, 1), new Vector4f(1, 0, 0, 0.2f));
+            mRayModel = new GVRLineSceneObject(context, 1, new Vector4f(1, 0, 0, 1), new Vector4f(1, 0, 0, 0));
             final GVRRenderData renderData = mRayModel.getRenderData();
             final GVRMaterial rayMaterial = renderData.getMaterial();
 
             mRayModel.setName("gearvr_controller_ray");
             rayMaterial.setLineWidth(4.0f);
-            renderData.setRenderingOrder(GVRRenderData.GVRRenderingOrder.OVERLAY);
+            renderData.setRenderingOrder(GVRRenderData.GVRRenderingOrder.OVERLAY + 10);
             renderData.setDepthTest(false);
             renderData.setAlphaBlend(true);
             mControllerGroup.addChildObject(mRayModel);
@@ -553,6 +601,18 @@ public final class GearCursorController extends GVRCursorController
                                         prevButtonHome, KeyEvent.KEYCODE_HOME);
             prevButtonHome = handleResult == -1 ? prevButtonHome : handleResult;
             event.recycle();
+            if (mSendEventsToActivity)
+            {
+                GVRActivity activity = getGVRContext().getActivity();
+                for (KeyEvent e : keyEvent)
+                {
+                    activity.dispatchKeyEvent(e);
+                }
+                for (MotionEvent e : motionEvent)
+                {
+                    activity.dispatchTouchEvent(e);
+                }
+            }
             GearCursorController.super.invalidate();
         }
 
@@ -600,9 +660,6 @@ public final class GearCursorController extends GVRCursorController
                     0, MotionEvent.BUTTON_PRIMARY, 1f, 1f, 0, 0, InputDevice.SOURCE_TOUCHPAD, 0);
             setMotionEvent(motionEvent);
             setActive(false);
-            Log.d("EVENT:", "handleEnterButton action=%d button=%d x=%f y=%f",
-                  motionEvent.getAction(), motionEvent.getButtonState(), motionEvent.getX(), motionEvent.getY());
-
         }
         else if ((handled == KeyEvent.ACTION_DOWN) || (touched && !actionDown))
         {
@@ -617,11 +674,8 @@ public final class GearCursorController extends GVRCursorController
             setMotionEvent(motionEvent);
             setActive(true);
             prevEnterTime = time;
-            Log.d("EVENT:", "handleEnterButton action=%d button=%d x=%f y=%f",
-                  motionEvent.getAction(), motionEvent.getButtonState(), motionEvent.getX(), motionEvent.getY());
         }
-        /*
-        else if (thread.prevButtonEnter == KeyEvent.ACTION_UP && actionDown)
+        else if (actionDown && touched)
         {
             pointerCoords.x = pointF.x;
             pointerCoords.y = pointF.y;
@@ -630,30 +684,29 @@ public final class GearCursorController extends GVRCursorController
                     0, MotionEvent.BUTTON_PRIMARY, 1f, 1f, 0, 0, InputDevice.SOURCE_TOUCHPAD, 0);
             setMotionEvent(motionEvent);
         }
-        */
         /*
          * If the controller is allowed to change the cursor depth,
          * update it from the X delta on the controller touchpad.
          * The near and far depth values are NEGATIVE,
          * the controller depth is POSITIVE, hence the strange math.
          */
-        else if (touched && (mCursorControl == CursorControl.CURSOR_DEPTH_FROM_CONTROLLER))
+        if (touched && (mCursorControl == CursorControl.CURSOR_DEPTH_FROM_CONTROLLER))
         {
             float cursorDepth = getCursorDepth();
             float dx = pointF.x;
 
-            if (actionDown)
+            if (!actionDown)
             {
-                dx -= touchDownX;
-                cursorDepth += dx * DEPTH_SENSITIVITY;
-                if ((cursorDepth >= -getNearDepth()) && (cursorDepth <= -getFarDepth()))
-                {
-                    setCursorDepth(cursorDepth);
-                }
+                touchDownX = dx;
             }
             else
             {
-                touchDownX = dx;
+                dx -= touchDownX;
+                cursorDepth += dx * DEPTH_SENSITIVITY;
+                if ((cursorDepth >= getNearDepth()) && (cursorDepth <= getFarDepth()))
+                {
+                    setCursorDepth(cursorDepth);
+                }
             }
         }
         actionDown = touched;

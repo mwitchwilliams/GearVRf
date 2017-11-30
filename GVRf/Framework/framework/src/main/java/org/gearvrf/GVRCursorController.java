@@ -69,9 +69,9 @@ public abstract class GVRCursorController {
     protected float nearDepth = 0.50f;
     protected float farDepth = 50.0f;
     protected final Vector3f position, origin;
-    private List<KeyEvent> keyEvent;
+    protected List<KeyEvent> keyEvent;
     private List<KeyEvent> processedKeyEvent;
-    private List<MotionEvent> motionEvent;
+    protected List<MotionEvent> motionEvent;
     private List<MotionEvent> processedMotionEvent;
     private List<ControllerEventListener> controllerEventListeners;
 
@@ -174,6 +174,8 @@ public abstract class GVRCursorController {
     }
 
     public GVRContext getGVRContext() { return context; }
+
+
 
     /**
      * Use this method to set the active state of the{@link GVRCursorController}.
@@ -658,8 +660,6 @@ public abstract class GVRCursorController {
         if (isEnabled())
         {
             position.set(x, y, z);
-            pickDir.set(x, y, z);
-            pickDir.normalize();
             update();
         }
     }

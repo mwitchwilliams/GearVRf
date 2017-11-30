@@ -87,6 +87,7 @@ public class GVRPicker extends GVRBehavior implements IEventReceiver {
     protected EnumSet<EventOptions> mEventOptions = EnumSet.of(
             EventOptions.SEND_PICK_EVENTS,
             EventOptions.SEND_TO_SCENE,
+            EventOptions.SEND_TO_HIT_OBJECT,
             EventOptions.SEND_TO_LISTENERS);
 
     /**
@@ -186,6 +187,7 @@ public class GVRPicker extends GVRBehavior implements IEventReceiver {
         mEventOptions = EnumSet.of(
                 EventOptions.SEND_PICK_EVENTS,
                 EventOptions.SEND_TOUCH_EVENTS,
+                EventOptions.SEND_TO_HIT_OBJECT,
                 EventOptions.SEND_TO_LISTENERS);
         if (!enable)
         {
