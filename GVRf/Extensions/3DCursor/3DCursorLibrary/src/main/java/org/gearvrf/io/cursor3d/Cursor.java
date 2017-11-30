@@ -465,7 +465,7 @@ public abstract class Cursor extends GVRBehavior
      *
      * @return -1 if no device attached, otherwise returns device priority
      */
-    public int getCurrentDevicePriority() {
+    int getCurrentDevicePriority() {
         if (mIODevice == null)
         {
             return -1;
@@ -485,7 +485,7 @@ public abstract class Cursor extends GVRBehavior
      *
      * @return -1 if device not compatible with this cursor, otherwise returns device priority
      */
-    public int getDevicePriority(IoDevice device)
+    int getDevicePriority(IoDevice device)
     {
         for (PriorityIoDeviceTuple tuple : mCompatibleDevices)
         {
@@ -519,7 +519,7 @@ public abstract class Cursor extends GVRBehavior
      * Determines whether the input {@link IoDevice} is compatible with the {@link Cursor}.
      * @return true if device is compatible, else false
      */
-    public boolean isDeviceCompatible(final IoDevice device)
+    boolean isDeviceCompatible(final IoDevice device)
     {
         List<IoDevice> ioDevices = new LinkedList<IoDevice>();
         for (PriorityIoDeviceTuple tuple : mCompatibleDevices)
