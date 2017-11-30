@@ -28,6 +28,7 @@ import android.os.Message;
 import android.os.SystemClock;
 import android.text.InputType;
 import android.view.ActionMode;
+import android.view.GestureDetector;
 import android.view.KeyCharacterMap;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
@@ -115,7 +116,7 @@ public class GVRViewSceneObject extends GVRSceneObject {
      * @param height the rectangle's height
      */
     public GVRViewSceneObject(GVRContext gvrContext, View view, float width, float height) {
-        this(gvrContext, view, gvrContext.createQuad(width, height));
+        this(gvrContext, view, GVRMesh.createQuad(gvrContext, "float3 a_position float2 a_texcoord", width, height));
     }
 
     /**
@@ -343,11 +344,10 @@ public class GVRViewSceneObject extends GVRSceneObject {
 
         @Override
         public boolean onTouch(View v, MotionEvent event) {
-            if ((v instanceof TextView)
-                    &&(event.getDownTime() - mLastUpTime
-                                <= ViewConfiguration.getDoubleTapTimeout()
-                    || event.getEventTime() - event.getDownTime()
-                                >= ViewConfiguration.getLongPressTimeout())) {
+
+            if ((v instanceof TextView)  &&
+                ((event.getDownTime() - mLastUpTime  <= ViewConfiguration.getDoubleTapTimeout()) ||
+                 (event.getEventTime() - event.getDownTime()) >= ViewConfiguration.getLongPressTimeout())) {
                 Log.w(mSceneObject.getClass().getSimpleName(),
                         "Double tap/long press disabled to avoid popups!!!");
                 if (event.getAction() == MotionEvent.ACTION_UP) {
@@ -427,10 +427,6 @@ public class GVRViewSceneObject extends GVRSceneObject {
         }
 
         public void dispatchPickerInputEvent(final MotionEvent e, final float x, final float y) {
-
-            Log.d("EVENT:", "dispatchPickerInputEvent action=%d button=%d x=%f y=%f",
-                  e.getAction(), e.getButtonState(), x, y);
-
             mGVRContext.getActivity().runOnUiThread(new Runnable()
             {
                 public void run()
@@ -563,14 +559,14 @@ public class GVRViewSceneObject extends GVRSceneObject {
         private void createRenderData() {
             final GVRTexture texture = new GVRExternalTexture(mGVRContext);
             final GVRMaterial material = new GVRMaterial(mGVRContext, GVRShaderType.OES.ID);
-            final GVRCollider collider = new GVRMeshCollider(mGVRContext, true);
+            final GVRCollider collider;
 
             if (mSceneObject.getRenderData() == null) {
                 final GVRRenderData renderData = new GVRRenderData(mGVRContext);
                 renderData.setMesh(mGVRContext.createQuad(mQuadWidth, mQuadHeight));
                 mSceneObject.attachComponent(renderData);
             }
-
+            collider = new GVRMeshCollider(mGVRContext, mSceneObject.getRenderData().getMesh(),true);
             material.setMainTexture(texture);
             mSceneObject.getRenderData().setMaterial(material);
             mSceneObject.attachComponent(collider);
@@ -612,16 +608,20 @@ public class GVRViewSceneObject extends GVRSceneObject {
             if ((mSelected == null) && (pickInfo.motionEvent != null))
             {
                 final MotionEvent event = pickInfo.motionEvent;
-                float x = event.getX();
-                float y = event.getY();
-                final float[] hitLocation = pickInfo.hitLocation;
+                final float[] texCoords = pickInfo.getTextureCoords();
 
-                mSelected = sceneObject;
-                mActionDownX = x;
-                mActionDownY = y;
-                mHitLocationX = x = (hitLocation[0] + 0.5f) * getWidth();
-                mHitLocationY = y = (0.5f - hitLocation[1]) * getHeight();
-                dispatchPickerInputEvent(event,  x, y);
+                if (texCoords != null)
+                {
+                    float x = texCoords[0] * getWidth();
+                    float y = texCoords[1] * getHeight();
+
+                    mSelected = sceneObject;
+                    mActionDownX = event.getX();
+                    mActionDownY = event.getY();
+                    mHitLocationX = x;
+                    mHitLocationY = y;
+                    dispatchPickerInputEvent(event, x, y);
+                }
             }
        }
 
@@ -637,19 +637,32 @@ public class GVRViewSceneObject extends GVRSceneObject {
         {
             if (sceneObject == mSelected)
             {
-                mSelected = null;
                 onDrag(pickInfo);
+                mSelected = null;
             }
         }
 
         public void onDrag(GVRPicker.GVRPickedObject pickInfo)
         {
-            if (pickInfo.motionEvent != null)
+            if ((pickInfo.motionEvent != null) && (pickInfo.hitObject == mSelected))
             {
                 final MotionEvent event = pickInfo.motionEvent;
-                float x = (pickInfo.hitLocation[0] + 0.5f) * getWidth();
-                float y = (0.5f - pickInfo.hitLocation[1]) * getHeight();
-                dispatchPickerInputEvent(event,  x, y);
+                final float[] texCoords = pickInfo.getTextureCoords();
+                float x = event.getX();
+                float y = event.getY();
+
+                if (event.getButtonState() == MotionEvent.BUTTON_PRIMARY)
+                {
+                    x += mHitLocationX - mActionDownX;
+                    y += mHitLocationY - mActionDownY;
+                    dispatchPickerInputEvent(event, x, y);
+                }
+                else if (texCoords != null)
+                {
+                    x = texCoords[0] * getWidth();
+                    y = texCoords[1] * getHeight();
+                    dispatchPickerInputEvent(event, x, y);
+                }
             }
         }
 
