@@ -40,7 +40,6 @@ public class GVRJavascriptV8File {
     static protected ScriptEngine mEngine = null;
     protected Bindings bindings = null;
     protected Invocable invocable = null;
-    //static protected Bindings inputBindings = null;
     protected Bindings inputBindings = null;
     private Map inputVars = null;
     static private String externalImportStatement = "";

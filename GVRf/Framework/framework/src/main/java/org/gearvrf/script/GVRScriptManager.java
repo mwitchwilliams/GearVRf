@@ -247,9 +247,7 @@ public class GVRScriptManager {
 
         GVRScriptFile script = null;
         try (InputStream inputStream = resource.getStream()) {
-            //InputStream inputStream = resource.getStream();
             script = new GVRJavascriptScriptFile(mGvrContext, inputStream);
-            //resource.closeStream();
         } catch (Exception e) {
             Log.e(TAG, "GVRScriptFile::loadScript Exception " + e);
         }
