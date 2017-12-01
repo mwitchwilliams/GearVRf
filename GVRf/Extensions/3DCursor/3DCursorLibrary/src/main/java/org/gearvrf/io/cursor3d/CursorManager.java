@@ -68,7 +68,7 @@ import java.util.Map;
 public final class CursorManager {
     // Result of XML parsing in a package of all settings that need displaying.
     private static final String TAG = CursorManager.class.getSimpleName();
-    private static final float DEFAULT_CURSOR_SCALE = 15.0f;
+    private static final float DEFAULT_CURSOR_SCALE = 10.0f;
     static String SETTINGS_SOURCE = "settings.xml";
 
     private GVRContext context;
@@ -659,9 +659,6 @@ public final class CursorManager {
             return;
         }
         // process the new scene
-
-        mCursorDepth = 0;
-        // TODO check if the objects are okay
         for (GVRSceneObject object : scene.getSceneObjects()) {
             addSelectableObject(object);
         }
@@ -679,6 +676,7 @@ public final class CursorManager {
         {
             ((GearCursorController) controller).showControllerModel(true);
         }
+        cursor.setCursorDepth(mCursorDepth);
         if (cursor instanceof ObjectCursor)
         {
             ObjectCursor ocurs = (ObjectCursor) cursor;
@@ -766,17 +764,6 @@ public final class CursorManager {
             throw new IllegalArgumentException("GVRSceneObject cannot be null");
         }
         addSelectableBehavior(object);
-
-        float depth = getDistance(object);
-        if (depth > mCursorDepth) {
-            synchronized (cursors) {
-                for (Cursor cursor : cursors) {
-                    cursor.setCursorDepth(depth);
-                }
-            }
-            settingsCursor.setCursorDepth(depth);
-            mCursorDepth = depth;
-        }
         return true;
     }
 
@@ -1062,7 +1049,6 @@ public final class CursorManager {
         for (CursorActivationListener listener : activationListeners) {
             listener.onActivated(cursor);
         }
-        cursor.setCursorDepth(mCursorDepth);
         usedIoDevices.add(ioDevice);
         synchronized (cursors) {
             cursors.add(cursor);

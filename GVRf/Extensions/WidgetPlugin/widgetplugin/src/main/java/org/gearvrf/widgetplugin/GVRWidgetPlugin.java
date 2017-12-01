@@ -48,6 +48,7 @@ import org.gearvrf.GVRSceneObject;
 import org.gearvrf.IActivityEvents;
 import org.gearvrf.IScriptEvents;
 import org.gearvrf.ITouchEvents;
+import org.gearvrf.io.GVRControllerType;
 import org.gearvrf.scene_objects.GVRViewSceneObject;
 import org.gearvrf.utility.Threads;
 import org.gearvrf.utility.Log;
@@ -663,16 +664,14 @@ public class GVRWidgetPlugin implements AndroidApplicationBase {
                 (sceneObject instanceof GVRWidgetSceneObject))
             {
                 final MotionEvent event = pickInfo.motionEvent;
-                setPickedObject(sceneObject);
                 final float[] texCoords = pickInfo.getTextureCoords();
-                if (texCoords != null)
-                {
-                    mHitX = texCoords[0] * getWidth();
-                    mHitY = texCoords[1] * getHeight();
-                    mActionDownX = event.getRawX() - mWidgetView.getLeft();;
-                    mActionDownY = event.getRawY() - mWidgetView.getTop();
-                    dispatchPickerInputEvent(event, mHitX, mHitY);
-                }
+
+                mActionDownX = event.getRawX() - mWidgetView.getLeft();
+                mActionDownY = event.getRawY() - mWidgetView.getTop();
+                mHitX = texCoords[0] * getWidth();
+                mHitY = texCoords[1] * getHeight();
+                setPickedObject(sceneObject);
+                dispatchPickerInputEvent(event, mHitX, mHitY);
             }
         }
 
@@ -704,18 +703,28 @@ public class GVRWidgetPlugin implements AndroidApplicationBase {
                 float x = event.getRawX() - mWidgetView.getLeft();
                 float y = event.getRawY() - mWidgetView.getTop();
 
-                if (event.getButtonState() == MotionEvent.BUTTON_PRIMARY)
-                {
-                    x += mHitX - mActionDownX;
-                    y += mHitY - mActionDownY;
-                    dispatchPickerInputEvent(event, x, y);
-                }
-                else if (texCoords != null)
+                /*
+                 * When we get events from the Gear controller we replace the location
+                 * with the current hit point since the pointer coordinates in
+                 * these events are all zero.
+                 */
+                if ((pickInfo.getPicker().getController().getControllerType() == GVRControllerType.CONTROLLER) &&
+                        (event.getButtonState() == MotionEvent.BUTTON_SECONDARY))
                 {
                     x = texCoords[0] * getWidth();
                     y = texCoords[1] * getHeight();
-                    dispatchPickerInputEvent(event, x, y);
                 }
+                /*
+                 * The pointer values in other events are not with respect to the view.
+                 * Here we make the event location relative to the hit point where
+                 * the button went down.
+                 */
+                else
+                {
+                    x += mHitX - mActionDownX;
+                    y += mHitY - mActionDownY;
+                }
+                dispatchPickerInputEvent(event, x, y);
             }
         }
 

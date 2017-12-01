@@ -31,9 +31,15 @@ import android.inputmethodservice.Keyboard;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
+import android.os.SystemClock;
+import android.view.KeyCharacterMap;
+import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.Surface;
+import android.view.View;
 import android.view.ViewConfiguration;
+import android.view.inputmethod.EditorInfo;
+import android.view.inputmethod.InputConnection;
 
 import org.gearvrf.GVRActivity;
 import org.gearvrf.GVRBaseSensor;
@@ -54,6 +60,7 @@ import org.gearvrf.GVRTexture;
 import org.gearvrf.IActivityEvents;
 import org.gearvrf.IKeyboardEvents;
 import org.gearvrf.ITouchEvents;
+import org.gearvrf.R;
 import org.gearvrf.utility.MeshUtils;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
@@ -82,7 +89,7 @@ public class GVRKeyboardSceneObject extends GVRSceneObject {
 
     private GVRKeyboard mMainKeyboard;
     private GVRKeyboard mMiniKeyboard;
-
+    private InputMethodHandler mViewKeyHandler;
     private Map<Integer, GVRKeyboard> mGVRKeyboardCache;
 
     private float mKeyMeshDeepthSize;
@@ -213,7 +220,6 @@ public class GVRKeyboardSceneObject extends GVRSceneObject {
 
         mKeyEventsHandler = new KeyEventsHandler(mActivity.getMainLooper(), this);
         mGVRKeyboardCache = new HashMap<Integer, GVRKeyboard>();
-
         mEditableSceneObject = null;
         mMiniKeyboard = null;
         mMainKeyboard = null;
@@ -346,9 +352,14 @@ public class GVRKeyboardSceneObject extends GVRSceneObject {
         return gvrKeyboard;
     }
 
-    public void startInput(GVRSceneObject sceneObject) {
+    public void startInput(GVRViewSceneObject sceneObject) {
         mEditableSceneObject = sceneObject;
         mKeyEventsHandler.start();
+        if (mViewKeyHandler == null)
+        {
+            mViewKeyHandler = new InputMethodHandler(sceneObject);
+            sceneObject.getEventReceiver().addListener(mViewKeyHandler);
+        }
         onStartInput(mEditableSceneObject);
     }
 
@@ -1166,6 +1177,245 @@ public class GVRKeyboardSceneObject extends GVRSceneObject {
             return new GVRKeyboardSceneObject(gvrContext, keyboardResId, this.keyboardMesh,
                     this.keyMesh, this.keyboardTexture, this.keyBackground,
                     this.textColor, keyHoveredAnimated);
+        }
+    }
+
+
+    private static class InputMethodHandler implements IKeyboardEvents
+    {
+        final GVRActivity mActivity;
+        final GVRViewSceneObject.RootViewGroup mRootGroup;
+        GVRKeyboardSceneObject mGvrKeybaord;
+        final String mWordSeparators;
+        InputConnection mInputConnection;
+        EditorInfo mInputEditorInfo;
+        boolean mInputStarted;
+
+        boolean mCapsLock;
+        long mLastShiftTime;
+
+        public InputMethodHandler(GVRViewSceneObject view)
+        {
+            mActivity = view.getGVRContext().getActivity();
+            mRootGroup = view.getRootView();
+            mGvrKeybaord = null;
+            mWordSeparators = mActivity.getResources().getString(R.string.word_separators);
+
+            mCapsLock = false;
+            mLastShiftTime = 0;
+            mInputConnection = null;
+            mInputEditorInfo = null;
+            mInputStarted = false;
+        }
+
+        public boolean isStarted()
+        {
+            return mInputStarted;
+        }
+
+        public InputConnection getCurrentInputConnection()
+        {
+            return mInputConnection;
+        }
+
+        public EditorInfo getCurrentInputEditorInfo()
+        {
+            return mInputEditorInfo;
+        }
+
+        public boolean isWordSeparator(int code)
+        {
+            String separators = getWordSeparators();
+            return separators.contains(String.valueOf((char) code));
+        }
+
+        public void sendKeyChar(char charCode)
+        {
+            switch (charCode)
+            {
+                case '\n': // Apps may be listening to an enter key to perform an action
+                    sendDownUpKeyEvents(KeyEvent.KEYCODE_ENTER);
+                    break;
+                default:
+                    // Make sure that digits go through any text watcher on the client side.
+                    if (charCode >= '0' && charCode <= '9')
+                    {
+                        sendDownUpKeyEvents(charCode - '0' + KeyEvent.KEYCODE_0);
+                    }
+                    else
+                    {
+                        InputConnection ic = getCurrentInputConnection();
+                        if (ic != null)
+                        {
+                            ic.commitText(String.valueOf(charCode), 1);
+                        }
+                    }
+                    break;
+            }
+        }
+
+        public void sendDownUpKeyEvents(int keyEventCode)
+        {
+            InputConnection ic = getCurrentInputConnection();
+            if (ic == null)
+                return;
+            long eventTime = SystemClock.uptimeMillis();
+            ic.sendKeyEvent(new KeyEvent(eventTime, eventTime, KeyEvent.ACTION_DOWN, keyEventCode, 0, 0, KeyCharacterMap.VIRTUAL_KEYBOARD, 0, KeyEvent.FLAG_SOFT_KEYBOARD | KeyEvent.FLAG_KEEP_TOUCH_MODE));
+            ic.sendKeyEvent(new KeyEvent(eventTime, SystemClock.uptimeMillis(), KeyEvent.ACTION_UP, keyEventCode, 0, 0, KeyCharacterMap.VIRTUAL_KEYBOARD, 0, KeyEvent.FLAG_SOFT_KEYBOARD | KeyEvent.FLAG_KEEP_TOUCH_MODE));
+        }
+
+        @Override
+        public void onKey(GVRKeyboardSceneObject sceneObject, int primaryCode, int[] keyCodes)
+        {
+            if (sceneObject != mGvrKeybaord || mInputConnection == null)
+                return;
+
+            if (isWordSeparator(primaryCode))
+            {
+                // Handle separator
+                sendKeyChar((char) primaryCode);
+                updateShiftKeyState(getCurrentInputEditorInfo());
+            }
+            else if (primaryCode == Keyboard.KEYCODE_DELETE)
+            {
+                handleBackspace();
+            }
+            else if (primaryCode == Keyboard.KEYCODE_SHIFT)
+            {
+            }
+            else if (primaryCode == Keyboard.KEYCODE_CANCEL)
+            {
+                handleClose();
+            }
+            else if (primaryCode == Keyboard.KEYCODE_DONE)
+            {
+                // FIXME: Should it close keyboard?
+                handleClose();
+            }
+            else if (primaryCode == Keyboard.KEYCODE_MODE_CHANGE && mGvrKeybaord != null)
+            {
+            }
+            else
+            {
+                handleCharacter(primaryCode, keyCodes);
+            }
+        }
+
+        @Override
+        public void onStartInput(GVRKeyboardSceneObject sceneObject)
+        {
+            // TODO: Finish previous input if exists or not finished before
+            View view = mRootGroup.findFocus();
+            mGvrKeybaord = sceneObject;
+            EditorInfo tba = new EditorInfo();
+            tba.packageName = view.getContext().getPackageName();
+            tba.fieldId = view.getId();
+            InputConnection ic = view.onCreateInputConnection(tba);
+
+            if (ic != null)
+            {
+                startInput(ic, tba);
+            }
+        }
+
+        @Override
+        public void onStopInput(GVRKeyboardSceneObject sceneObject)
+        {
+            // TODO: Finish current input
+            if (mGvrKeybaord == sceneObject)
+            {
+                mGvrKeybaord = null;
+            }
+            doFinishInput();
+        }
+
+        private void startInput(InputConnection ic, EditorInfo attribute)
+        {
+            if (getCurrentInputConnection() == ic && isStarted())
+            {
+                doStartInput(ic, attribute, true);
+            }
+            else
+            {
+                doStartInput(ic, attribute, false);
+            }
+        }
+
+        private void doStartInput(InputConnection ic, EditorInfo attribute, boolean restarting)
+        {
+            if (!restarting)
+            {
+                doFinishInput();
+            }
+
+            mInputStarted = true;
+            mInputConnection = ic;
+            mInputEditorInfo = attribute;
+        }
+
+        private void doFinishInput()
+        {
+            if (mInputStarted)
+            {
+                onFinishInput();
+            }
+            mInputStarted = false;
+            mInputConnection = null;
+            mInputEditorInfo = null;
+        }
+
+        private void onFinishInput()
+        {
+            InputConnection ic = getCurrentInputConnection();
+            if (ic != null)
+            {
+                ic.finishComposingText();
+            }
+        }
+
+        private void handleCharacter(int primaryCode, int[] keyCodes)
+        {
+            if (mGvrKeybaord.getKeyboard().isShifted())
+            {
+                primaryCode = Character.toUpperCase(primaryCode);
+            }
+
+            getCurrentInputConnection().commitText(String.valueOf((char) primaryCode), 1);
+        }
+
+        private String getWordSeparators()
+        {
+            return mWordSeparators;
+        }
+
+
+        /**
+         * Helper to update the shift state of our keyboard based on the initial
+         * editor state.
+         */
+        private void updateShiftKeyState(EditorInfo attr)
+        {
+        /*
+        TODO: Integrate this code to GVRKeyboard
+        if (attr != null && mGvrKeybaord != null) {
+            int caps = 0;
+            EditorInfo ei = getCurrentInputEditorInfo();
+            if (ei != null && ei.inputType != InputType.TYPE_NULL) {
+                caps = getCurrentInputConnection().getCursorCapsMode(attr.inputType);
+            }
+            mGvrKeybaord.getKeyboard().setShifted(mCapsLock || caps != 0);
+        }*/
+        }
+
+        private void handleBackspace()
+        {
+            sendDownUpKeyEvents(KeyEvent.KEYCODE_DEL);
+            updateShiftKeyState(getCurrentInputEditorInfo());
+        }
+
+        private void handleClose()
+        {
+            mGvrKeybaord.stopInput();
         }
     }
 
