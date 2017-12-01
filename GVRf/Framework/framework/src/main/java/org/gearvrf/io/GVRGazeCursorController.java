@@ -135,7 +135,7 @@ final public class GVRGazeCursorController extends GVRCursorController
         {
             thread.dispatchMotionEvent(event);
         }
-        return false;
+        return true;
     }
 
     @Override

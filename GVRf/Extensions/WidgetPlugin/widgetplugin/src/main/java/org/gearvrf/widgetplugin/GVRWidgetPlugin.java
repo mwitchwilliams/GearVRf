@@ -627,16 +627,7 @@ public class GVRWidgetPlugin implements AndroidApplicationBase {
     }
 
     public boolean dispatchTouchEvent(MotionEvent event) {
-        Log.d("EVENT:", "dispatchTouchEvent action = %d  %f, %f",
-                event.getAction(), event.getX(), event.getY());
-        if (!mActivity.getGVRContext().getInputManager().dispatchMotionEvent(event))
-        {
-            if (mInput.onTouch(mWidgetView, event))
-            {
-                return mActivity.onTouchEvent(event);
-            }
-        }
-        return true;
+        return mActivity.getGVRContext().getInputManager().dispatchMotionEvent(event);
     }
 
     private ITouchEvents touchHandler = new GVREventListeners.TouchEvents()
@@ -745,8 +736,6 @@ public class GVRWidgetPlugin implements AndroidApplicationBase {
                     {
                         enew.setLocation(x, y);
                     }
-                    Log.d("EVENT:", "dispatchPickerEveent action = %d  %f, %f",
-                            enew.getAction(), enew.getX(), enew.getY());
                     if (!mInput.onTouch(mWidgetView, enew))
                     {
                         mActivity.onTouchEvent(enew);
