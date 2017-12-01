@@ -76,15 +76,16 @@ public abstract class GVRCursorController {
     private List<ControllerEventListener> controllerEventListeners;
 
     protected Object eventLock = new Object();
-    protected GVRSceneObject mCursor;
+    protected GVRSceneObject mCursor = null;
     protected boolean enable = true;
     protected Object mCursorLock = new Object();
     protected String name;
     protected int vendorId, productId;
-    protected GVRScene scene;
+    protected GVRScene scene = null;
     protected GVRPicker mPicker = null;
     protected CursorControl mCursorControl = CursorControl.CURSOR_CONSTANT_DEPTH;
     protected float mCursorDepth = 1.0f;
+    protected GVRSceneObject mCursorRoot;
     protected GVRContext context;
     protected volatile boolean mConnected = false;
     protected Vector3f pickDir = new Vector3f(0, 0, -1);
@@ -146,6 +147,7 @@ public abstract class GVRCursorController {
         }
         addPickEventListener(mPickHandler);
         addPickEventListener(GVRBaseSensor.getPickHandler());
+        mCursorRoot = new GVRSceneObject(context);
     }
 
     synchronized public boolean dispatchKeyEvent(KeyEvent event)
@@ -232,20 +234,12 @@ public abstract class GVRCursorController {
         {
             parent.removeChildObject(cursor);
         }
-        if (scene != null)
-        {
-            scene.getMainCameraRig().addChildObject(cursor);
-        }
+        mCursorRoot.addChildObject(cursor);
     }
 
     protected void detachCursor()
     {
-        GVRSceneObject parent = mCursor.getParent();
-
-        if (parent != null)
-        {
-            parent.removeChildObject(mCursor);
-        }
+        mCursorRoot.removeChildObject(mCursor);
     }
 
     public void setCursorDepth(float depth)
@@ -358,7 +352,7 @@ public abstract class GVRCursorController {
     {
         synchronized (mCursorLock)
         {
-            GVRTransform cursorTrans = mCursor.getTransform();
+            GVRTransform cursorTrans = mCursorRoot.getTransform();
 
             if (mCursorControl == CursorControl.NONE)
             {
@@ -376,6 +370,8 @@ public abstract class GVRCursorController {
             float xcursor = pickDir.x * dist;   // vector to hit position
             float ycursor = pickDir.y * dist;
             float zcursor = pickDir.z * dist;
+            float scale = dist / mCursorDepth;
+
             if (mCursor == collision.hitObject.getParent())
             {
                 preserveHitObjectPosition(collision);
@@ -385,6 +381,7 @@ public abstract class GVRCursorController {
                 orientCursor(collision);
             }
             cursorTrans.setPosition(xcursor, ycursor, zcursor);
+            cursorTrans.setScale(scale, scale, scale);
         }
     }
 
@@ -396,7 +393,7 @@ public abstract class GVRCursorController {
     protected void preserveHitObjectPosition(GVRPicker.GVRPickedObject collision)
     {
         GVRTransform hitTrans = collision.hitObject.getTransform();
-        GVRTransform cursorTrans = mCursor.getTransform();
+        GVRTransform cursorTrans = mCursorRoot.getTransform();
         float xcurs = cursorTrans.getPositionX();
         float ycurs = cursorTrans.getPositionY();
         float zcurs = cursorTrans.getPositionZ();
@@ -421,8 +418,9 @@ public abstract class GVRCursorController {
         {
             synchronized (mCursorLock)
             {
-                GVRTransform trans = mCursor.getTransform();
+                GVRTransform trans = mCursorRoot.getTransform();
                 trans.setRotation(1, 0, 0, 0);
+                trans.setScale(1, 1, 1);
                 trans.setPosition(pickDir.x * mCursorDepth, pickDir.y * mCursorDepth, pickDir.z * mCursorDepth);
             }
         }
@@ -430,7 +428,7 @@ public abstract class GVRCursorController {
 
     protected boolean orientCursor(GVRPicker.GVRPickedObject collision)
     {
-        GVRSceneObject parent = mCursor.getParent();
+        GVRSceneObject parent = mCursorRoot.getParent();
         float[] baryCoords = collision.getBarycentricCoords();
         boolean coordinatesCalculated = (baryCoords != null) && !Arrays.equals(baryCoords, new float[] {-1f, -1f, -1f});
 
@@ -460,7 +458,7 @@ public abstract class GVRCursorController {
             orient.mul(hitLtW);
             orient.mul(cursorWtL);
             orient.normalize();
-            GVRTransform cursorTrans = mCursor.getTransform();
+            GVRTransform cursorTrans = mCursorRoot.getTransform();
             cursorTrans.setRotation(orient.w, orient.x, orient.y, orient.z);
             return true;
         }
@@ -481,11 +479,8 @@ public abstract class GVRCursorController {
             GVRPicker.GVRPickedObject hit = picker.getPicked()[0];
             if (hit != null)
             {
-                if (mCursor != null)
-                {
-                    updateCursor(hit);
-                }
-            }
+                updateCursor(hit);
+             }
             else
             {
                 onNoPick(picker);
@@ -494,11 +489,8 @@ public abstract class GVRCursorController {
 
         public void onNoPick(GVRPicker picker)
         {
-            if (mCursor != null)
-            {
-                moveCursor();
-            }
-        }
+            moveCursor();
+       }
     };
 
     /**
@@ -744,10 +736,7 @@ public abstract class GVRCursorController {
      */
     public void setEnable(boolean flag) {
         mPicker.setEnable(flag);
-        if (mCursor != null)
-        {
-            mCursor.setEnable(flag);
-        }
+        mCursorRoot.setEnable(flag);
         if (this.enable == flag)
         {
             // nothing to be done here, return
@@ -875,19 +864,18 @@ public abstract class GVRCursorController {
     public void setScene(GVRScene scene)
     {
         mPicker.setScene(scene);
-        if ((mCursor != null) && (scene != null))
+        if (scene != null)
         {
             synchronized (mCursorLock)
             {
-                detachCursor();
-                this.scene = scene;
-                attachCursor(mCursor);
+                if (mCursorRoot.getParent() != null)
+                {
+                    mCursorRoot.getParent().removeChildObject(mCursorRoot);
+                }
+                scene.getMainCameraRig().addChildObject(mCursorRoot);
             }
         }
-        else
-        {
-            this.scene = scene;
-        }
+        this.scene = scene;
     }
 
     /**

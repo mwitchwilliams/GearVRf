@@ -64,6 +64,7 @@ import org.gearvrf.IKeyboardEvents;
 import org.gearvrf.ITouchEvents;
 import org.gearvrf.IViewEvents;
 import org.gearvrf.R;
+import org.gearvrf.io.GVRControllerType;
 import org.gearvrf.utility.Log;
 
 /**
@@ -74,7 +75,6 @@ public class GVRViewSceneObject extends GVRSceneObject {
     private View mView;
     private RootViewGroup mRootViewGroup;
     private IViewEvents mEventsListener;
-    private InputMethodHandler mInputMethodHandler;
 
     /**
      * Constructs a scene object that inflate a view from an XML resource. The scene object
@@ -145,6 +145,8 @@ public class GVRViewSceneObject extends GVRSceneObject {
                     });
         }
     }
+
+    protected RootViewGroup getRootView() { return mRootViewGroup; }
 
     private void inflateView(final int viewId) {
         final  GVRActivity activity = getGVRContext().getActivity();
@@ -225,11 +227,6 @@ public class GVRViewSceneObject extends GVRSceneObject {
 
         mRootViewGroup.addView(mView);
         mRootViewGroup.startRendering();
-
-        mInputMethodHandler = new InputMethodHandler(getGVRContext().getActivity(),
-                mRootViewGroup);
-
-        getEventReceiver().addListener(mInputMethodHandler);
         getEventReceiver().addListener(mRootViewGroup);
 
         // To fix invalidate issue at S6/Note5
@@ -376,7 +373,7 @@ public class GVRViewSceneObject extends GVRSceneObject {
      * This is the root view to overwrite the default canvas of the view by the
      * canvas of the texture attached to the scene object.
      */
-    private static class RootViewGroup extends FrameLayout implements ITouchEvents {
+    protected static class RootViewGroup extends FrameLayout implements ITouchEvents {
         final GVRContext mGVRContext;
         final GVRViewSceneObject mSceneObject;
         Surface mSurface;
@@ -384,10 +381,10 @@ public class GVRViewSceneObject extends GVRSceneObject {
         float mViewSize;
         float mQuadWidth;
         float mQuadHeight;
+        float mHitX;
+        float mHitY;
         float mActionDownX;
         float mActionDownY;
-        float mHitLocationX;
-        float mHitLocationY;
         GVRSceneObject mSelected = null;
         SoftInputController mSoftInputController;
 
@@ -403,10 +400,6 @@ public class GVRViewSceneObject extends GVRSceneObject {
             mViewSize = 0.0f;
             mQuadWidth = 1.0f;
             mQuadHeight = 1.0f;
-            mActionDownX = 0.0f;
-            mActionDownY = 0.0f;
-            mHitLocationX = 0.0f;
-            mHitLocationY = 0.0f;
 
             // To optimization
             setWillNotDraw(true);
@@ -610,18 +603,12 @@ public class GVRViewSceneObject extends GVRSceneObject {
                 final MotionEvent event = pickInfo.motionEvent;
                 final float[] texCoords = pickInfo.getTextureCoords();
 
-                if (texCoords != null)
-                {
-                    float x = texCoords[0] * getWidth();
-                    float y = texCoords[1] * getHeight();
-
-                    mSelected = sceneObject;
-                    mActionDownX = event.getX();
-                    mActionDownY = event.getY();
-                    mHitLocationX = x;
-                    mHitLocationY = y;
-                    dispatchPickerInputEvent(event, x, y);
-                }
+                mHitX = texCoords[0] * getWidth();
+                mHitY = texCoords[1] * getHeight();
+                mActionDownX = event.getRawX() - getLeft();
+                mActionDownY = event.getRawY() - getTop();
+                mSelected = sceneObject;
+                dispatchPickerInputEvent(event, mHitX, mHitY);
             }
        }
 
@@ -648,224 +635,37 @@ public class GVRViewSceneObject extends GVRSceneObject {
             {
                 final MotionEvent event = pickInfo.motionEvent;
                 final float[] texCoords = pickInfo.getTextureCoords();
-                float x = event.getX();
-                float y = event.getY();
+                float x = event.getRawX() - getTop();
+                float y = event.getRawY() - getLeft();
 
-                if (event.getButtonState() == MotionEvent.BUTTON_PRIMARY)
-                {
-                    x += mHitLocationX - mActionDownX;
-                    y += mHitLocationY - mActionDownY;
-                    dispatchPickerInputEvent(event, x, y);
-                }
-                else if (texCoords != null)
+                /*
+                 * When we get events from the Gear controller we replace the location
+                 * with the current hit point since the pointer coordinates in
+                 * these events are all zero.
+                 */
+                if ((pickInfo.getPicker().getController().getControllerType() == GVRControllerType.CONTROLLER) &&
+                    (event.getButtonState() == MotionEvent.BUTTON_SECONDARY))
                 {
                     x = texCoords[0] * getWidth();
                     y = texCoords[1] * getHeight();
-                    dispatchPickerInputEvent(event, x, y);
                 }
+                /*
+                 * The pointer values in other events are not with respect to the view.
+                 * Here we make the event location relative to the hit point where
+                 * the button went down.
+                 */
+                else
+                {
+                    x += mHitX - mActionDownX;
+                    y += mHitY - mActionDownY;
+                }
+                dispatchPickerInputEvent(event, x, y);
             }
         }
 
         public void onMotionOutside(GVRPicker picker, MotionEvent event)
         {
             dispatchPickerInputEvent(event, event.getX(), event.getY());
-        }
-    }
-
-    private static class InputMethodHandler implements IKeyboardEvents {
-        final GVRActivity mActivity;
-        final RootViewGroup mRootGroup;
-        GVRKeyboardSceneObject mGvrKeybaord;
-        final String mWordSeparators;
-        InputConnection mInputConnection;
-        EditorInfo mInputEditorInfo;
-        boolean mInputStarted;
-
-        boolean mCapsLock;
-        long mLastShiftTime;
-
-        public InputMethodHandler(GVRActivity context, RootViewGroup view) {
-            mActivity = context;
-            mRootGroup = view;
-            mGvrKeybaord = null;
-            mWordSeparators = mActivity.getResources().getString(R.string.word_separators);
-
-            mCapsLock = false;
-            mLastShiftTime = 0;
-            mInputConnection = null;
-            mInputEditorInfo = null;
-            mInputStarted = false;
-        }
-
-        public void startInput(View view) {
-            EditorInfo tba = new EditorInfo();
-            tba.packageName = view.getContext().getPackageName();
-            tba.fieldId = view.getId();
-            InputConnection ic = view.onCreateInputConnection(tba);
-
-            if (ic != null) {
-                startInput(ic, tba);
-            }
-        }
-
-        public void startInput(InputConnection ic, EditorInfo attribute) {
-            if (getCurrentInputConnection() == ic && isStarted()) {
-                doStartInput(ic, attribute, true);
-            } else {
-                doStartInput(ic, attribute, false);
-            }
-        }
-
-        private void doStartInput(InputConnection ic, EditorInfo attribute, boolean restarting) {
-            if (!restarting) {
-                doFinishInput();
-            }
-
-            mInputStarted = true;
-            mInputConnection = ic;
-            mInputEditorInfo = attribute;
-        }
-
-        private void doFinishInput() {
-            if (mInputStarted) {
-                onFinishInput();
-            }
-            mInputStarted = false;
-            mInputConnection = null;
-            mInputEditorInfo = null;
-        }
-
-        private void onFinishInput() {
-            InputConnection ic = getCurrentInputConnection();
-            if (ic != null) {
-                ic.finishComposingText();
-            }
-        }
-
-        public boolean isStarted() {
-            return mInputStarted;
-        }
-
-        public InputConnection getCurrentInputConnection() {
-            return mInputConnection;
-        }
-
-        public EditorInfo getCurrentInputEditorInfo() {
-            return mInputEditorInfo;
-        }
-
-        private void handleCharacter(int primaryCode, int[] keyCodes) {
-            if (mGvrKeybaord.getKeyboard().isShifted()) {
-                primaryCode = Character.toUpperCase(primaryCode);
-            }
-
-            getCurrentInputConnection().commitText(String.valueOf((char) primaryCode), 1);
-        }
-
-        private String getWordSeparators() {
-            return mWordSeparators;
-        }
-
-        public boolean isWordSeparator(int code) {
-            String separators = getWordSeparators();
-            return separators.contains(String.valueOf((char)code));
-        }
-
-        /**
-         * Helper to update the shift state of our keyboard based on the initial
-         * editor state.
-         */
-        private void updateShiftKeyState(EditorInfo attr) {
-            /*
-            TODO: Integrate this code to GVRKeyboard
-            if (attr != null && mGvrKeybaord != null) {
-                int caps = 0;
-                EditorInfo ei = getCurrentInputEditorInfo();
-                if (ei != null && ei.inputType != InputType.TYPE_NULL) {
-                    caps = getCurrentInputConnection().getCursorCapsMode(attr.inputType);
-                }
-                mGvrKeybaord.getKeyboard().setShifted(mCapsLock || caps != 0);
-            }*/
-        }
-
-        private void handleBackspace() {
-            sendDownUpKeyEvents(KeyEvent.KEYCODE_DEL);
-            updateShiftKeyState(getCurrentInputEditorInfo());
-        }
-
-        private void handleClose() {
-            mGvrKeybaord.stopInput();
-        }
-
-        public void sendKeyChar(char charCode) {
-            switch (charCode) {
-                case '\n': // Apps may be listening to an enter key to perform an action
-                    sendDownUpKeyEvents(KeyEvent.KEYCODE_ENTER);
-                    break;
-                default:
-                    // Make sure that digits go through any text watcher on the client side.
-                    if (charCode >= '0' && charCode <= '9') {
-                        sendDownUpKeyEvents(charCode - '0' + KeyEvent.KEYCODE_0);
-                    } else {
-                        InputConnection ic = getCurrentInputConnection();
-                        if (ic != null) {
-                            ic.commitText(String.valueOf(charCode), 1);
-                        }
-                    }
-                    break;
-            }
-        }
-
-        public void sendDownUpKeyEvents(int keyEventCode) {
-            InputConnection ic = getCurrentInputConnection();
-            if (ic == null) return;
-            long eventTime = SystemClock.uptimeMillis();
-            ic.sendKeyEvent(new KeyEvent(eventTime, eventTime,
-                    KeyEvent.ACTION_DOWN, keyEventCode, 0, 0, KeyCharacterMap.VIRTUAL_KEYBOARD, 0,
-                    KeyEvent.FLAG_SOFT_KEYBOARD|KeyEvent.FLAG_KEEP_TOUCH_MODE));
-            ic.sendKeyEvent(new KeyEvent(eventTime, SystemClock.uptimeMillis(),
-                    KeyEvent.ACTION_UP, keyEventCode, 0, 0, KeyCharacterMap.VIRTUAL_KEYBOARD, 0,
-                    KeyEvent.FLAG_SOFT_KEYBOARD|KeyEvent.FLAG_KEEP_TOUCH_MODE));
-        }
-
-        @Override
-        public void onKey(GVRKeyboardSceneObject sceneObject, int primaryCode, int[] keyCodes) {
-            if (sceneObject != mGvrKeybaord || mInputConnection == null)
-                return;
-
-            if (isWordSeparator(primaryCode)) {
-                // Handle separator
-                sendKeyChar((char) primaryCode);
-                updateShiftKeyState(getCurrentInputEditorInfo());
-            } else if (primaryCode == Keyboard.KEYCODE_DELETE) {
-                handleBackspace();
-            } else if (primaryCode == Keyboard.KEYCODE_SHIFT) {
-            } else if (primaryCode == Keyboard.KEYCODE_CANCEL) {
-                handleClose();
-            } else if (primaryCode == Keyboard.KEYCODE_DONE) {
-                // FIXME: Should it close keyboard?
-                handleClose();
-            } else if (primaryCode == Keyboard.KEYCODE_MODE_CHANGE
-                    && mGvrKeybaord != null) {
-            } else {
-                handleCharacter(primaryCode, keyCodes);
-            }
-        }
-
-        @Override
-        public void onStartInput(GVRKeyboardSceneObject sceneObject) {
-            // TODO: Finish previous input if exists or not finished before
-            mGvrKeybaord = sceneObject;
-            startInput(mRootGroup.findFocus());
-        }
-
-        @Override
-        public void onStopInput(GVRKeyboardSceneObject sceneObject) {
-            // TODO: Finish current input
-            if (mGvrKeybaord == sceneObject) {
-                mGvrKeybaord = null;
-            }
-            doFinishInput();
         }
     }
 }

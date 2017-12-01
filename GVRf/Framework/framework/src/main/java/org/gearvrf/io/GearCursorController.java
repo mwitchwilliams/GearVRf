@@ -148,7 +148,7 @@ public final class GearCursorController extends GVRCursorController
         mControllerGroup = new GVRSceneObject(context);
         mControllerGroup.setName("gearvr_controller_group");
         mPivotRoot.addChildObject(mControllerGroup);
-        mControllerGroup.setEnable(false);
+        mControllerGroup.addChildObject(mCursorRoot);
         mControllerGroup.attachComponent(mPicker);
         thread = new EventHandlerThread();
         enable = isEnabled();
@@ -237,29 +237,6 @@ public final class GearCursorController extends GVRCursorController
         }
     }
 
-    @Override
-    protected void attachCursor(GVRSceneObject object)
-    {
-        GVRSceneObject parent = object.getParent();
-
-        if (parent != mControllerGroup)
-        {
-            if (parent != null)
-            {
-                parent.removeChildObject(object);
-            }
-            mControllerGroup.addChildObject(object);
-        }
-        mControllerGroup.setEnable(true);
-        object.getTransform().setPosition(0, 0, 0);
-    }
-
-    @Override
-    protected void detachCursor()
-    {
-        mControllerGroup.setEnable(false);
-        super.detachCursor();
-    }
 
     protected void updateCursor(GVRPicker.GVRPickedObject collision)
     {
@@ -353,6 +330,8 @@ public final class GearCursorController extends GVRCursorController
     public void setScene(GVRScene scene) {
         GVRSceneObject parent = mPivotRoot.getParent();
 
+        mPicker.setScene(scene);
+        this.scene = scene;
         if (parent != null)
         {
             parent.removeChildObject(mPivotRoot);
@@ -362,14 +341,6 @@ public final class GearCursorController extends GVRCursorController
             scene.addSceneObject(mPivotRoot);
         }
         showControllerModel(mShowControllerModel);
-        if (!initialized)
-        {
-            super.setScene(scene);
-        }
-        else
-        {
-            thread.setScene(scene);
-        }
     }
 
     @Override
@@ -420,16 +391,12 @@ public final class GearCursorController extends GVRCursorController
 
     public synchronized boolean dispatchKeyEvent(KeyEvent e)
     {
-        setKeyEvent(e);
-        invalidate();
-        return true;
+        return false;
     }
 
     public synchronized boolean dispatchMotionEvent(MotionEvent e)
     {
-        setMotionEvent(MotionEvent.obtain(e));
-        invalidate();
-        return true;
+        return false;
     }
 
     /**
