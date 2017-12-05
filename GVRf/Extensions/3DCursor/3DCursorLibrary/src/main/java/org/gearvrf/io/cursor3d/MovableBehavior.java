@@ -123,35 +123,11 @@ public class MovableBehavior extends SelectableBehavior {
                 }
             }
 
-            public void onDrag(Cursor c, GVRPicker.GVRPickedObject hit)
-            {
-                if ((mCurrentCursor == c) && (c.getCursorType() == CursorType.LASER))
-                {
-                    if (IoDeviceLoader.isControllerIoDevice(mCurrentCursor.getIoDevice()))
-                    {
-                        return;
-                    }
-                    mCursorPosition = new Vector3f(c.getPositionX(), c.getPositionY(), c.getPositionZ());
-                    rotateObjectToFollowCursor(mCursorPosition);
-                }
-            }
+            public void onDrag(Cursor c, GVRPicker.GVRPickedObject hit) { }
 
             public void onExit(Cursor c, GVRPicker.GVRPickedObject hit)
             {
-                if (hit.touched && (mCurrentCursor == c))
-                {
-                    if (mCurrentCursor.getCursorType() == CursorType.LASER && !IoDeviceLoader.isControllerIoDevice(
-                            mCurrentCursor.getIoDevice()))
-                    {
-                        mCursorPosition = new Vector3f(mCurrentCursor.getPositionX(), mCurrentCursor.getPositionY(), mCurrentCursor.getPositionZ());
-                        rotateObjectToFollowCursor(mCursorPosition);
-                    }
-                    else if (mCurrentCursor.getCursorType() == CursorType.OBJECT || IoDeviceLoader.isControllerIoDevice(
-                            mCurrentCursor.getIoDevice()))
-                    {
-                        onTouchEnd(c, hit);
-                    }
-                }
+                onTouchEnd(c, hit);
             }
 
             public void onTouchEnd(Cursor c, GVRPicker.GVRPickedObject hit)
