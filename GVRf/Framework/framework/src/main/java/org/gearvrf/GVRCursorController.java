@@ -86,6 +86,8 @@ public abstract class GVRCursorController {
     protected CursorControl mCursorControl = CursorControl.CURSOR_CONSTANT_DEPTH;
     protected float mCursorDepth = 1.0f;
     protected GVRSceneObject mCursorRoot;
+    protected GVRSceneObject mDragParent = null;
+    protected GVRSceneObject mDragMe = null;
     protected GVRContext context;
     protected volatile boolean mConnected = false;
     protected Vector3f pickDir = new Vector3f(0, 0, -1);
@@ -348,6 +350,60 @@ public abstract class GVRCursorController {
 
     public CursorControl getCursorControl() { return mCursorControl; }
 
+
+    public boolean startDrag(GVRSceneObject dragMe)
+    {
+        if (mDragMe != null)
+        {
+            return false;
+        }
+        synchronized (mCursorLock)
+        {
+            GVRTransform objTrans = dragMe.getTransform();
+            Matrix4f cursorMtx = mCursorRoot.getTransform().getModelMatrix4f();
+            Matrix4f objMatrix = objTrans.getModelMatrix4f();
+
+            mDragMe = dragMe;
+            mDragParent = dragMe.getParent();
+            if (mDragParent != null)
+            {
+                mDragParent.removeChildObject(dragMe);
+            }
+            cursorMtx.invert();
+            objTrans.setModelMatrix(cursorMtx.mul(objMatrix));
+            mCursorRoot.addChildObject(dragMe);
+        }
+        return true;
+    }
+
+    public boolean stopDrag()
+    {
+        if (mDragMe == null)
+        {
+            return false;
+        }
+        synchronized (mCursorLock)
+        {
+            GVRTransform objTrans = mDragMe.getTransform();
+            Matrix4f cursorMatrix = mCursorRoot.getTransform().getModelMatrix4f();
+            mCursorRoot.removeChildObject(mDragMe);
+            Matrix4f objMatrix = objTrans.getModelMatrix4f();
+
+            objTrans.setModelMatrix(cursorMatrix.mul(objMatrix));
+            if (mDragParent != null)
+            {
+                mDragParent.addChildObject(mDragMe);
+            }
+            else
+            {
+                scene.addSceneObject(mDragMe);
+            }
+            mDragMe = null;
+            mDragParent = null;
+        }
+        return true;
+    }
+
     protected void updateCursor(GVRPicker.GVRPickedObject collision)
     {
         synchronized (mCursorLock)
@@ -366,50 +422,32 @@ public abstract class GVRCursorController {
                         pickDir.z * mCursorDepth);
                 return;
             }
+            GVRSceneObject parent = collision.hitObject.getParent();
             float dist = collision.hitDistance;
-            float xcursor = pickDir.x * dist;   // vector to hit position
-            float ycursor = pickDir.y * dist;
-            float zcursor = pickDir.z * dist;
             float scale = dist / mCursorDepth;
 
-            if (mCursor == collision.hitObject.getParent())
-            {
-                preserveHitObjectPosition(collision);
-            }
             if (mCursorControl == CursorControl.ORIENT_CURSOR_WITH_SURFACE_NORMAL)
             {
                 orientCursor(collision);
             }
-            cursorTrans.setPosition(xcursor, ycursor, zcursor);
-            cursorTrans.setScale(scale, scale, scale);
+            if (mCursor != null)
+            {
+                mCursor.getTransform().setScale(scale, scale, scale);
+            }
+            while (parent != null)
+            {
+                if (parent == mCursorRoot)
+                {
+                    return;
+                }
+                parent = parent.getParent();
+            }
+            float xcursor = pickDir.x * dist;   // vector to hit position
+            float ycursor = pickDir.y * dist;
+            float zcursor = pickDir.z * dist;
+
+            cursorTrans.getTransform().setPosition(xcursor, ycursor, zcursor);
         }
-    }
-
-    //
-    // If the hit object is a child of the cursor
-    // preserve the relative distance between the
-    // cursor and the object in case we are dragging it
-    //
-    protected void preserveHitObjectPosition(GVRPicker.GVRPickedObject collision)
-    {
-        GVRTransform hitTrans = collision.hitObject.getTransform();
-        GVRTransform cursorTrans = mCursorRoot.getTransform();
-        float xcurs = cursorTrans.getPositionX();
-        float ycurs = cursorTrans.getPositionY();
-        float zcurs = cursorTrans.getPositionZ();
-        Vector3f temp = new Vector3f(xcurs, ycurs, zcurs);
-        float l = temp.length();
-
-        if (l > 0.00001f)
-        {
-            temp.normalize();
-        }
-        temp.mul(collision.hitDistance);
-        float x = hitTrans.getPositionX() + xcurs - temp.x;
-        float y = hitTrans.getPositionY() + ycurs - temp.y;
-        float z = hitTrans.getPositionZ() + zcurs - temp.z;
-
-        hitTrans.setPosition(x, y, z);
     }
 
     protected void moveCursor()
@@ -418,17 +456,20 @@ public abstract class GVRCursorController {
         {
             synchronized (mCursorLock)
             {
-                GVRTransform trans = mCursorRoot.getTransform();
-                trans.setRotation(1, 0, 0, 0);
-                trans.setScale(1, 1, 1);
-                trans.setPosition(pickDir.x * mCursorDepth, pickDir.y * mCursorDepth, pickDir.z * mCursorDepth);
+                if (mCursor != null)
+                {
+                    GVRTransform trans = mCursor.getTransform();
+                    trans.setRotation(1, 0, 0, 0);
+                    trans.setScale(1, 1, 1);
+                }
+                mCursorRoot.getTransform().setPosition(pickDir.x * mCursorDepth, pickDir.y * mCursorDepth, pickDir.z * mCursorDepth);
             }
         }
     }
 
     protected boolean orientCursor(GVRPicker.GVRPickedObject collision)
     {
-        GVRSceneObject parent = mCursorRoot.getParent();
+        GVRSceneObject parent = mCursor.getParent();
         float[] baryCoords = collision.getBarycentricCoords();
         boolean coordinatesCalculated = (baryCoords != null) && !Arrays.equals(baryCoords, new float[] {-1f, -1f, -1f});
 
@@ -458,7 +499,7 @@ public abstract class GVRCursorController {
             orient.mul(hitLtW);
             orient.mul(cursorWtL);
             orient.normalize();
-            GVRTransform cursorTrans = mCursorRoot.getTransform();
+            GVRTransform cursorTrans = mCursor.getTransform();
             cursorTrans.setRotation(orient.w, orient.x, orient.y, orient.z);
             return true;
         }
