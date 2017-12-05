@@ -148,7 +148,7 @@ public final class GearCursorController extends GVRCursorController
         mControllerGroup = new GVRSceneObject(context);
         mControllerGroup.setName("gearvr_controller_group");
         mPivotRoot.addChildObject(mControllerGroup);
-        mControllerGroup.addChildObject(mCursorRoot);
+        mControllerGroup.addChildObject(mDragRoot);
         mControllerGroup.attachComponent(mPicker);
         thread = new EventHandlerThread();
         enable = isEnabled();
