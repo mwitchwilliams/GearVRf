@@ -124,8 +124,9 @@ final public class GVRGazeCursorController extends GVRCursorController
         if (thread.isAlive())
         {
             thread.dispatchKeyEvent(event);
+            return !mSendEventsToActivity;
         }
-        return true;
+        return false;
     }
 
     @Override
@@ -134,8 +135,9 @@ final public class GVRGazeCursorController extends GVRCursorController
         if (thread.isAlive())
         {
             thread.dispatchMotionEvent(event);
+            return !mSendEventsToActivity;
         }
-        return true;
+        return false;
     }
 
     @Override

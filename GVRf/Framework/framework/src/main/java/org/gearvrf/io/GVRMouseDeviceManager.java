@@ -145,21 +145,29 @@ final class GVRMouseDeviceManager {
         }
 
         @Override
-        public synchronized boolean dispatchKeyEvent(KeyEvent event) {
-            if (event.isFromSource(InputDevice.SOURCE_MOUSE)) {
-                return deviceManager.thread.submitKeyEvent(getId(), event);
-            } else {
-                return false;
+        public synchronized boolean dispatchKeyEvent(KeyEvent event)
+        {
+            if (event.isFromSource(InputDevice.SOURCE_MOUSE))
+            {
+                if (deviceManager.thread.submitKeyEvent(getId(), event))
+                {
+                    return !mSendEventsToActivity;
+                }
             }
+            return false;
         }
 
         @Override
-        public synchronized boolean dispatchMotionEvent(MotionEvent event) {
-            if (event.isFromSource(InputDevice.SOURCE_MOUSE)) {
-                return deviceManager.thread.submitMotionEvent(getId(), event);
-            } else {
-                return false;
+        public synchronized boolean dispatchMotionEvent(MotionEvent event)
+        {
+            if (event.isFromSource(InputDevice.SOURCE_MOUSE))
+            {
+                if (deviceManager.thread.submitMotionEvent(getId(), event))
+                {
+                    return !mSendEventsToActivity;
+                }
             }
+            return false;
         }
 
         private boolean processMouseEvent(float x, float y, float z, MotionEvent e)

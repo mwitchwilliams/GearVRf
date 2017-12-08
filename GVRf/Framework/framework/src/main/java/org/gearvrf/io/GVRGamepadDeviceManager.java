@@ -203,13 +203,23 @@ class GVRGamepadDeviceManager {
         }
 
         @Override
-        public boolean dispatchKeyEvent(KeyEvent event) {
-            return deviceManager.thread.submitKeyEvent(getId(), event);
+        public boolean dispatchKeyEvent(KeyEvent event)
+        {
+            if (deviceManager.thread.submitKeyEvent(getId(), event))
+            {
+                return !mSendEventsToActivity;
+            }
+            return false;
         }
 
         @Override
-        public boolean dispatchMotionEvent(MotionEvent event) {
-            return deviceManager.thread.submitMotionEvent(getId(), event);
+        public boolean dispatchMotionEvent(MotionEvent event)
+        {
+            if (deviceManager.thread.submitMotionEvent(getId(), event))
+            {
+                return !mSendEventsToActivity;
+            }
+            return false;
         }
 
         private void processControllerEvent(float x, float y, float z) {

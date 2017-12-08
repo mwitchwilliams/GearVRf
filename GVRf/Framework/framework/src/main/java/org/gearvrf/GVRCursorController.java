@@ -21,7 +21,6 @@ import android.view.MotionEvent;
 import org.gearvrf.io.CursorControllerListener;
 import org.gearvrf.io.GVRControllerType;
 import org.gearvrf.io.GVRInputManager;
-import org.gearvrf.utility.Log;
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
@@ -78,6 +77,7 @@ public abstract class GVRCursorController {
     protected Object eventLock = new Object();
     protected GVRSceneObject mCursor = null;
     protected boolean enable = true;
+    protected boolean mSendEventsToActivity = false;
     protected Object mCursorLock = new Object();
     protected String name;
     protected int vendorId, productId;
@@ -85,7 +85,7 @@ public abstract class GVRCursorController {
     protected GVRPicker mPicker = null;
     protected CursorControl mCursorControl = CursorControl.CURSOR_CONSTANT_DEPTH;
     protected float mCursorDepth = 1.0f;
-    protected GVRSceneObject mCursorRoot;
+    protected GVRSceneObject mCursorScale;
     protected GVRSceneObject mDragRoot;
     protected GVRSceneObject mDragParent = null;
     protected GVRSceneObject mDragMe = null;
@@ -150,9 +150,11 @@ public abstract class GVRCursorController {
         }
         addPickEventListener(mPickHandler);
         addPickEventListener(GVRBaseSensor.getPickHandler());
-        mCursorRoot = new GVRSceneObject(context);
+        mCursorScale = new GVRSceneObject(context);
+        mCursorScale.setName("CursorController_CursorScale");
         mDragRoot = new GVRSceneObject(context);
-        mDragRoot.addChildObject(mCursorRoot);
+        mDragRoot.setName("CursorController_DragRoot");
+        mDragRoot.addChildObject(mCursorScale);
     }
 
     synchronized public boolean dispatchKeyEvent(KeyEvent event)
@@ -160,7 +162,7 @@ public abstract class GVRCursorController {
         synchronized (eventLock) {
             this.keyEvent.add(event);
         }
-        return true;
+        return !mSendEventsToActivity;
     }
 
     synchronized public boolean dispatchMotionEvent(MotionEvent event)
@@ -168,7 +170,7 @@ public abstract class GVRCursorController {
         synchronized (eventLock) {
             this.motionEvent.add(event);
         }
-        return true;
+        return !mSendEventsToActivity;
     }
 
     /**
@@ -183,6 +185,45 @@ public abstract class GVRCursorController {
     public GVRContext getGVRContext() { return context; }
 
 
+    /**
+     * Enable or disable routing controller MotionEvents to GVRActivity.
+     * <p>
+     * When a controller is active, Android MotionEvents are not routed
+     * to your application via {@link GVRActivity#dispatchTouchEvent}.
+     * Instead they are consumed by the controller.
+     * <p>
+     * You can listen for {@link IPickEvents} or {@link ITouchEvents}
+     * emitted by the{@link GVRPicker} associated with the controller.
+     * The {@link GVRPicker.GVRPickedObject} associated with the
+     * event may have an Android MotionEvent attached.
+     * You can also use a {@link GVRCursorController.ControllerEventListener}
+     * to listen for controller events. You can get the motion event
+     * with {@link GVRCursorController#getMotionEvent()}.
+     * <p>
+     * If you enable this option, Android MotionEvent and KeyEvents
+     * are routed to your application even though a controller is active.
+     * This is useful if you are using Android gesture detection or
+     * other Android APIs that rely on getting these events..
+     * <p>
+     * Do not enable this option if you are using {@link org.gearvrf.scene_objects.GVRViewSceneObject}
+     * or {@GVRWidgetPlugin}. These classes route events to the activity for you.
+     *
+     * @param flag true to send events to GVRActivity, false to not send them
+     * @see #sendingEventsToActivity
+     * @see GVRCursorController.ControllerEventListener
+     * @see #addPickEventListener(IEvents)
+     * @see ITouchEvents
+     */
+    public void sendEventsToActivity(boolean flag)
+    {
+        mSendEventsToActivity = flag;
+    }
+
+    /**
+     * Determine whether controller events are being routed to GVRActivity.
+     * @return true if events are sent to the activity, else false
+     */
+    public boolean sendingEventsToActivity() { return mSendEventsToActivity; }
 
     /**
      * Use this method to set the active state of the{@link GVRCursorController}.
@@ -239,12 +280,12 @@ public abstract class GVRCursorController {
         {
             parent.removeChildObject(cursor);
         }
-        mCursorRoot.addChildObject(cursor);
+        mCursorScale.addChildObject(cursor);
     }
 
     protected void detachCursor()
     {
-        mCursorRoot.removeChildObject(mCursor);
+        mCursorScale.removeChildObject(mCursor);
     }
 
     public void setCursorDepth(float depth)
@@ -432,7 +473,7 @@ public abstract class GVRCursorController {
             {
                 orientCursor(collision);
             }
-            mCursorRoot.getTransform().setScale(scale, scale, scale);
+            mCursorScale.getTransform().setScale(scale, scale, scale);
             while (parent != null)
             {
                 if (parent == mDragRoot)
@@ -457,15 +498,15 @@ public abstract class GVRCursorController {
             {
                 GVRTransform trans = mDragRoot.getTransform();
                 trans.setRotation(1, 0, 0, 0);
-                trans.setScale(1, 1, 1);
-                mDragRoot.getTransform().setPosition(pickDir.x * mCursorDepth, pickDir.y * mCursorDepth, pickDir.z * mCursorDepth);
+                trans.setPosition(pickDir.x * mCursorDepth, pickDir.y * mCursorDepth, pickDir.z * mCursorDepth);
+                mCursorScale.getTransform().setScale(1, 1, 1);
             }
         }
     }
 
     protected boolean orientCursor(GVRPicker.GVRPickedObject collision)
     {
-        GVRSceneObject parent = mCursorRoot.getParent();
+        GVRSceneObject parent = mCursorScale.getParent();
         float[] baryCoords = collision.getBarycentricCoords();
         boolean coordinatesCalculated = (baryCoords != null) && !Arrays.equals(baryCoords, new float[] {-1f, -1f, -1f});
 
@@ -495,7 +536,7 @@ public abstract class GVRCursorController {
             orient.mul(hitLtW);
             orient.mul(cursorWtL);
             orient.normalize();
-            GVRTransform cursorTrans = mCursorRoot.getTransform();
+            GVRTransform cursorTrans = mCursorScale.getTransform();
             cursorTrans.setRotation(orient.w, orient.x, orient.y, orient.z);
             return true;
         }

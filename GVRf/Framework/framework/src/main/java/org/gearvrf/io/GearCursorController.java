@@ -124,7 +124,6 @@ public final class GearCursorController extends GVRCursorController
     private GVRSceneObject mRayModel;
     private GVRSceneObject mPivotRoot;
     private GVRSceneObject mControllerGroup;
-    private boolean mSendEventsToActivity = false;
     private ControllerReader mControllerReader;
     private boolean mShowControllerModel = false;
 
@@ -144,9 +143,9 @@ public final class GearCursorController extends GVRCursorController
     {
         super(context, GVRControllerType.CONTROLLER);
         mPivotRoot = new GVRSceneObject(context);
-        mPivotRoot.setName("gearvr_controller_pivot");
+        mPivotRoot.setName("GearCursorController_Pivot");
         mControllerGroup = new GVRSceneObject(context);
-        mControllerGroup.setName("gearvr_controller_group");
+        mControllerGroup.setName("GearCursorController_ControllerGroup");
         mPivotRoot.addChildObject(mControllerGroup);
         mControllerGroup.addChildObject(mDragRoot);
         mControllerGroup.attachComponent(mPicker);
@@ -166,44 +165,6 @@ public final class GearCursorController extends GVRCursorController
     }
 
     public GVRSceneObject getControllerModel() { return mControllerModel; }
-
-    /**
-     * Enable or disable routing controller MotionEvents to GVRActivity.
-     * <p>
-     * By default, Android MotionEvents from the controller are generated internally
-     * but not explicitly routed to your application. You can listen for
-     * {@link IPickEvents} or {@link ITouchEvents} emitted by the
-     * {@link GVRPicker} associated with the controller. The
-     * {@link GVRPicker.GVRPickedObject} associated with the
-     * event may have an Android MotionEvent attached.
-     * You can also use a {@link GVRCursorController.ControllerEventListener}
-     * to listen for controller events. You can get the motion event
-     * with {@link GVRCursorController#getMotionEvent()}.
-     * <p>
-     * If you enable this option, your application doesn't have
-     * to specifically listen for controller events. Instead
-     * they are routed through {@link GVRActivity#dispatchTouchEvent}
-     * and can be handled with Android APIs.
-     * <p>
-     * Do not enable this option if you are using {@link org.gearvrf.scene_objects.GVRViewSceneObject}
-     * or {@GVRWidgetPlugin}. These classes route events to the activity for you.
-     *
-     * @param flag true to send events to GVRActivity, false to not send them
-     * @see #sendingEventsToActivity
-     * @see GVRCursorController.ControllerEventListener
-     * @see #addPickEventListener(IEvents)
-     * @see ITouchEvents
-     */
-    public void sendEventsToActivity(boolean flag)
-    {
-        mSendEventsToActivity = flag;
-    }
-
-    /**
-     * Determine whether controller events are being routed to GVRActivity.
-     * @return true if events are sent to the activity, else false
-     */
-    public boolean sendingEventsToActivity() { return mSendEventsToActivity; }
 
 
     /**
@@ -304,7 +265,7 @@ public final class GearCursorController extends GVRCursorController
             final GVRRenderData renderData = mRayModel.getRenderData();
             final GVRMaterial rayMaterial = renderData.getMaterial();
 
-            mRayModel.setName("gearvr_controller_ray");
+            mRayModel.setName("GearCursorController_Ray");
             rayMaterial.setLineWidth(4.0f);
             renderData.setRenderingOrder(GVRRenderData.GVRRenderingOrder.OVERLAY + 10);
             renderData.setDepthTest(false);
