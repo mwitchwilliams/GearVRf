@@ -15,6 +15,7 @@
 
 package org.gearvrf.widgetplugin;
 
+import org.gearvrf.GVRAssetLoader;
 import org.gearvrf.GVRContext;
 import org.gearvrf.GVREventListeners;
 import org.gearvrf.GVRExternalTexture;
@@ -77,9 +78,9 @@ public class GVRWidgetSceneObject extends GVRSceneObject
      *
      * @param gvrContext current {@link GVRContext}
      * @param mesh       a {@link GVRMesh} - see
-     *                   {@link GVRContext#loadMesh(org.gearvrf.GVRAndroidResource)}
+     *                   {@link GVRAssetLoader#loadMesh(org.gearvrf.GVRAndroidResource)}
      *                   and {@link GVRContext#createQuad(float, float)}
-     * @param int        Libgdx Texture ID
+     * @param texid        Libgdx Texture ID
      */
     public GVRWidgetSceneObject(GVRContext gvrContext, GVRMesh mesh, int texid)
     {
@@ -98,10 +99,10 @@ public class GVRWidgetSceneObject extends GVRSceneObject
      * Shows GVRF UI widgets (Libgdx scene2d) {@linkplain GVRWidgetSceneObject
      * scene object}
      *
-     * @param gvrContext                   current {@link GVRContext}
-     * @param GVRWidgetSceneObjectMeshInfo a {@link GVRWidgetSceneObjectMeshInfo} - see
-     * @param int                          Libgdx viewWidth
-     * @param int                          Libgdx viewHeight
+     * @param gvrContext     current {@link GVRContext}
+     * @param mesh           a {@link GVRWidgetSceneObjectMeshInfo}
+     * @param viewWidth      Libgdx viewWidth
+     * @param viewHeight     Libgdx viewHeight
      */
     public GVRWidgetSceneObject(GVRContext gvrContext, int texid, GVRWidgetSceneObjectMeshInfo mesh, int viewWidth, int viewHeight)
     {

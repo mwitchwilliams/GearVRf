@@ -637,24 +637,18 @@ public class GVRWidgetPlugin implements AndroidApplicationBase {
         private float mActionDownX = 0;
         private float mActionDownY = 0;
 
-        public void onExit(GVRSceneObject sceneObject, GVRPicker.GVRPickedObject pickInfo)
-        {
-            GVRSceneObject picked = getPickedObject();
-            if (sceneObject == picked)
-            {
-                setPickedObject(null);
-                onDrag(pickInfo);
-            }
-        }
-
         public void onTouchStart(GVRSceneObject sceneObject, GVRPicker.GVRPickedObject pickInfo)
         {
             GVRSceneObject picked = getPickedObject();
+            final MotionEvent event = pickInfo.motionEvent;
+
+            if (event == null)
+            {
+                return;
+            }
             if ((picked == null) &&
-                (pickInfo.motionEvent != null) &&
                 (sceneObject instanceof GVRWidgetSceneObject))
             {
-                final MotionEvent event = pickInfo.motionEvent;
                 final float[] texCoords = pickInfo.getTextureCoords();
 
                 mActionDownX = event.getRawX() - mWidgetView.getLeft();
@@ -664,14 +658,26 @@ public class GVRWidgetPlugin implements AndroidApplicationBase {
                 setPickedObject(sceneObject);
                 dispatchPickerInputEvent(event, mHitX, mHitY);
             }
+            else
+            {
+                onMotionOutside(pickInfo.picker, event);
+            }
         }
 
         public void onInside(GVRSceneObject sceneObject, GVRPicker.GVRPickedObject pickInfo)
         {
             GVRSceneObject picked = getPickedObject();
-            if ((sceneObject == picked) && pickInfo.isTouched())
+            if (!pickInfo.isTouched())
+            {
+                return;
+            }
+            if (sceneObject == picked)
             {
                 onDrag(pickInfo);
+            }
+            else if (pickInfo.motionEvent != null)
+            {
+                onMotionOutside(pickInfo.picker, pickInfo.motionEvent);
             }
         }
 
@@ -682,6 +688,10 @@ public class GVRWidgetPlugin implements AndroidApplicationBase {
             {
                 setPickedObject(null);
                 onDrag(pickInfo);
+            }
+            else if (pickInfo.motionEvent != null)
+            {
+                onMotionOutside(pickInfo.picker, pickInfo.motionEvent);
             }
         }
 
@@ -721,7 +731,18 @@ public class GVRWidgetPlugin implements AndroidApplicationBase {
 
         public void onMotionOutside(GVRPicker picker, MotionEvent e)
         {
-            dispatchPickerInputEvent(e, e.getX(), e.getY());
+            dispatchPickerInputEvent(e);
+        }
+
+        public void dispatchPickerInputEvent(final MotionEvent e)
+        {
+            runOnUiThread(new Runnable()
+            {
+                public void run()
+                {
+                    mActivity.onTouchEvent(e);
+                }
+            });
         }
 
         public void dispatchPickerInputEvent(final MotionEvent e, final float x, final float y)
@@ -736,10 +757,7 @@ public class GVRWidgetPlugin implements AndroidApplicationBase {
                     {
                         enew.setLocation(x, y);
                     }
-                    if (!mInput.onTouch(mWidgetView, enew))
-                    {
-                        mActivity.onTouchEvent(enew);
-                    }
+                    mInput.onTouch(mWidgetView, enew);
                     enew.recycle();
                 }
             });
