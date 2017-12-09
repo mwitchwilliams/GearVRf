@@ -278,6 +278,8 @@ public class X3Dobject {
             this.activityContext = gvrContext.getContext();
             this.root = root;
 
+            gvrContext.getScriptManager().setJavaScriptFromX3D();
+
             // Camera rig setup code based on GVRScene::init()
             GVRCamera leftCamera = new GVRPerspectiveCamera(gvrContext);
             leftCamera.setRenderMask(GVRRenderMaskBit.Left);
@@ -3475,7 +3477,6 @@ public class X3Dobject {
                 catch (Exception exception) {
                     Log.e(TAG, "Error initialing X3D <ROUTE> or <Script> node related to Animation or Interactivity.");
                 }
-
             } // end </scene>
             else if (qName.equalsIgnoreCase("x3d")) {
                 ;

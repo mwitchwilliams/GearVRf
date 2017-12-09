@@ -25,6 +25,7 @@ import org.gearvrf.GVRResourceVolume;
 import org.gearvrf.GVRScene;
 import org.gearvrf.GVRSceneObject;
 import org.gearvrf.IScriptEvents;
+import org.gearvrf.script.javascript.RhinoScriptEngineFactory;
 
 import org.gearvrf.script.javascript.GVRJavascriptV8File;
 import org.gearvrf.utility.Log;
@@ -64,6 +65,9 @@ public class GVRScriptManager {
     public static final String TARGET_GVRACTIVITY = "@GVRActivity";
 
     private GVRJavascriptV8File gvrJavascriptV8File = null;
+    // set this if the JavaScipt file is from X3D, meaning it will
+    // use the v8 engine instead.
+    private boolean jsFromX3D = false;
 
     interface TargetResolver {
         IScriptable getTarget(GVRContext gvrContext, String name);
@@ -100,6 +104,7 @@ public class GVRScriptManager {
      * @param gvrContext
      *     The GVR Context.
      */
+    //public GVRScriptManager(GVRContext gvrContext) {
     public GVRScriptManager(GVRContext gvrContext) {
         mGvrContext = gvrContext;
         mGlobalVariables = new TreeMap<String, Object>();
@@ -112,7 +117,23 @@ public class GVRScriptManager {
         initializeEngines();
     }
 
+
     private void initializeEngines() {
+        mEngines = new TreeMap<String, ScriptEngine>();
+
+        // Add languages
+        //mEngines.put(LANG_LUA, new LuaScriptEngineFactory().getScriptEngine());
+        mEngines.put(LANG_JAVASCRIPT, new RhinoScriptEngineFactory().getScriptEngine());
+
+        // Add variables to engines
+        refreshGlobalBindings();
+    }
+
+    public void setJavaScriptFromX3D() {
+        jsFromX3D = true;
+        initializeEnginesX3D();
+    }
+    private void initializeEnginesX3D() {
         mEngines = new TreeMap<String, ScriptEngine>();
 
         // Add languages, currently only JavaScript
@@ -129,11 +150,36 @@ public class GVRScriptManager {
 
     private void refreshGlobalBindings() {
         for (ScriptEngine se : mEngines.values()) {
-            addGlobalBindings(se);
+            if (!jsFromX3D) addGlobalBindings(se);
+            else addGlobalBindingsX3D(se);
         }
     }
 
     protected void addGlobalBindings(final ScriptEngine engine) {
+        Bindings bindings = engine.getBindings(ScriptContext.GLOBAL_SCOPE);
+        if (bindings == null) {
+            bindings = engine.createBindings();
+            engine.setBindings(bindings, ScriptContext.GLOBAL_SCOPE);
+        }
+
+        synchronized (mGlobalVariables) {
+            for (Map.Entry<String, Object> ent : mGlobalVariables.entrySet()) {
+                bindings.put(ent.getKey(), ent.getValue());
+            }
+            mBindingsClosers.add(new Runnable() {
+                @Override
+                public void run() {
+                    final Bindings bindings = engine.getBindings(ScriptContext.GLOBAL_SCOPE);
+                    if (null != bindings) {
+                        bindings.clear();
+                    }
+                    engine.setBindings(null, ScriptContext.GLOBAL_SCOPE);
+                }
+            });
+        }
+    }
+
+    protected void addGlobalBindingsX3D(final ScriptEngine engine) {
         mGvrContext.runOnGlThread(new Runnable() {
             @Override
             public void run() {
@@ -177,29 +223,37 @@ public class GVRScriptManager {
      * @param value The variable value.
      */
     public void addVariable(String varName, Object value) {
-        final String varNameFinal = varName;
-        final Object valueFinal = value;
-        mGvrContext.runOnGlThread(new Runnable() {
-            @Override
-            public void run() {
-                ScriptEngine engine = getEngine(LANG_JAVASCRIPT);
-                // need to add the package where this variable is being added from
-                int lastPeriod = valueFinal.toString().lastIndexOf('.');
-                String importStatement = valueFinal.toString().substring(0, lastPeriod);
-                importStatement = "importPackage(" + importStatement + ")\n";
-                gvrJavascriptV8File.setExternalImportStatement(importStatement);
-
-                synchronized (mGlobalVariables) {
-                    mGlobalVariables.put(varNameFinal, valueFinal);
-                }
-                refreshGlobalBindings();
-
-                //Set the input values and bindings for the GVRJavaScriptV8File
-                Map<String, Object> inputValue =new HashMap<String, Object>();
-                inputValue.put(varNameFinal, valueFinal);
-                gvrJavascriptV8File.setInputValues( inputValue );
+        if (!jsFromX3D) {
+            synchronized (mGlobalVariables) {
+                mGlobalVariables.put(varName, value);
             }
-        });
+            refreshGlobalBindings();
+        }
+        else {
+            final String varNameFinal = varName;
+            final Object valueFinal = value;
+            mGvrContext.runOnGlThread(new Runnable() {
+                @Override
+                public void run() {
+                    ScriptEngine engine = getEngine(LANG_JAVASCRIPT);
+                    // need to add the package where this variable is being added from
+                    int lastPeriod = valueFinal.toString().lastIndexOf('.');
+                    String importStatement = valueFinal.toString().substring(0, lastPeriod);
+                    importStatement = "importPackage(" + importStatement + ")\n";
+                    gvrJavascriptV8File.setExternalImportStatement(importStatement);
+
+                    synchronized (mGlobalVariables) {
+                        mGlobalVariables.put(varNameFinal, valueFinal);
+                    }
+                    refreshGlobalBindings();
+
+                    //Set the input values and bindings for the GVRJavaScriptV8File
+                    Map<String, Object> inputValue = new HashMap<String, Object>();
+                    inputValue.put(varNameFinal, valueFinal);
+                    gvrJavascriptV8File.setInputValues(inputValue);
+                }
+            });
+        }
     }
 
     /**
@@ -243,7 +297,10 @@ public class GVRScriptManager {
      * @throws GVRScriptException if script processing error occurs.
      */
     public GVRScriptFile loadScript(GVRAndroidResource resource, String language) throws IOException, GVRScriptException {
-        //final Object[] getV8Engine = new Object[0];
+        if (getEngine(language) == null) {
+            mGvrContext.logError("Script language " + language + " unsupported", this);
+            throw new GVRScriptException(String.format("The language is unknown: %s", language));
+        }
 
         GVRScriptFile script = null;
         try (InputStream inputStream = resource.getStream()) {
