@@ -513,18 +513,6 @@ public class GVRWidgetPlugin implements AndroidApplicationBase {
         return touchHandler;
     }
 
-    public GVRSceneObject getPickedObject()
-    {
-        return mPicked;
-    }
-
-    void setPickedObject(GVRSceneObject obj)
-    {
-        mPicked = obj;
-    }
-
-    private GVRSceneObject mPicked = null;
-
     public void initializeWidget(GVRWidget widget) {
         mWidget = widget;
 
@@ -636,18 +624,35 @@ public class GVRWidgetPlugin implements AndroidApplicationBase {
         private float mHitY = 0;
         private float mActionDownX = 0;
         private float mActionDownY = 0;
+        private GVRSceneObject mPicked = null;
+        private GVRSceneObject mTouched = null;
+
+        public void onEnter(GVRSceneObject sceneObject, GVRPicker.GVRPickedObject pickInfo)
+        {
+            if (sceneObject instanceof GVRWidgetSceneObject)
+            {
+                mPicked = sceneObject;
+            }
+        }
+
+        public void onExit(GVRSceneObject sceneObject, GVRPicker.GVRPickedObject pickInfo)
+        {
+            if (sceneObject == mPicked)
+            {
+                mPicked = null;
+            }
+        }
 
         public void onTouchStart(GVRSceneObject sceneObject, GVRPicker.GVRPickedObject pickInfo)
         {
-            GVRSceneObject picked = getPickedObject();
             final MotionEvent event = pickInfo.motionEvent;
 
             if (event == null)
             {
                 return;
             }
-            if ((picked == null) &&
-                (sceneObject instanceof GVRWidgetSceneObject))
+            Log.d("TOUCH", "onTouchStart");
+            if (sceneObject == mPicked)
             {
                 final float[] texCoords = pickInfo.getTextureCoords();
 
@@ -655,7 +660,7 @@ public class GVRWidgetPlugin implements AndroidApplicationBase {
                 mActionDownY = event.getRawY() - mWidgetView.getTop();
                 mHitX = texCoords[0] * getWidth();
                 mHitY = texCoords[1] * getHeight();
-                setPickedObject(sceneObject);
+                mTouched = sceneObject;
                 dispatchPickerInputEvent(event, mHitX, mHitY);
             }
             else
@@ -666,16 +671,15 @@ public class GVRWidgetPlugin implements AndroidApplicationBase {
 
         public void onInside(GVRSceneObject sceneObject, GVRPicker.GVRPickedObject pickInfo)
         {
-            GVRSceneObject picked = getPickedObject();
             if (!pickInfo.isTouched())
             {
                 return;
             }
-            if (sceneObject == picked)
+            if (sceneObject == mTouched)
             {
                 onDrag(pickInfo);
             }
-            else if (pickInfo.motionEvent != null)
+            else if ((sceneObject != mPicked) && (pickInfo.motionEvent != null))
             {
                 onMotionOutside(pickInfo.picker, pickInfo.motionEvent);
             }
@@ -683,11 +687,11 @@ public class GVRWidgetPlugin implements AndroidApplicationBase {
 
         public void onTouchEnd(GVRSceneObject sceneObject, GVRPicker.GVRPickedObject pickInfo)
         {
-            GVRSceneObject picked = getPickedObject();
-            if (sceneObject == picked)
+            Log.d("TOUCH", "onTouchEnd");
+            if (sceneObject == mTouched)
             {
-                setPickedObject(null);
                 onDrag(pickInfo);
+                mTouched = null;
             }
             else if (pickInfo.motionEvent != null)
             {
@@ -740,6 +744,9 @@ public class GVRWidgetPlugin implements AndroidApplicationBase {
             {
                 public void run()
                 {
+                    Log.d("TOUCH", "dispatchPickerActivity action = %d %f, %f",
+                          e.getAction(), e.getX(), e.getY());
+
                     mActivity.onTouchEvent(e);
                 }
             });
@@ -757,6 +764,8 @@ public class GVRWidgetPlugin implements AndroidApplicationBase {
                     {
                         enew.setLocation(x, y);
                     }
+                    Log.d("TOUCH", "dispatchPicker action = %d %f, %f",
+                          enew.getAction(), enew.getX(), enew.getY());
                     mInput.onTouch(mWidgetView, enew);
                     enew.recycle();
                 }
