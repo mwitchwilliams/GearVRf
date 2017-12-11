@@ -276,6 +276,10 @@ public class X3Dobject {
             this.activityContext = gvrContext.getContext();
             this.root = root;
 
+            // Inform GVRScriptMgr that the JavaScript code will
+            // be cming from X3D scripts, so use v8 engine at this time.
+            gvrContext.getScriptManager().setJavaScriptFromX3D();
+
             // Camera rig setup code based on GVRScene::init()
             GVRCamera leftCamera = new GVRPerspectiveCamera(gvrContext);
             leftCamera.setRenderMask(GVRRenderMaskBit.Left);
