@@ -63,8 +63,7 @@ abstract class GVRViewManager extends GVRContext {
         VrAppSettings appSettings = activity.getAppSettings();
         mScriptManager = new GVRScriptManager(this);
         mEventManager = new GVREventManager(this);
-        mInputManager = new GVRInputManager(this, appSettings.useGazeCursorController(),
-                appSettings.useAndroidWearTouchpad());
+        mInputManager = new GVRInputManager(this, appSettings.getCursorControllerTypes());
         mInputManager.scanDevices();
     }
 
