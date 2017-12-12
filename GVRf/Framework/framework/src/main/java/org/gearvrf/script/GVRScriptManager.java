@@ -232,10 +232,15 @@ public class GVRScriptManager {
                 public void run() {
                     ScriptEngine engine = getEngine(LANG_JAVASCRIPT);
                     // need to add the package where this variable is being added from
+                    // for example, if 'myFile.java' is in package 'org.gearvrf.myapp',
+                    // then valueFinal = org.gearvrf.myapp.myFile
+                    // we need to import the package 'org.gearvrf.myapp'
                     int lastPeriod = valueFinal.toString().lastIndexOf('.');
-                    String importStatement = valueFinal.toString().substring(0, lastPeriod);
-                    importStatement = "importPackage(" + importStatement + ")\n";
-                    gvrJavascriptV8File.setExternalImportStatement(importStatement);
+                    if (lastPeriod > 0) {
+                        String importStatement = valueFinal.toString().substring(0, lastPeriod);
+                        importStatement = "importPackage(" + importStatement + ")\n";
+                        gvrJavascriptV8File.setExternalImportStatement(importStatement);
+                    }
 
                     synchronized (mGlobalVariables) {
                         mGlobalVariables.put(varNameFinal, valueFinal);

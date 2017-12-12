@@ -46,6 +46,14 @@ public class GVRJavascriptV8File {
 
     public GVRJavascriptV8File(GVRContext gvrContext) {
         mGvrContext = gvrContext;
+
+        GVRContext.addResetOnRestartHandler(new Runnable() {
+            @Override
+            public void run() {
+                mEngine = null;
+            }
+        });
+
         if ( mEngine == null ) {
             mEngine = new V8ScriptEngineFactory().getScriptEngine();
         }
