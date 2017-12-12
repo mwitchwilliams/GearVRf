@@ -1067,6 +1067,7 @@ public final class CursorManager {
             {
                 unusedIoDevices.add(addedIoDevice);
             }
+            addedIoDevice.getGvrCursorController().setScene(CursorManager.this.scene);
             assignIoDevicesToCursors(true);
             if (unusedIoDevices.contains(addedIoDevice))
             {
