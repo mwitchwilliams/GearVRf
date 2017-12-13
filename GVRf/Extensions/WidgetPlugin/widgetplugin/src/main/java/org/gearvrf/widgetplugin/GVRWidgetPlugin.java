@@ -44,9 +44,14 @@ import org.gearvrf.GVRContext;
 import org.gearvrf.GVREventListeners;
 import org.gearvrf.GVRMain;
 import org.gearvrf.GVRPicker;
+import org.gearvrf.GVRSceneObject;
 import org.gearvrf.IActivityEvents;
 import org.gearvrf.IScriptEvents;
+import org.gearvrf.ITouchEvents;
+import org.gearvrf.io.GVRControllerType;
+import org.gearvrf.scene_objects.GVRViewSceneObject;
 import org.gearvrf.utility.Threads;
+import org.gearvrf.utility.Log;
 
 import java.lang.reflect.Method;
 import java.util.concurrent.CountDownLatch;
@@ -65,8 +70,6 @@ public class GVRWidgetPlugin implements AndroidApplicationBase {
         GdxNativesLoader.load();
     }
     protected GLSurfaceView mWidgetView;
-
-    private GVRWidgetInputDispatcher mInputDispatcher = new GVRWidgetInputDispatcher();
 
     protected AndroidGraphics mGraphics;
 
@@ -93,6 +96,7 @@ public class GVRWidgetPlugin implements AndroidApplicationBase {
     private EGLContext mEGLContext;
     private final CountDownLatch mEglContextLatch = new CountDownLatch(1);
     private GVRActivity mActivity;
+    private AndroidInput mInput = null;
 
     private IActivityEvents mActivityEventsListener = new GVREventListeners.ActivityEvents() {
         @Override
@@ -109,7 +113,7 @@ public class GVRWidgetPlugin implements AndroidApplicationBase {
                 // will be ignored at this point...
                 mGraphics.pause();
 
-                mInputDispatcher.getInput().onPause();
+                mInput.onPause();
 
                 if (mActivity.isFinishing()) {
                     mGraphics.clearManagedCaches();
@@ -148,7 +152,10 @@ public class GVRWidgetPlugin implements AndroidApplicationBase {
             boolean keyboardAvailable = false;
             if (config.hardKeyboardHidden == Configuration.HARDKEYBOARDHIDDEN_NO)
                 keyboardAvailable = true;
-            mInputDispatcher.getInput().keyboardAvailable = keyboardAvailable;
+            if (mInput != null)
+            {
+                mInput.keyboardAvailable = keyboardAvailable;
+            }
         }
 
         @Override
@@ -210,9 +217,9 @@ public class GVRWidgetPlugin implements AndroidApplicationBase {
                 config,
                 config.resolutionStrategy == null ? new FillResolutionStrategy()
                         : config.resolutionStrategy, sharedcontext);
+        mInput = AndroidInputFactory.newAndroidInput(this,
+                mActivity, mGraphics.getView(), config);
 
-        mInputDispatcher.setInput(AndroidInputFactory.newAndroidInput(this,
-                mActivity, mGraphics.getView(), config));        
         mAudio = new AndroidAudio(mActivity, config);
         mActivity.getFilesDir(); // workaround for Android bug #10515463
         mFiles = new AndroidFiles(mActivity.getAssets(), mActivity.getFilesDir()
@@ -364,7 +371,7 @@ public class GVRWidgetPlugin implements AndroidApplicationBase {
 
     @Override
     public AndroidInput getInput() {
-        return mInputDispatcher.getInput();
+        return mInput;
     }
 
     @Override
@@ -501,8 +508,9 @@ public class GVRWidgetPlugin implements AndroidApplicationBase {
         mMain = main;
     }
 
-    public void setPickedObject(GVRPicker.GVRPickedObject pickInfo) {
-        mInputDispatcher.setPickedObject(pickInfo);
+    public ITouchEvents getTouchHandler()
+    {
+        return touchHandler;
     }
 
     public void initializeWidget(GVRWidget widget) {
@@ -541,7 +549,7 @@ public class GVRWidgetPlugin implements AndroidApplicationBase {
         Gdx.net = this.getNet();
         mGraphics.setFramebuffer(mViewWidth, mViewHeight);
 
-        mInputDispatcher.getInput().onResume();
+        mInput.onResume();
         if (mGraphics != null) {
             mGraphics.onResumeGLSurfaceView();
         }
@@ -607,8 +615,161 @@ public class GVRWidgetPlugin implements AndroidApplicationBase {
     }
 
     public boolean dispatchTouchEvent(MotionEvent event) {
-        return mInputDispatcher.dispatchEvent(event, mWidgetView) ? true :
-                mActivity.onTouchEvent(event);
-
+        return mActivity.getGVRContext().getInputManager().dispatchMotionEvent(event);
     }
+
+    private ITouchEvents touchHandler = new GVREventListeners.TouchEvents()
+    {
+        private float mHitX = 0;
+        private float mHitY = 0;
+        private float mActionDownX = 0;
+        private float mActionDownY = 0;
+        private GVRSceneObject mPicked = null;
+        private GVRSceneObject mTouched = null;
+
+        public void onEnter(GVRSceneObject sceneObject, GVRPicker.GVRPickedObject pickInfo)
+        {
+            if (sceneObject instanceof GVRWidgetSceneObject)
+            {
+                mPicked = sceneObject;
+            }
+        }
+
+        public void onExit(GVRSceneObject sceneObject, GVRPicker.GVRPickedObject pickInfo)
+        {
+            if (sceneObject == mPicked)
+            {
+                mPicked = null;
+            }
+        }
+
+        public void onTouchStart(GVRSceneObject sceneObject, GVRPicker.GVRPickedObject pickInfo)
+        {
+            final MotionEvent event = pickInfo.motionEvent;
+
+            if (event == null)
+            {
+                return;
+            }
+            Log.d("TOUCH", "onTouchStart");
+            if (sceneObject == mPicked)
+            {
+                final float[] texCoords = pickInfo.getTextureCoords();
+
+                mActionDownX = event.getRawX() - mWidgetView.getLeft();
+                mActionDownY = event.getRawY() - mWidgetView.getTop();
+                mHitX = texCoords[0] * getWidth();
+                mHitY = texCoords[1] * getHeight();
+                mTouched = sceneObject;
+                dispatchPickerInputEvent(event, mHitX, mHitY);
+            }
+            else
+            {
+                onMotionOutside(pickInfo.picker, event);
+            }
+        }
+
+        public void onInside(GVRSceneObject sceneObject, GVRPicker.GVRPickedObject pickInfo)
+        {
+            if (!pickInfo.isTouched())
+            {
+                return;
+            }
+            if (sceneObject == mTouched)
+            {
+                onDrag(pickInfo);
+            }
+            else if ((sceneObject != mPicked) && (pickInfo.motionEvent != null))
+            {
+                onMotionOutside(pickInfo.picker, pickInfo.motionEvent);
+            }
+        }
+
+        public void onTouchEnd(GVRSceneObject sceneObject, GVRPicker.GVRPickedObject pickInfo)
+        {
+            Log.d("TOUCH", "onTouchEnd");
+            if (sceneObject == mTouched)
+            {
+                onDrag(pickInfo);
+                mTouched = null;
+            }
+            else if (pickInfo.motionEvent != null)
+            {
+                onMotionOutside(pickInfo.picker, pickInfo.motionEvent);
+            }
+        }
+
+        public void onDrag(GVRPicker.GVRPickedObject pickInfo)
+        {
+            if (pickInfo.motionEvent != null)
+            {
+                final MotionEvent event = pickInfo.motionEvent;
+                final float[] texCoords = pickInfo.getTextureCoords();
+                float x = event.getRawX() - mWidgetView.getLeft();
+                float y = event.getRawY() - mWidgetView.getTop();
+
+                /*
+                 * When we get events from the Gear controller we replace the location
+                 * with the current hit point since the pointer coordinates in
+                 * these events are all zero.
+                 */
+                if ((pickInfo.getPicker().getController().getControllerType() == GVRControllerType.CONTROLLER) &&
+                        (event.getButtonState() == MotionEvent.BUTTON_SECONDARY))
+                {
+                    x = texCoords[0] * getWidth();
+                    y = texCoords[1] * getHeight();
+                }
+                /*
+                 * The pointer values in other events are not with respect to the view.
+                 * Here we make the event location relative to the hit point where
+                 * the button went down.
+                 */
+                else
+                {
+                    x += mHitX - mActionDownX;
+                    y += mHitY - mActionDownY;
+                }
+                dispatchPickerInputEvent(event, x, y);
+            }
+        }
+
+        public void onMotionOutside(GVRPicker picker, MotionEvent e)
+        {
+            dispatchPickerInputEvent(e);
+        }
+
+        public void dispatchPickerInputEvent(final MotionEvent e)
+        {
+            runOnUiThread(new Runnable()
+            {
+                public void run()
+                {
+                    Log.d("TOUCH", "dispatchPickerActivity action = %d %f, %f",
+                          e.getAction(), e.getX(), e.getY());
+
+                    mActivity.onTouchEvent(e);
+                }
+            });
+        }
+
+        public void dispatchPickerInputEvent(final MotionEvent e, final float x, final float y)
+        {
+            runOnUiThread(new Runnable()
+            {
+                public void run()
+                {
+                    MotionEvent enew = MotionEvent.obtain(e);
+
+                    if (e.getPointerCount() > 0)
+                    {
+                        enew.setLocation(x, y);
+                    }
+                    Log.d("TOUCH", "dispatchPicker action = %d %f, %f",
+                          enew.getAction(), enew.getX(), enew.getY());
+                    mInput.onTouch(mWidgetView, enew);
+                    enew.recycle();
+                }
+            });
+        }
+    };
 }
