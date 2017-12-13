@@ -248,9 +248,9 @@ public final class GearCursorController extends GVRCursorController
         }
         else if (enable && !flag)
         {
+            enable = false;
             if (initialized)
             {
-                enable = false;
                 //set the disabled flag on the handler thread
                 thread.setEnabled(false);
             }

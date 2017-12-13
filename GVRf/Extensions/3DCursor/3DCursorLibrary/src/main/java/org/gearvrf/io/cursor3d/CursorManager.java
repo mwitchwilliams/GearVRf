@@ -479,8 +479,11 @@ public final class CursorManager {
     public void enableSettingsCursor(Cursor cursor) {
         menuCursor = cursor;
         IoDevice device = cursor.getIoDevice();
-        settingsIoDeviceFarDepth = device.getFarDepth();
-        settingsIoDeviceNearDepth = device.getNearDepth();
+        if (device != null)
+        {
+            settingsIoDeviceFarDepth = device.getFarDepth();
+            settingsIoDeviceNearDepth = device.getNearDepth();
+        }
         removeCursorFromScene(cursor);
         settingsCursor.transferIoDevice(cursor);
         addCursorToScene(settingsCursor);

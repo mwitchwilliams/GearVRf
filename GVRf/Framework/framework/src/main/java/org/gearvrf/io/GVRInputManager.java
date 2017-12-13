@@ -261,6 +261,7 @@ public class GVRInputManager implements IEventReceiver
      *                   the framework.
      */
     public void removeCursorController(GVRCursorController controller) {
+        controller.setEnable(false);
         controllers.remove(controller);
         synchronized (listeners) {
             for (CursorControllerListener listener : listeners) {
