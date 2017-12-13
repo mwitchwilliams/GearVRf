@@ -82,9 +82,7 @@ final class GVRMouseDeviceManager {
                 vendorId, int productId, GVRMouseDeviceManager deviceManager) {
             super(context, controllerType, name, vendorId, productId);
             this.deviceManager = deviceManager;
-            enable = isEnabled();
-            mConnected = enable;
-            mPicker.setEnable(false);
+            mConnected = true;
         }
 
         @Override

@@ -127,8 +127,6 @@ class GVRGamepadDeviceManager {
             tempTrans = new GVRSceneObject(context).getTransform();
             tempTrans.setPosition(0.0f, 0.0f, -1.0f);
             this.deviceManager = deviceManager;
-            enable = isEnabled();
-            mPicker.setEnable(false);
         }
 
         @Override

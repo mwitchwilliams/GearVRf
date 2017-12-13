@@ -60,7 +60,6 @@ final public class GVRGazeCursorController extends GVRCursorController
         this.context = context;
         thread = new EventHandlerThread();
         mConnected = true;
-        mPicker.setEnable(isEnabled());
     }
 
     /*
