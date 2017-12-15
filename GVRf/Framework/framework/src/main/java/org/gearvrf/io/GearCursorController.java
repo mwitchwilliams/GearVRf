@@ -150,7 +150,6 @@ public final class GearCursorController extends GVRCursorController
         mControllerGroup.addChildObject(mDragRoot);
         mControllerGroup.attachComponent(mPicker);
         thread = new EventHandlerThread();
-        enable = isEnabled();
         position.set(0.0f, 0.0f, -1.0f);
         MotionEvent.PointerProperties properties = new MotionEvent.PointerProperties();
         properties.id = 0;
@@ -240,17 +239,18 @@ public final class GearCursorController extends GVRCursorController
         mControllerGroup.setEnable(flag);
         if (!enable && flag)
         {
+            //set the enabled flag on the handler thread
+            enable = true;
             if (initialized)
             {
-                //set the enabled flag on the handler thread
-                enable = true;
                 thread.setEnabled(true);
             }
-        } else if (enable && !flag)
+        }
+        else if (enable && !flag)
         {
+            enable = false;
             if (initialized)
             {
-                enable = false;
                 //set the disabled flag on the handler thread
                 thread.setEnabled(false);
             }
@@ -315,7 +315,12 @@ public final class GearCursorController extends GVRCursorController
 
     public void onDrawFrame()
     {
+        boolean wasConnected = mConnected;
         mConnected = (mControllerReader != null) && mControllerReader.isConnected();
+        if (!wasConnected && mConnected)
+        {
+            context.getInputManager().addCursorController(GearCursorController.this);
+        }
         if (mConnected && isEnabled())
         {
             if (!initialized)
@@ -327,7 +332,6 @@ public final class GearCursorController extends GVRCursorController
                 }
                 thread.initialize();
                 initialized = true;
-                context.getInputManager().addCursorController(GearCursorController.this);
             }
             ControllerEvent event = ControllerEvent.obtain();
 

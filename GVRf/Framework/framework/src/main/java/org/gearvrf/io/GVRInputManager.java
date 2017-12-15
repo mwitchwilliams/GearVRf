@@ -38,6 +38,7 @@ import org.gearvrf.utility.Log;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 /**
  * An instance of this class is obtained using the
@@ -62,11 +63,11 @@ public class GVRInputManager implements IEventReceiver
     private final InputManager inputManager;
     private final GVRContext context;
     private GVRAndroidWearTouchpad androidWearTouchpad;
-    private boolean useGazeCursorController;
     private GVRGamepadDeviceManager gamepadDeviceManager;
     private GVRMouseDeviceManager mouseDeviceManager;
     private GearCursorController gearCursorController;
     private GVREventReceiver mListeners;
+    private ArrayList<GVRControllerType> mEnabledControllerTypes;
 
     // maintain one instance of the gazeCursorController
     private GVRGazeCursorController gazeCursorController;
@@ -101,14 +102,12 @@ public class GVRInputManager implements IEventReceiver
     private List<CursorControllerListener> listeners;
     private List<GVRCursorController> controllers;
 
-    public GVRInputManager(GVRContext context, boolean useGazeCursorController,
-                              boolean useAndroidWearTouchpad)
+    public GVRInputManager(GVRContext context, ArrayList<GVRControllerType> enabledTypes)
     {
         Context androidContext = context.getContext();
-        inputManager = (InputManager) androidContext
-                .getSystemService(Context.INPUT_SERVICE);
+        inputManager = (InputManager) androidContext.getSystemService(Context.INPUT_SERVICE);
+        mEnabledControllerTypes = enabledTypes;
         this.context = context;
-        this.useGazeCursorController = useGazeCursorController;
         mListeners = new GVREventReceiver(this);
         inputManager.registerInputDeviceListener(inputDeviceListener, null);
         controllerIds = new SparseArray<GVRCursorController>();
@@ -116,7 +115,10 @@ public class GVRInputManager implements IEventReceiver
         mouseDeviceManager = new GVRMouseDeviceManager(context);
         gamepadDeviceManager = new GVRGamepadDeviceManager();
         gearCursorController = new GearCursorController(context);
-        if(useAndroidWearTouchpad && checkIfWearTouchPadServiceInstalled(context)) {
+        if ((enabledTypes != null) &&
+            enabledTypes.contains(GVRControllerType.WEARTOUCHPAD) &&
+            checkIfWearTouchPadServiceInstalled(context))
+        {
             androidWearTouchpad = new GVRAndroidWearTouchpad(context);
         }
         controllers = new ArrayList<GVRCursorController>();
@@ -151,7 +153,8 @@ public class GVRInputManager implements IEventReceiver
     }
 
     /**
-     * Select an input controller based on a prioritized list of controller types.
+     * Select an input controller based on the list of controller types in gvr.xml.
+     * The list is in priority order with the highest priority controller last.
      * <p>
      * The "onCursorControllerSelected" event is emitted when
      * a cursor controller is chosen. The controller chosen is
@@ -160,17 +163,19 @@ public class GVRInputManager implements IEventReceiver
      * If a higher priority controller is connected afterwards,
      * the input manager switches to using the new controller
      * and "onCursorControllerSelected" is emitted again.
-     * @param desiredTypes list of accepable controller types in prioritized
-     *                     order, highest priority is last in the list.
      * @param listener     listens for onCursorControllerSelected events.
      * @see CursorControllerListener
      * @see ICursorControllerSelectListener
      * @see org.gearvrf.io.GVRInputManager.ICursorControllerSelectListener
      */
-    public void selectController(GVRControllerType[] desiredTypes, ICursorControllerSelectListener listener)
+    public void selectController(ICursorControllerSelectListener listener)
     {
+        if (mEnabledControllerTypes == null)
+        {
+            throw new UnsupportedOperationException("Cannot select controllers if none are enabled in gvr.xml settings");
+        }
         GVRInputManager.SingleControllerSelector
-                selector = new GVRInputManager.SingleControllerSelector(context, desiredTypes);
+                selector = new GVRInputManager.SingleControllerSelector(context, mEnabledControllerTypes);
         addCursorControllerListener(selector);
         getEventReceiver().addListener(listener);
         scanControllers();
@@ -192,30 +197,17 @@ public class GVRInputManager implements IEventReceiver
      * and can be handled by attaching a script which contains a
      * function called "onCursorControllerSelected".
      * </p>
-     * @param typeNames list of accepable controller type names in prioritized
-     *                     order, highest priority is last in the list.
      * @see ICursorControllerSelectListener
      * @see org.gearvrf.io.GVRInputManager.ICursorControllerSelectListener
      */
-    public void selectController(String[] typeNames)
+    public void selectController()
     {
-        GVRControllerType[] desiredTypes = new GVRControllerType[typeNames.length];
-
-        for (String name : typeNames)
+        if (mEnabledControllerTypes == null)
         {
-            String typeName = name.toUpperCase();
-            int i = 0;
-            for (GVRControllerType type : GVRControllerType.values())
-            {
-                if (type.name().equals(typeName))
-                {
-                    desiredTypes[i] = type;
-                    break;
-                }
-            }
+            throw new UnsupportedOperationException("Cannot select controllers if none are enabled in gvr.xml settings");
         }
         GVRInputManager.SingleControllerSelector
-                selector = new GVRInputManager.SingleControllerSelector(context, desiredTypes);
+                selector = new GVRInputManager.SingleControllerSelector(context, mEnabledControllerTypes);
         addCursorControllerListener(selector);
         scanControllers();
     }
@@ -269,6 +261,7 @@ public class GVRInputManager implements IEventReceiver
      *                   the framework.
      */
     public void removeCursorController(GVRCursorController controller) {
+        controller.setEnable(false);
         controllers.remove(controller);
         synchronized (listeners) {
             for (CursorControllerListener listener : listeners) {
@@ -462,7 +455,12 @@ public class GVRInputManager implements IEventReceiver
         InputDevice device = inputManager.getInputDevice(deviceId);
         GVRControllerType controllerType = getGVRInputDeviceType(device);
 
-        if (controllerType == GVRControllerType.GAZE && (false == useGazeCursorController)) {
+        if (mEnabledControllerTypes == null)
+        {
+            return null;
+        }
+        if (controllerType == GVRControllerType.GAZE && !mEnabledControllerTypes.contains(GVRControllerType.GAZE))
+        {
             return null;
         }
 
@@ -487,6 +485,10 @@ public class GVRInputManager implements IEventReceiver
             GVRCursorController controller = cache.get(key);
             if (controller == null)
             {
+                if ((mEnabledControllerTypes == null) || !mEnabledControllerTypes.contains(controllerType))
+                {
+                    return null;
+                }
                 if (controllerType == GVRControllerType.MOUSE)
                 {
                     controller = mouseDeviceManager.getCursorController(context, device.getName(), device.getVendorId(), device.getProductId());
@@ -615,13 +617,12 @@ public class GVRInputManager implements IEventReceiver
 
     protected static class SingleControllerSelector implements CursorControllerListener
     {
-        private GVRControllerType[] mControllerTypes;
+        private ArrayList<GVRControllerType> mControllerTypes;
         private int mCurrentControllerPriority = -1;
         private GVRCursorController mCursorController = null;
         private GVRSceneObject mCursor = null;
-        private GVRCursorController.CursorControl mCursorControl = GVRCursorController.CursorControl.CURSOR_CONSTANT_DEPTH;
 
-        public SingleControllerSelector(GVRContext ctx, GVRControllerType[] desiredTypes)
+        public SingleControllerSelector(GVRContext ctx, ArrayList<GVRControllerType> desiredTypes)
         {
             mControllerTypes = desiredTypes;
             mCursor = makeDefaultCursor(ctx);
@@ -686,13 +687,13 @@ public class GVRInputManager implements IEventReceiver
                 mCursor.getTransform().setPosition(0, 0, 0);
                 controller.setCursor(mCursor);
             }
+            mCursorController = controller;
+            mCursorController.setEnable(true);
             ctx.getEventManager().sendEvent(ctx.getInputManager(),
                                             ICursorControllerSelectListener.class,
                                             "onCursorControllerSelected",
                                             controller,
                                             mCursorController);
-            mCursorController = controller;
-            mCursorController.setEnable(true);
             Log.d(TAG, "selected " + controller.getClass().getSimpleName());
         }
 

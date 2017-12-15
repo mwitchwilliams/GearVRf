@@ -65,6 +65,7 @@ import org.gearvrf.ITouchEvents;
 import org.gearvrf.IViewEvents;
 import org.gearvrf.R;
 import org.gearvrf.io.GVRControllerType;
+import org.gearvrf.io.GVRTouchPadGestureDetector;
 import org.gearvrf.utility.Log;
 
 /**
@@ -75,6 +76,7 @@ public class GVRViewSceneObject extends GVRSceneObject {
     private View mView;
     private RootViewGroup mRootViewGroup;
     private IViewEvents mEventsListener;
+    private GVRTouchPadGestureDetector mGestureDetector = null;
 
     /**
      * Constructs a scene object that inflate a view from an XML resource. The scene object
@@ -146,7 +148,14 @@ public class GVRViewSceneObject extends GVRSceneObject {
         }
     }
 
-    protected RootViewGroup getRootView() { return mRootViewGroup; }
+    public RootViewGroup getRootView() { return mRootViewGroup; }
+
+    public void setGestureDetector(GVRTouchPadGestureDetector gestureDetector)
+    {
+        mGestureDetector = gestureDetector;
+    }
+
+    GVRTouchPadGestureDetector getGestureDetector() { return mGestureDetector; }
 
     private void inflateView(final int viewId) {
         final  GVRActivity activity = getGVRContext().getActivity();
@@ -355,13 +364,15 @@ public class GVRViewSceneObject extends GVRSceneObject {
                       event.getAction(), event.getButtonState(), event.getX(), event.getY());
                 return true;
             }
-
             if (event.getAction() == MotionEvent.ACTION_UP) {
                 mLastUpTime = event.getEventTime();
 
                 hideSoftInput(v, 10);
             }
-
+            if (mSceneObject.getGestureDetector() != null)
+            {
+                mSceneObject.getGestureDetector().onTouchEvent(event);
+            }
             return false;
         }
     }

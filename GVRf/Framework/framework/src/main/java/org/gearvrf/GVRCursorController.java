@@ -76,7 +76,7 @@ public abstract class GVRCursorController {
 
     protected Object eventLock = new Object();
     protected GVRSceneObject mCursor = null;
-    protected boolean enable = true;
+    protected boolean enable = false;
     protected boolean mSendEventsToActivity = false;
     protected Object mCursorLock = new Object();
     protected String name;
