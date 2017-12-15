@@ -975,19 +975,17 @@ public class X3Dobject {
 
         private void parseNumbersString(String numberString, int componentType,
                                         int componentCount) {
-            //preprocessing to get rid of 'e' exponent
-            //if ( componentType == X3Dobject.verticesComponent) {
+            //preprocessing to get rid of 'e' or 'E' exponent
+            // otherwise the SAX parser splits 3e-2 (which is .03) into two
+            // number, 3 and -2.
             if ( (numberString.indexOf('e') != -1) || (numberString.indexOf('E') != -1) ) {
-                Log.e("X3DDBG", "original numberString: '" + numberString + "'");
                 int stringPos = 0;
                 String newReplacementString = "";
                 // we do assume the numberString won't be mixing 'e' and 'E'
                 // but we want to handle any either character
                 char eChar = 'e';
                 if ( numberString.indexOf('E') != -1 ) eChar = 'E';
-                //while (numberString.indexOf('e', stringPos) != -1)  {
                 while (numberString.indexOf(eChar, stringPos) != -1)  {
-                    //int ePos = numberString.indexOf('e', stringPos);
                     int ePos = numberString.indexOf(eChar, stringPos);
                     // check for the first space or comma before 'e'.
                     int prevSpaceBefore_e = Math.max( (numberString.lastIndexOf(' ', ePos)), (numberString.lastIndexOf(',', ePos)) );
@@ -995,38 +993,15 @@ public class X3Dobject {
                     // Copy from the current position until the comma or space before the 'e'
                     newReplacementString += numberString.substring(stringPos, prevSpaceBefore_e);
                     // check for the next space or comma after 'e'.
-                    // Otherwise, we are at the end of the string.
+                    // Otherwise, we might be at the end of the string.
                     int nextSpaceAfter_e = Math.min( (numberString.indexOf(' ', ePos)), (numberString.indexOf(',', ePos)) );
                     if (nextSpaceAfter_e == -1) {
                         // at the end of the original string, find the last space, comma or EOL of the string
                         nextSpaceAfter_e = Math.max( (numberString.indexOf(' ', ePos)), (numberString.indexOf(',', ePos)) );
                         if (nextSpaceAfter_e == -1) nextSpaceAfter_e = Math.max( nextSpaceAfter_e, numberString.length() );
                     }
-                    //String number = numberString.substring(prevSpaceBefore_e, nextSpaceAfter_e);
                     String exponentString = numberString.substring(ePos+1, nextSpaceAfter_e);
                     try {
-                        /*
-                        int exponent = (int) (new Integer(exponentString));
-                        //if (exponent < 0) {
-                        if (exponent <= -3) {
-                            // value will be so small, replace it with 0
-                            newReplacementString += " 0 ";
-                        } else {
-                            // number = coefficient x 10**exponent
-                            //String coefficientString = numberString.substring(prevSpaceBefore_e, ePos);
-                            //float coefficient = (float) (new Float(coefficientString));
-                            //float coefficient = (float) (new Float( numberString.substring(prevSpaceBefore_e, ePos) ));
-                            //double fullNumber = coefficient * Math.pow(10, exponent);
-
-                            //double newNumber = ( (float) (new Float( numberString.substring(prevSpaceBefore_e, ePos) )) )
-                            //        * Math.pow(10, exponent);
-                            //newReplacementString += " " + newNumber + " ";
-                            newReplacementString += " " +
-                                    ( (float) (new Float( numberString.substring(prevSpaceBefore_e, ePos) )) )
-                                            * Math.pow(10, exponent)
-                                    + " ";
-                        }
-                         */
                         double newReplacementNumber =
                                 ( (float) (new Float( numberString.substring(prevSpaceBefore_e, ePos) )) )
                                         * Math.pow(10, (int) (new Integer(exponentString)) );
@@ -1035,22 +1010,15 @@ public class X3Dobject {
                         newReplacementString += " " + newReplacementNumber + " ";
                     }
                     catch (java.lang.NumberFormatException exception) {
-                        Log.e("X3DDBG", "NumberFormatException in " + numberString.substring(prevSpaceBefore_e, nextSpaceAfter_e) + "; " + exception);
                         Log.e(TAG, "NumberFormatException in " + numberString.substring(prevSpaceBefore_e, nextSpaceAfter_e) + "; " + exception);
                     }
                     catch (Exception exception) {
-                        Log.e("X3DDBG", "Exception in " + numberString.substring(prevSpaceBefore_e, nextSpaceAfter_e) + "; " + exception);
                         Log.e(TAG, "Exception in " + numberString.substring(prevSpaceBefore_e, nextSpaceAfter_e) + "; " + exception);
                     }
                     stringPos = nextSpaceAfter_e;
                 }
                 // Add any remainder of a string
-                //newReplacementString += numberString.substring(stringPos, numberString.length());
-                //Log.e("X3DDBG", "newString: '" + newReplacementString + "'");
-                //numberString = newReplacementString;
                 numberString = newReplacementString + numberString.substring(stringPos, numberString.length());
-                Log.e("X3DDBG", "numberString: '" + numberString + "'");
-                Log.e("X3DDBG", " ");
             }
             StringReader sr = new StringReader(numberString);
             StreamTokenizer st = new StreamTokenizer(sr);
