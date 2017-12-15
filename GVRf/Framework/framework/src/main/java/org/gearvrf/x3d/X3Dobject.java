@@ -975,6 +975,67 @@ public class X3Dobject {
 
         private void parseNumbersString(String numberString, int componentType,
                                         int componentCount) {
+            //preprocessing to get rid of 'e' exponent
+            if ( componentType == X3Dobject.verticesComponent) {
+                int stringPos = 0;
+                String newString = "";
+                while (numberString.indexOf('e', stringPos) != -1)  {
+                    int ePos = numberString.indexOf('e', stringPos);
+                    //Log.e("X3DDBG", "parseNumbersString stringPos: " + ePos);
+                    // check for the space or comma before 'e'.
+                    int prevSpaceBefore_e = Math.max( (numberString.lastIndexOf(' ', ePos)), (numberString.lastIndexOf(',', ePos)) );
+                    //if (prevSpaceBefore_e == -1) prevSpaceBefore_e = numberString.lastIndexOf(',', ePos);
+                    prevSpaceBefore_e++;
+                    newString += numberString.substring(stringPos, prevSpaceBefore_e);
+                    // check for the next space or comma after 'e'.
+                    // Otherwise, we are at the end of the string.
+                    int nextSpaceAfter_e = Math.min( (numberString.indexOf(' ', ePos)), (numberString.indexOf(',', ePos)) );
+                    //if (nextSpaceAfter_e == -1) nextSpaceAfter_e = numberString.indexOf(',', ePos);
+                    if (nextSpaceAfter_e == -1) {
+                        //nextSpaceAfter_e = numberString.length() -1;
+                        nextSpaceAfter_e = Math.max( (numberString.indexOf(' ', ePos)), (numberString.indexOf(',', ePos)) );
+                        if (nextSpaceAfter_e == -1) nextSpaceAfter_e = Math.max( nextSpaceAfter_e, numberString.length() );
+                    }
+                    String number = numberString.substring(prevSpaceBefore_e, nextSpaceAfter_e);
+                    String exponentString = numberString.substring(ePos+1, nextSpaceAfter_e);
+                    //Log.e("X3DDBG", "parseNumbersString data: '" + number + "'");
+                    //Log.e("X3DDBG", "exponentString: '" + exponentString + "'");
+                    try {
+                        int exponent = (int) (new Integer(exponentString));
+                        //Log.e("X3DDBG", "exponent: '" + exponent + "'");
+                        if (exponent < 0) {
+                            //Log.e("X3DDBG", "   exponent < 0" );
+                            newString += " 0 ";
+
+
+                        } else {
+                            // number is coefficient x 10**exponent
+                            String coefficientString = numberString.substring(prevSpaceBefore_e, ePos);
+                            float coefficient = (float) (new Float(coefficientString));
+                            double fullNumber = coefficient * Math.pow(10, exponent);
+                            newString += " " + fullNumber + " ";
+                            Log.e("X3DDBG", "   exponent > 0: fullNumber: " + fullNumber );
+                        }
+                    }
+                    catch (java.lang.NumberFormatException e) {
+                        Log.e("X3DDBG", "NumberFormatException in " + number + "; " + e);
+                        Log.e(TAG, "NumberFormatException in " + number + "; " + e);
+                    }
+                    catch (Exception e) {
+                        Log.e("X3DDBG", "Exception in " + number + "; " + e);
+                        Log.e(TAG, "Exception in " + number + "; " + e);
+                    }
+                    //stringPos = numberString.indexOf('e', stringPos) + 1;
+                    stringPos = nextSpaceAfter_e;
+                }
+                newString += numberString.substring(stringPos, numberString.length());
+                Log.e("X3DDBG", "newString: '" + newString + "'");
+                Log.e("X3DDBG", "numberString: '" + numberString + "'");
+                numberString = newString;
+                Log.e("X3DDBG", "end processing");
+                Log.e("X3DDBG", " ");
+
+            }
             StringReader sr = new StringReader(numberString);
             StreamTokenizer st = new StreamTokenizer(sr);
             st.parseNumbers();
