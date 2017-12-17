@@ -235,16 +235,26 @@ public class SettingsView extends BaseView implements OnCheckedChangeListener
                 public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                     if (isChecked) {
                         Log.d(TAG, "Setting cursor:" + cursor.getName() + " to enable");
+                        boolean enabled = cursor.isEnabled();
                         cursor.setEnable(true);
+                        if (!enabled)
+                        {
+                            cursor.activate();
+                        }
                         notifyDataSetChanged();
                     } else {
-                        IoDevice ioDevice = cursor.getIoDevice();
-                        if (ioDevice != null && cursor == currentCursor) {
+                        if (cursor == currentCursor) {
                             Log.d(TAG, "Cannot disable :" + cursor.getName());
                             tbCursorEnable.setChecked(true);
                         } else {
                             Log.d(TAG, "Setting cursor:" + cursor.getName() + " to disable");
+                            boolean enabled = cursor.isEnabled();
+
                             cursor.setEnable(false);
+                            if (enabled)
+                            {
+                                cursor.deactivate();
+                            }
                             notifyDataSetChanged();
                         }
                     }

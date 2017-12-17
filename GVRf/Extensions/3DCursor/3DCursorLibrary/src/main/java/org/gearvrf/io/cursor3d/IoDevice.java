@@ -59,7 +59,7 @@ public class IoDevice {
      * associated with the {@link IoDevice} is already connected. An {@link IoDevice} created
      * using this constructor will be ready to be attached to a {@link Cursor}. To create an
      * {@link IoDevice} whose hardware device is not connected at initialization use {@link
-     * IoDevice#IoDevice(String, int, int, String, String, boolean)}.
+     * IoDevice(String, int, int, String, String, boolean)}.
      *
      * @param deviceId   deviceId of the {@link IoDevice}. This differentiates
      *                   multiple devices from the same vendor with same productId and
@@ -299,10 +299,6 @@ public class IoDevice {
         }
     }
 
-    void setSceneObject(GVRSceneObject cursor) {
-        gvrCursorController.setCursor(cursor);
-    }
-
     void resetSceneObject() {
         gvrCursorController.stopDrag();
         gvrCursorController.setCursor(null);
@@ -458,7 +454,7 @@ public class IoDevice {
         public boolean dispatchKeyEvent(KeyEvent ev) { return false; }
     }
 
-    GVRCursorController getGvrCursorController() {
+    public GVRCursorController getGvrCursorController() {
         return gvrCursorController;
     }
 }

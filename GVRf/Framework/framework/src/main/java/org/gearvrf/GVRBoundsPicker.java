@@ -171,7 +171,10 @@ public class GVRBoundsPicker extends GVRPicker
     {
         synchronized (mCollidables)
         {
-            mCollidables.remove(index);
+            if (index < mCollidables.size())
+            {
+                mCollidables.remove(index);
+            }
         }
     }
 

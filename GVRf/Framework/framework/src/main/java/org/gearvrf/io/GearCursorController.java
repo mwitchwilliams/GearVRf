@@ -316,23 +316,32 @@ public final class GearCursorController extends GVRCursorController
     public void onDrawFrame()
     {
         boolean wasConnected = mConnected;
+
         mConnected = (mControllerReader != null) && mControllerReader.isConnected();
-        if (!wasConnected && mConnected)
+        if (!mConnected)
         {
-            context.getInputManager().addCursorController(GearCursorController.this);
-        }
-        if (mConnected && isEnabled())
-        {
-            if (!initialized)
+            if (initialized)
             {
-                if (!thread.isAlive())
-                {
-                    thread.start();
-                    thread.prepareHandler();
-                }
-                thread.initialize();
-                initialized = true;
+                thread.uninitialize();
+                initialized = false;
             }
+            return;
+        }
+        if (!initialized)
+        {
+            if (!thread.isAlive())
+            {
+                thread.start();
+                thread.prepareHandler();
+            }
+            if (!wasConnected && mConnected)
+            {
+                thread.initialize();
+            }
+            initialized = true;
+        }
+        if (isEnabled())
+        {
             ControllerEvent event = ControllerEvent.obtain();
 
             mControllerReader.updateRotation(event.rotation);
@@ -341,16 +350,7 @@ public final class GearCursorController extends GVRCursorController
             event.key = mControllerReader.getKey();
             event.handedness = mControllerReader.getHandedness();
             mControllerReader.updateTouchpad(event.pointF);
-
             thread.sendEvent(event);
-        }
-        else
-        {
-            if (initialized)
-            {
-                thread.uninitialize();
-                initialized = false;
-            }
         }
     }
 
@@ -468,6 +468,7 @@ public final class GearCursorController extends GVRCursorController
                 public boolean handleMessage(Message message) {
                     switch (message.what) {
                         case MSG_INITIALIZE:
+                            context.getInputManager().addCursorController(GearCursorController.this);
                             break;
                         case MSG_EVENT:
                             handleControllerEvent((ControllerEvent) message.obj);
