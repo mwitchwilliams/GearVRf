@@ -27,6 +27,7 @@ package org.gearvrf.io;
 
 import android.content.Context;
 import android.os.Handler;
+import android.util.Log;
 import android.view.GestureDetector;
 import android.view.GestureDetector.OnDoubleTapListener;
 import android.view.GestureDetector.OnGestureListener;
@@ -52,6 +53,7 @@ public class GVRTouchPadGestureDetector extends Object implements
         OnGestureListener, OnDoubleTapListener {
     private static final int SWIPE_MIN_DISTANCE = 80;
     private static final int ONTAP_MIN_DISTANCE = 0;
+    private static final String TAG = "GVRTPadGestureDetector";
 
     public enum SwipeDirection {
         Backward, Forward, Down, Up
@@ -168,6 +170,9 @@ public class GVRTouchPadGestureDetector extends Object implements
         if (gestureDetector == null)
             return false;
 
+        if (null == e1 || null == e2) {
+            Log.w(TAG, "can't process onFling; e1 is " + e1 + "; e2 is " + e2);
+        }
         double distance = Math.sqrt(Math.pow(e2.getX() - e1.getX(), 2)
                 + Math.pow(e2.getY() - e1.getY(), 2));
 
