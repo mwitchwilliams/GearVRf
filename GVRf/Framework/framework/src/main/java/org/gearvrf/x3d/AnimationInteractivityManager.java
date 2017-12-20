@@ -16,6 +16,7 @@
 
 package org.gearvrf.x3d;
 
+import org.gearvrf.GVRAssetLoader;
 import org.gearvrf.GVRComponent;
 import org.gearvrf.GVRContext;
 import org.gearvrf.GVRMeshCollider;
@@ -25,6 +26,8 @@ import org.gearvrf.GVRDirectLight;
 import org.gearvrf.GVRLightBase;
 import org.gearvrf.GVRSceneObject;
 import org.gearvrf.GVRSwitch;
+import org.gearvrf.GVRTexture;
+import org.gearvrf.GVRTextureParameters;
 import org.gearvrf.ISensorEvents;
 import org.gearvrf.SensorEvent;
 import org.gearvrf.animation.GVRAnimation;
@@ -48,6 +51,7 @@ import org.gearvrf.x3d.data_types.SFInt32;
 import org.gearvrf.x3d.data_types.SFTime;
 import org.gearvrf.x3d.data_types.SFVec3f;
 import org.gearvrf.x3d.data_types.SFRotation;
+import org.gearvrf.x3d.data_types.MFString;
 import org.joml.AxisAngle4f;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
@@ -55,6 +59,7 @@ import org.joml.Vector3f;
 
 import java.util.ArrayList;
 import java.util.Vector;
+import java.util.concurrent.Future;
 
 import javax.script.Bindings;
 
@@ -101,6 +106,9 @@ public class AnimationInteractivityManager {
     private AnchorImplementation anchorImplementation = null;
     private GVRAnimator gvrAnimator = null;
 
+    private GVRAssetLoader.AssetRequest assetRequest = null;
+
+
 
     private PerFrameScripting perFrameScripting = new PerFrameScripting();
 
@@ -117,7 +125,8 @@ public class AnimationInteractivityManager {
                                          Vector<TimeSensor> timeSensors,
                                          Vector<EventUtility> eventUtilities,
                                          ArrayList<ScriptObject> scriptObjects,
-                                         Vector<Viewpoint> viewpoints
+                                         Vector<Viewpoint> viewpoints,
+                                         GVRAssetLoader.AssetRequest assetRequest
 
     ) {
         this.x3dObject = x3dObject;
@@ -129,6 +138,7 @@ public class AnimationInteractivityManager {
         this.timeSensors = timeSensors;
         this.eventUtilities = eventUtilities;
         this.scriptObjects = scriptObjects;
+        this.assetRequest = assetRequest;
 
         gvrAnimator = new GVRAnimator(this.gvrContext, true);
         root.attachComponent(gvrAnimator);
@@ -1599,6 +1609,38 @@ public class AnimationInteractivityManager {
                             }
 
                         }  //  end SFInt32
+                        else if (fieldType.equalsIgnoreCase("MFString")) {
+                            MFString mfString = (MFString) returnedJavaScriptValue;
+                            if (scriptObjectToDefinedItem.getGVRTexture() != null) {
+                                //  MFString change to a GVRTexture object
+                                if (scriptObject.getToDefinedItemField(fieldNode).equalsIgnoreCase("url")) {
+                                    if (scriptObjectToDefinedItem.getGVRMaterial() != null) {
+                                        GVRTextureParameters gvrTextureParameters  = new GVRTextureParameters(gvrContext);
+                                        gvrTextureParameters.setWrapSType(GVRTextureParameters.TextureWrapType.GL_REPEAT);
+                                        gvrTextureParameters.setWrapTType(GVRTextureParameters.TextureWrapType.GL_REPEAT);
+                                        gvrTextureParameters.setMinFilterType(GVRTextureParameters.TextureFilterType.GL_LINEAR_MIPMAP_NEAREST);
+
+                                        GVRAssetLoader.TextureRequest request = new GVRAssetLoader.TextureRequest(assetRequest,
+                                                mfString.get1Value(0), gvrTextureParameters);
+                                        Future<GVRTexture> texture = assetRequest.loadFutureTexture(request);
+                                        scriptObjectToDefinedItem.getGVRMaterial().setTexture("diffuseTexture", texture);
+                                    } // end having GVRMaterial containing GVRTexture
+                                    else {
+                                        Log.e(TAG, "Error: No GVRMaterial associated with MFString Texture url '" + scriptObject.getFieldName(fieldNode) + "' value from SCRIPT '" + scriptObject.getName() + "'." );
+                                    }
+                                }  //  definedItem != null
+                                else {
+                                    Log.e(TAG, "Error: No url associated with MFString '" + scriptObject.getFieldName(fieldNode) + "' value from SCRIPT '" + scriptObject.getName() + "'." );
+                                }
+                            }  // end GVRTexture with MFString
+                            else {
+                                Log.e(TAG, "Error: Not setting MFString '" + scriptObject.getFieldName(fieldNode) + "' value from SCRIPT '" + scriptObject.getName() + "'." );
+                            }
+                        }  //  end MFString
+                        else {
+                            Log.e(TAG, "Error: " + fieldType + " in '" + scriptObject.getFieldName(fieldNode) + "' value from SCRIPT '" + scriptObject.getName() + "' not supported." );
+                        }
+
                     }  //  end value != null
                 }  //  end OUTPUT-ONLY or INPUT_OUTPUT
             }  // end for-loop list of fields for a single script
