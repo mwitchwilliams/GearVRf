@@ -1165,6 +1165,19 @@ public class AnimationInteractivityManager {
                         }
                         scriptParameters.add(parameter);
                     }
+                    else if (fieldType.equalsIgnoreCase("MFString")) {
+                         //TODO: will need to handle multiple strings particularly for Text node
+                         if (definedItem.getGVRTexture() != null) {
+                             // have a url containting a texture map
+                             if (scriptObject.getFromDefinedItemField(field).equalsIgnoreCase("url") ) {
+                                 if ( definedItem.getGVRTexture().getImage() != null ) {
+                                     if ( definedItem.getGVRTexture().getImage().getFileName() != null) {
+                                         scriptParameters.add("\'" + definedItem.getGVRTexture().getImage().getFileName() + "\'");
+                                     }
+                                 }
+                             }
+                         }
+                     } // end MFString
                 }  //  end if definedItem != null
             }  //  end INPUT_ONLY, INPUT_OUTPUT (only ways to pass parameters to JS parser
         }  // for loop checking for parameters passed to the JavaScript parser
@@ -1314,6 +1327,16 @@ public class AnimationInteractivityManager {
                                 "( params[" + argumentNum + "]);\n";
                         argumentNum += 1;
                     }  // end if SFFloat, SFBool or SFInt32 - a single parameter
+                    else if (fieldType.equalsIgnoreCase("MFString") ) {
+                        // TODO: need MFString to support more than one argument due to being used for Text Strings
+                        gearVRinitJavaScript += scriptObject.getFieldName(field) + " = new " + scriptObject.getFieldType(field) +
+                                "( params[" + argumentNum + "]);\n";
+                        argumentNum += 1;
+                    }  // end if MFString
+                    else {
+                        Log.e(TAG, "Error unsupported field type '" + fieldType + "' in SCRIPT '" +
+                                interactiveObject.getScriptObject().getName() + "'");
+                    }
                 }
                 else if (scriptObject.getFromEventUtility(field) != null) {
                     if (fieldType.equalsIgnoreCase("SFBool")) {
