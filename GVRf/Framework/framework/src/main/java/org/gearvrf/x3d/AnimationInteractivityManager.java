@@ -1039,17 +1039,17 @@ public class AnimationInteractivityManager {
                             }
                         }  // rotation parameter
                         else if (scriptObject.getFromDefinedItemField(field).equalsIgnoreCase("orientation")) {
-                            if ( definedItem.getViewpoint() != null ) {
+                            if (definedItem.getViewpoint() != null) {
                                 // have a Viewpoint which for the time-being means get the current direction of the camera
                                 float[] lookAt = gvrContext.getMainScene().getMainCameraRig().getLookAt();
                                 Vector3f cameraDir = new Vector3f(lookAt[0], lookAt[1], lookAt[2]);
                                 Quaternionf q = ConvertDirectionalVectorToQuaternion(cameraDir);
                                 AxisAngle4f cameraAxisAngle = new AxisAngle4f();
                                 q.get(cameraAxisAngle);
-                                scriptParameters.add( cameraAxisAngle.x );
-                                scriptParameters.add( cameraAxisAngle.y );
-                                scriptParameters.add( cameraAxisAngle.z );
-                                scriptParameters.add( cameraAxisAngle.angle );
+                                scriptParameters.add(cameraAxisAngle.x);
+                                scriptParameters.add(cameraAxisAngle.y);
+                                scriptParameters.add(cameraAxisAngle.z);
+                                scriptParameters.add(cameraAxisAngle.angle);
                             }
                         }  // orientation parameter
                     }  // end if SFRotation
@@ -1124,8 +1124,7 @@ public class AnimationInteractivityManager {
                                 scriptParameters.add(
                                         definedItem.getGVRMaterial().getFloat("specular_exponent")
                                 );
-                            }
-                            else if (scriptObject.getFromDefinedItemField(field).equalsIgnoreCase("transparency")) {
+                            } else if (scriptObject.getFromDefinedItemField(field).equalsIgnoreCase("transparency")) {
                                 scriptParameters.add(definedItem.getGVRMaterial().getOpacity());
                             }
                         } else if (definedItem.getGVRSceneObject() != null) {
@@ -1165,6 +1164,19 @@ public class AnimationInteractivityManager {
                         }
                         scriptParameters.add(parameter);
                     }
+                    else if (fieldType.equalsIgnoreCase("MFString")) {
+                        //TODO: will need to handle multiple strings particularly for Text node
+                        if (definedItem.getGVRTexture() != null) {
+                            // have a url containting a texture map
+                            if (scriptObject.getFromDefinedItemField(field).equalsIgnoreCase("url") ) {
+                                if ( definedItem.getGVRTexture().getImage() != null ) {
+                                    if ( definedItem.getGVRTexture().getImage().getFileName() != null) {
+                                        scriptParameters.add("\'" + definedItem.getGVRTexture().getImage().getFileName() + "\'");
+                                    }
+                                }
+                            }
+                        }
+                    } // end MFFloat
                 }  //  end if definedItem != null
             }  //  end INPUT_ONLY, INPUT_OUTPUT (only ways to pass parameters to JS parser
         }  // for loop checking for parameters passed to the JavaScript parser
@@ -1314,6 +1326,17 @@ public class AnimationInteractivityManager {
                                 "( params[" + argumentNum + "]);\n";
                         argumentNum += 1;
                     }  // end if SFFloat, SFBool or SFInt32 - a single parameter
+                    else if (fieldType.equalsIgnoreCase("MFString") ) {
+                        // TODO: need MFString to support more than one argument due to being used for Text Strings
+                        gearVRinitJavaScript += scriptObject.getFieldName(field) + " = new " + scriptObject.getFieldType(field) +
+                                "( params[" + argumentNum + "]);\n";
+                        argumentNum += 1;
+                    }  // end if MFString
+                    else {
+                        Log.e(TAG, "Error unsupported field type '" + fieldType + "' in SCRIPT '" +
+                                interactiveObject.getScriptObject().getName() + "'");
+
+                    }
                 }
                 else if (scriptObject.getFromEventUtility(field) != null) {
                     if (fieldType.equalsIgnoreCase("SFBool")) {
