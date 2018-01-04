@@ -15,6 +15,7 @@
 
 package org.gearvrf.x3d;
 
+import java.util.ArrayList;
 import java.util.concurrent.Future;
 
 import org.gearvrf.GVRMaterial;
@@ -79,6 +80,9 @@ public class ShaderSettings
 
   public GVRTexture texture = null;
 
+    public ArrayList<String> movieTextures = new ArrayList<String>();
+
+
   public String fragmentShaderLights = "";
   
   public GVRMaterial material;
@@ -123,6 +127,7 @@ public class ShaderSettings
     }
 
     texture = null;
+      movieTextures.clear();
   }
 
 

@@ -16,14 +16,21 @@
 package org.gearvrf.x3d;
 
 import android.content.Context;
+import android.content.res.AssetFileDescriptor;
 import android.graphics.Color;
+import android.media.MediaPlayer;
+import android.os.Environment;
 
 import org.gearvrf.GVRCursorController;
 import org.gearvrf.GVRMeshCollider;
 import org.gearvrf.io.GVRControllerType;
 import org.gearvrf.io.GVRInputManager;
+import org.gearvrf.scene_objects.GVRVideoSceneObject;
+import org.gearvrf.scene_objects.GVRVideoSceneObjectPlayer;
+import org.gearvrf.GVRExternalTexture;
 import org.gearvrf.utility.Log;
 
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -2792,6 +2799,91 @@ public class X3Dobject {
                     } // not re-USE FontStyle
                 } // end <FontStyle> node
 
+
+
+                /********** MovieTexture **********/
+                else if (qName.equalsIgnoreCase("MovieTexture")) {
+
+                    attributeValue = attributes.getValue("USE");
+                    if (attributeValue != null) {
+                        DefinedItem useItem = null;
+                        for (DefinedItem definedItem : mDefinedItems) {
+                            if (attributeValue.equals(definedItem.getName())) {
+                                useItem = definedItem;
+                                break;
+                            }
+                        }
+                        if (useItem != null) {
+                            Log.e("X3DDBG", "MovieTexture USE not implemented");
+                            gvrTexture = useItem.getGVRTexture();
+                            shaderSettings.setTexture(gvrTexture);
+                        }
+                        else {
+                            Log.e(TAG, "Error: MovieTexture USE='" + attributeValue + "'; No matching DEF='" + attributeValue + "'.");
+                        }
+                    } else {
+                        Log.e("X3DDBG", "MovieTexture not fully implemented");
+                        String description = "";
+                        boolean loop = false;
+
+                        /*
+                        gvrTextureParameters = new GVRTextureParameters(gvrContext);
+                        gvrTextureParameters.setWrapSType(TextureWrapType.GL_REPEAT);
+                        gvrTextureParameters.setWrapTType(TextureWrapType.GL_REPEAT);
+                        gvrTextureParameters.setMinFilterType(GVRTextureParameters.TextureFilterType.GL_LINEAR_MIPMAP_NEAREST);
+*/
+                        String urlAttribute = attributes.getValue("url");
+                        if (urlAttribute != null) {
+                            //urlAttribute = urlAttribute.replace("\"", ""); // remove double and
+                            // single quotes
+                            //urlAttribute = urlAttribute.replace("\'", "");
+                            String[] urlsString = parseMFString(urlAttribute);
+
+                            //ArrayList <String> urls = new ArrayList<String>();
+                            for (int i = 0; i < urlsString.length; i++) {
+                                shaderSettings.movieTextures.add(urlsString[i]);
+                                Log.e("X3DDBG", "   MovieTexture url["+i+"]=" + shaderSettings.movieTextures.get(i));
+                            }
+                                //urls.add( urlAttribute.substring);
+
+                            //final String filename = urlAttribute;
+                        }
+
+                        String repeatSAttribute = attributes.getValue("repeatS");
+                        if (repeatSAttribute != null) {
+                                if (!parseBooleanString(repeatSAttribute)) {
+                                    //gvrTextureParameters
+                                    //        .setWrapSType(TextureWrapType.GL_CLAMP_TO_EDGE);
+                                }
+                        }
+                        String repeatTAttribute = attributes.getValue("repeatT");
+                        if (repeatTAttribute != null) {
+                                if (!parseBooleanString(repeatTAttribute)) {
+                                    //gvrTextureParameters
+                                    //        .setWrapTType(TextureWrapType.GL_CLAMP_TO_EDGE);
+                                }
+                        }
+
+
+                        final String defValue = attributes.getValue("DEF");
+
+                            /*
+                            gvrTexture = new GVRTexture(gvrContext, gvrTextureParameters);
+                            GVRAssetLoader.TextureRequest request = new GVRAssetLoader.TextureRequest(assetRequest, gvrTexture, (inlineSubdirectory + filename));
+                            assetRequest.loadTexture(request);
+                            shaderSettings.setTexture(gvrTexture);
+                            if (defValue != null) {
+                                DefinedItem item = new DefinedItem(defValue);
+                                item.setGVRTexture(gvrTexture);
+                                mDefinedItems.add(item);
+                            }
+                            */
+                        //}
+                    }
+                } // end <MovieTexture> node
+
+
+
                 /********** Billboard **********/
                 else if (qName.equalsIgnoreCase("Billboard")) {
                     Log.e(TAG, "X3D Billboard currently not implemented. ");
@@ -3596,7 +3688,88 @@ public class X3Dobject {
                                 }
                             }
 
-                            // Appearance node thus far contains properties of GVRMaterial
+                            if ( !shaderSettings.movieTextures.isEmpty()) {
+                                Log.e("X3DDBG", "shader settings movie texture ! null");
+                                MediaPlayer mediaPlayer = new MediaPlayer();
+                                mediaPlayer.setLooping(true);
+
+                                try {
+
+                                    AssetFileDescriptor fileDescriptor = gvrContext.getContext().getAssets().openFd(
+                                            shaderSettings.movieTextures.get(0));
+                                    mediaPlayer.setDataSource(fileDescriptor.getFileDescriptor(),
+                                        fileDescriptor.getStartOffset(), fileDescriptor.getLength());
+                                    fileDescriptor.close();
+
+                                    //final GVRMesh movieMesh = gvrRenderData.getMesh();
+                                    //final GVRContext movieContext = gvrContext;
+                                    mediaPlayer.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
+                                        @Override
+                                        public void onPrepared(MediaPlayer mp) {
+                                            Log.d(TAG, "onPrepared");
+                                            mp.start();
+
+                                            /*
+                                            GVRExternalTexture screenTexture = new GVRExternalTexture(gvrContext);
+                                            Log.e("X3DDBG", "shader settings movie texture: mediaPlayer.prepare()");
+                                            GVRVideoSceneObject gvrVideoSceneObject =
+                                                    new GVRVideoSceneObject(gvrContext, movieMesh, mp, screenTexture,
+                                                    //new GVRVideoSceneObject(gvrContext, 24, 16, mp
+                                                            GVRVideoSceneObject.GVRVideoType.MONO);
+                                            gvrMaterial.setTexture("diffuseTexture", screenTexture);
+                                            //gvrContext.getMainScene().addSceneObject( gvrVideoSceneObject );
+                                            */
+
+                                            /*
+                                            //currentSceneObject.addChildObject( gvrVideoSceneObject );
+                                            Log.e("X3DDBG", "shader settings movie texture: got gvrVideoSceneObject()");
+                                            GVRVideoSceneObjectPlayer gvrVideoSceneObjectPlayer = gvrVideoSceneObject.getMediaPlayer();
+                                            Log.e("X3DDBG", "shader settings movie texture: got gvrVideoSceneObjectPlayer");
+                                            if (gvrVideoSceneObjectPlayer != null) {
+                                                gvrVideoSceneObjectPlayer.start();
+                                                Log.e("X3DDBG", "   shader settings movie texture: gvrVideoSceneObjectPlayer.start()");
+                                            }
+                                            else {
+                                                Log.e("X3DDBG", "   shader settings movie texture: gvrVideoSceneObjectPlayer == null");
+
+                                            }
+                                            */
+                                            Log.e("X3DDBG", "shader settings movie texture: gvrVideo, after set-up");
+
+                                        }
+                                    });
+
+                                    mediaPlayer.prepare();
+
+                                    //GVRExternalTexture screenTexture = new GVRExternalTexture(gvrContext);
+                                    Log.e("X3DDBG", "shader settings movie texture: mediaPlayer.prepare()");
+                                    GVRVideoSceneObject gvrVideoSceneObject =
+                                            //new GVRVideoSceneObject(gvrContext, gvrRenderData.getMesh(), mediaPlayer, screenTexture,
+                                            new GVRVideoSceneObject(gvrContext, 18, 12, mediaPlayer,
+                                                    GVRVideoSceneObject.GVRVideoType.MONO);
+                                    //gvrVideoSceneObject.setName( shaderSettings.movieTextures.get(0) ); // crashed later w/o a name
+                                    //gvrMaterial.setTexture("diffuseTexture", screenTexture);
+                                    gvrContext.getMainScene().addSceneObject( gvrVideoSceneObject );
+                                    //currentSceneObject = gvrVideoSceneObject;
+                                    Log.e("X3DDBG", "shader settings movie texture: after setTexture()");
+
+                                } catch (IOException e) {
+                                    e.printStackTrace();
+                                    //finish();
+                                    Log.e("X3DDBG", "X3D MovieTexture Assets were not loaded. Stopping application!");
+                                    Log.e(TAG, "X3D MovieTexture Assets were not loaded. Stopping application!");
+                                    mediaPlayer = null;
+                                    //return null;
+                                } catch (IllegalStateException e) {
+                                    Log.e("X3DDBG", "X3D Movie Texture: Failed to prepare media player");
+                                    Log.e(TAG, "X3D Movie Texture: Failed to prepare media player");
+                                    e.printStackTrace();
+                                    mediaPlayer = null;
+                                }
+
+                            }
+
+                                // Appearance node thus far contains properties of GVRMaterial
                             // node
                             if (!shaderSettings.getAppearanceName().isEmpty()) {
                                 DefinedItem definedItem = new DefinedItem(
@@ -3790,6 +3963,8 @@ public class X3Dobject {
             } else if (qName.equalsIgnoreCase("NavigationInfo")) {
                 ;
             } else if (qName.equalsIgnoreCase("Background")) {
+                ;
+            } else if (qName.equalsIgnoreCase("MovieTexture")) {
                 ;
             } else if (qName.equalsIgnoreCase("ElevationGrid")) {
                 ;
