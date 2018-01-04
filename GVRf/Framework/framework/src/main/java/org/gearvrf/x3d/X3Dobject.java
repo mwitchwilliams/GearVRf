@@ -28,6 +28,7 @@ import org.gearvrf.io.GVRInputManager;
 import org.gearvrf.scene_objects.GVRVideoSceneObject;
 import org.gearvrf.scene_objects.GVRVideoSceneObjectPlayer;
 import org.gearvrf.GVRExternalTexture;
+import org.gearvrf.GVRImage;
 import org.gearvrf.utility.Log;
 
 import java.io.File;
@@ -3721,9 +3722,6 @@ public class X3Dobject {
                                             */
 
                                             /*
-                                            //currentSceneObject.addChildObject( gvrVideoSceneObject );
-                                            Log.e("X3DDBG", "shader settings movie texture: got gvrVideoSceneObject()");
-                                            GVRVideoSceneObjectPlayer gvrVideoSceneObjectPlayer = gvrVideoSceneObject.getMediaPlayer();
                                             Log.e("X3DDBG", "shader settings movie texture: got gvrVideoSceneObjectPlayer");
                                             if (gvrVideoSceneObjectPlayer != null) {
                                                 gvrVideoSceneObjectPlayer.start();
@@ -3741,15 +3739,39 @@ public class X3Dobject {
 
                                     mediaPlayer.prepare();
 
-                                    //GVRExternalTexture screenTexture = new GVRExternalTexture(gvrContext);
+                                    GVRExternalTexture screenTexture = new GVRExternalTexture(gvrContext);
+                                    //GVRExternalTexture screenExternalTexture = (GVRExternalTexture) gvrRenderData.getMaterial().getTexture("diffuseColor");
+                                    gvrRenderData.getMaterial().setTexture("diffuseTexture", screenTexture);
                                     Log.e("X3DDBG", "shader settings movie texture: mediaPlayer.prepare()");
                                     GVRVideoSceneObject gvrVideoSceneObject =
-                                            //new GVRVideoSceneObject(gvrContext, gvrRenderData.getMesh(), mediaPlayer, screenTexture,
-                                            new GVRVideoSceneObject(gvrContext, 18, 12, mediaPlayer,
+                                            //new GVRVideoSceneObject(gvrContext, gvrRenderData.getMesh(), mediaPlayer, //screenTexture,
+                                            new GVRVideoSceneObject(gvrContext, gvrRenderData.getMesh(), mediaPlayer, screenTexture,
+                                            //new GVRVideoSceneObject(gvrContext, 15, 10, mediaPlayer,
                                                     GVRVideoSceneObject.GVRVideoType.MONO);
-                                    //gvrVideoSceneObject.setName( shaderSettings.movieTextures.get(0) ); // crashed later w/o a name
-                                    //gvrMaterial.setTexture("diffuseTexture", screenTexture);
-                                    gvrContext.getMainScene().addSceneObject( gvrVideoSceneObject );
+                                    //gvrContext.getMainScene().addSceneObject( gvrVideoSceneObject );
+
+                                    currentSceneObject.addChildObject(gvrVideoSceneObject);
+
+                                    GVRTransform movieGVRTransform = gvrVideoSceneObject.getTransform();
+                                    movieGVRTransform.setPosition(1, 1, 1);
+
+                                    GVRRenderData movieGVRRenderData = gvrVideoSceneObject.getRenderData();
+                                    GVRMaterial movieGVRMaterial = movieGVRRenderData.getMaterial();
+                                    //movieGVRMaterial.setTexture("diffuseTexture", screenTexture);
+                                    GVRMesh movieGVRMesh = movieGVRRenderData.getMesh();
+                                    GVRTexture movieGVRTexture = movieGVRMaterial.getMainTexture();
+
+                                    float[] movieVertices = movieGVRMesh.getVertices();
+                                    GVRImage movieGVRImage = movieGVRTexture.getImage();
+                                    if (movieGVRImage != null ) {
+                                        String movieTextureName = movieGVRImage.getFileName();
+                                    }
+                                    GVRImage screenTextureGVRImage = screenTexture.getImage();
+                                    if (screenTextureGVRImage != null ) {
+                                        String movieTextureName = screenTextureGVRImage.getFileName();
+                                    }
+
+
                                     //currentSceneObject = gvrVideoSceneObject;
                                     Log.e("X3DDBG", "shader settings movie texture: after setTexture()");
 
