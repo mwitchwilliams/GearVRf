@@ -3739,18 +3739,31 @@ public class X3Dobject {
 
                                     mediaPlayer.prepare();
 
-                                    GVRExternalTexture screenTexture = new GVRExternalTexture(gvrContext);
-                                    //GVRExternalTexture screenExternalTexture = (GVRExternalTexture) gvrRenderData.getMaterial().getTexture("diffuseColor");
-                                    gvrRenderData.getMaterial().setTexture("diffuseTexture", screenTexture);
+                                    //GVRExternalTexture screenTexture = new GVRExternalTexture(gvrContext);
+                                    //gvrRenderData.getMaterial().setTexture("diffuseTexture", screenTexture);
                                     Log.e("X3DDBG", "shader settings movie texture: mediaPlayer.prepare()");
-                                    GVRVideoSceneObject gvrVideoSceneObject =
-                                            //new GVRVideoSceneObject(gvrContext, gvrRenderData.getMesh(), mediaPlayer, //screenTexture,
-                                            new GVRVideoSceneObject(gvrContext, gvrRenderData.getMesh(), mediaPlayer, screenTexture,
-                                            //new GVRVideoSceneObject(gvrContext, 15, 10, mediaPlayer,
-                                                    GVRVideoSceneObject.GVRVideoType.MONO);
-                                    //gvrContext.getMainScene().addSceneObject( gvrVideoSceneObject );
 
-                                    currentSceneObject.addChildObject(gvrVideoSceneObject);
+                                    GVRVideoSceneObject gvrVideoSceneObject = null;
+                                    boolean onX3Dmesh = true; // helps me switch between x3d mesh vs. adding to main scene
+                                    if (onX3Dmesh) {
+                                        GVRExternalTexture screenTexture = new GVRExternalTexture(gvrContext);
+                                        gvrRenderData.getMaterial().setTexture("diffuseTexture", screenTexture);
+                                        gvrVideoSceneObject =
+                                                new GVRVideoSceneObject(gvrContext, gvrRenderData.getMesh(), mediaPlayer, screenTexture,
+                                                        GVRVideoSceneObject.GVRVideoType.MONO);
+                                        currentSceneObject.addChildObject(gvrVideoSceneObject);
+
+                                        //GVRImage screenTextureGVRImage = screenTexture.getImage();
+                                        //if (screenTextureGVRImage != null ) {
+                                        //    String movieTextureName = screenTextureGVRImage.getFileName();
+                                        //}
+                                    }
+                                    else {
+                                        gvrVideoSceneObject =
+                                                new GVRVideoSceneObject(gvrContext, 15, 10, mediaPlayer,
+                                                        GVRVideoSceneObject.GVRVideoType.MONO);
+                                        gvrContext.getMainScene().addSceneObject( gvrVideoSceneObject );
+                                    }
 
                                     GVRTransform movieGVRTransform = gvrVideoSceneObject.getTransform();
                                     movieGVRTransform.setPosition(1, 1, 1);
@@ -3762,17 +3775,11 @@ public class X3Dobject {
                                     GVRTexture movieGVRTexture = movieGVRMaterial.getMainTexture();
 
                                     float[] movieVertices = movieGVRMesh.getVertices();
-                                    GVRImage movieGVRImage = movieGVRTexture.getImage();
-                                    if (movieGVRImage != null ) {
-                                        String movieTextureName = movieGVRImage.getFileName();
-                                    }
-                                    GVRImage screenTextureGVRImage = screenTexture.getImage();
-                                    if (screenTextureGVRImage != null ) {
-                                        String movieTextureName = screenTextureGVRImage.getFileName();
-                                    }
+                                    //GVRImage movieGVRImage = movieGVRTexture.getImage();
+                                    //if (movieGVRImage != null ) {
+                                    //    String movieTextureName = movieGVRImage.getFileName();
+                                    //}
 
-
-                                    //currentSceneObject = gvrVideoSceneObject;
                                     Log.e("X3DDBG", "shader settings movie texture: after setTexture()");
 
                                 } catch (IOException e) {
@@ -3781,7 +3788,6 @@ public class X3Dobject {
                                     Log.e("X3DDBG", "X3D MovieTexture Assets were not loaded. Stopping application!");
                                     Log.e(TAG, "X3D MovieTexture Assets were not loaded. Stopping application!");
                                     mediaPlayer = null;
-                                    //return null;
                                 } catch (IllegalStateException e) {
                                     Log.e("X3DDBG", "X3D Movie Texture: Failed to prepare media player");
                                     Log.e(TAG, "X3D Movie Texture: Failed to prepare media player");
