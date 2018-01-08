@@ -27,7 +27,6 @@ import org.gearvrf.GVRMaterial.GVRShaderType;
 import org.gearvrf.GVRShaderId;
 import org.gearvrf.GVRMesh;
 import org.gearvrf.GVRSceneObject;
-import org.gearvrf.utility.Log;
 
 import java.lang.ref.WeakReference;
 
@@ -137,14 +136,6 @@ public class GVRVideoSceneObject extends GVRSceneObject {
                                final GVRVideoSceneObjectPlayer mediaPlayer, final GVRExternalTexture texture,
                                int videoType) {
         super(gvrContext, mesh);
-        float[] movieVertices = mesh.getVertices();
-        String movieVerticesString = new String("vals: ");
-        for (int i = 0; i < movieVertices.length; i++) {
-            movieVerticesString += (new Float(movieVertices[i])).toString();
-            if ( ((i+1)%3) == 0) movieVerticesString += ", ";
-            else movieVerticesString += " ";
-        }
-        Log.e("X3DDBG", "GVRVideoSO mesh vertices " + movieVerticesString);
         GVRShaderId materialType;
 
         switch (videoType) {
