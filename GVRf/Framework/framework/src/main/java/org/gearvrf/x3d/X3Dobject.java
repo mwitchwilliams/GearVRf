@@ -241,6 +241,7 @@ public class X3Dobject {
         private FloatArray mOutputTexCoords = new FloatArray(64 * 3);
         private GVRContext mContext;
         private DefinedItem mVertexBufferDefine;
+        private float mMaxYTexcoord = Float.NEGATIVE_INFINITY;
 
         MeshCreator(GVRContext ctx)
         {
@@ -259,6 +260,7 @@ public class X3Dobject {
             mPositionIndices.clear();
             mNormalIndices.clear();
             mTexcoordIndices.clear();
+            mMaxYTexcoord = Float.NEGATIVE_INFINITY;
         }
 
         void defineVertexBuffer(DefinedItem item)
@@ -329,6 +331,10 @@ public class X3Dobject {
          */
         void addInputTexcoord(float[] tc)
         {
+            if (tc[1] > mMaxYTexcoord)
+            {
+                mMaxYTexcoord = tc[1];
+            }
             mInputTexCoords.add(tc);
         }
 
@@ -350,9 +356,9 @@ public class X3Dobject {
                 mInputNormals.setCapacity(numIndices * 3);
                 mOutputNormals.setCapacity(positions.getSize());
                 mOutputNormals.fill(0.0f);
-                /*
-                 * Compute face normals
-                 */
+            /*
+             * Compute face normals
+             */
                 for (int f = 0; f < numIndices; f += 3)
                 {
                     int v1Index = faces[f] * 3;
@@ -369,9 +375,9 @@ public class X3Dobject {
                     normal.normalize();
                     mInputNormals.set(f * 3, normal);
                 }
-                /*
-                 * Add face normals to produce vertex normals
-                 */
+            /*
+             * Add face normals to produce vertex normals
+             */
                 float[] normals = mOutputNormals.array();
                 for (int f = 0; f < numIndices; f += 3)
                 {
@@ -390,9 +396,9 @@ public class X3Dobject {
                     normals[v3Index + 1] += normal.y;
                     normals[v3Index + 2] += normal.z;
                 }
-                /*
-                 * Normalize output normals
-                 */
+            /*
+             * Normalize output normals
+             */
                 for (int i = 0; i < mOutputNormals.getSize(); ++i)
                 {
                     int nindex = i * 3;
@@ -431,33 +437,33 @@ public class X3Dobject {
             {
                 descriptor += " float3 a_normal";
             }
-            /*
-             * If there are no texture coordinates or normals,
-             * we can just copy the input positions directly from
-             * X3D and generate normals if necessary.
-             */
+        /*
+         * If there are no texture coordinates or normals,
+         * we can just copy the input positions directly from
+         * X3D and generate normals if necessary.
+         */
             if (!hasTexCoords && !hasNormals)
             {
                 return copyVertices(descriptor, ibuf, makeNormals);
             }
-            /*
-             * If the X3D file does not have normal or texcoord indices,
-             * we can just copy the input data directly from X3D
-             * because the positions, normals and texcoord arrays
-             * are all in the same order.
-             */
+        /*
+         * If the X3D file does not have normal or texcoord indices,
+         * we can just copy the input data directly from X3D
+         * because the positions, normals and texcoord arrays
+         * are all in the same order.
+         */
             if ((mTexcoordIndices.getSize() == 0) &&
-                (mNormalIndices.getSize() == 0))
+                    (mNormalIndices.getSize() == 0))
             {
                 return copyVertices(descriptor, ibuf, makeNormals);
             }
 
-            /*
-             * The X3D file has different index tables for positions,
-             * normals and texture coordinates. We must regenerate the
-             * vertex table to duplicate vertices in the cases where
-             * a position has more than one normal or textoord.
-             */
+        /*
+         * The X3D file has different index tables for positions,
+         * normals and texture coordinates. We must regenerate the
+         * vertex table to duplicate vertices in the cases where
+         * a position has more than one normal or textoord.
+         */
             Map<String, Integer> vertexMap = new LinkedHashMap<String, Integer>();
             int[] newIndices = new int[mPositionIndices.getSize()];
             float[] pos = new float[3];
@@ -466,10 +472,10 @@ public class X3Dobject {
             int[] normalIndices = (mNormalIndices.getSize() > 0) ? mNormalIndices.array() : mPositionIndices.array();
             int[] texcoordIndices = (mTexcoordIndices.getSize() > 0) ? mTexcoordIndices.array() : mPositionIndices.array();
 
-            /*
-             * Scan all the faces and compose the set of unique vertices
-             * (where a vertex has a position, normal and texcoord)
-             */
+        /*
+         * Scan all the faces and compose the set of unique vertices
+         * (where a vertex has a position, normal and texcoord)
+         */
             mOutputPositions.setCapacity(mInputPositions.getSize());
             for (char f = 0; f < mPositionIndices.getSize(); f++)
             {
@@ -483,7 +489,7 @@ public class X3Dobject {
                     int tindex = texcoordIndices[f] * 2;
                     mInputTexCoords.get(tindex, tc);
                     // flip the Y texture coordinate
-                    tc[1] = -tc[1];
+                    tc[1] = mMaxYTexcoord - tc[1];
                     key += String.valueOf(tc[0]) + String.valueOf(tc[1]);
                 }
                 if (hasNormals)
@@ -575,9 +581,9 @@ public class X3Dobject {
 
                 float[] texCoords = mInputTexCoords.array().clone();
                 int n = texCoords.length;
-                for(int i=1; i<n; i+=2)
+                for (int i = 1; i < n; i += 2)
                 {
-                    texCoords[i] = -texCoords[i];
+                    texCoords[i] = mMaxYTexcoord - texCoords[i];
                 }
                 vbuffer.setFloatArray("a_texcoord", texCoords, 2, 0);
             }
@@ -586,6 +592,7 @@ public class X3Dobject {
             return vbuffer;
         }
     }
+
 
 
     /**
