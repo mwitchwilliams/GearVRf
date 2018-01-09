@@ -2836,19 +2836,11 @@ public class X3Dobject {
 */
                         String urlAttribute = attributes.getValue("url");
                         if (urlAttribute != null) {
-                            //urlAttribute = urlAttribute.replace("\"", ""); // remove double and
-                            // single quotes
-                            //urlAttribute = urlAttribute.replace("\'", "");
                             String[] urlsString = parseMFString(urlAttribute);
-
-                            //ArrayList <String> urls = new ArrayList<String>();
                             for (int i = 0; i < urlsString.length; i++) {
                                 shaderSettings.movieTextures.add(urlsString[i]);
                                 Log.e("X3DDBG", "   MovieTexture url["+i+"]=" + shaderSettings.movieTextures.get(i));
                             }
-                                //urls.add( urlAttribute.substring);
-
-                            //final String filename = urlAttribute;
                         }
 
                         String repeatSAttribute = attributes.getValue("repeatS");
@@ -3703,8 +3695,6 @@ public class X3Dobject {
                                         fileDescriptor.getStartOffset(), fileDescriptor.getLength());
                                     fileDescriptor.close();
 
-                                    //final GVRMesh movieMesh = gvrRenderData.getMesh();
-                                    //final GVRContext movieContext = gvrContext;
                                     mediaPlayer.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
                                         @Override
                                         public void onPrepared(MediaPlayer mp) {
@@ -3764,15 +3754,7 @@ public class X3Dobject {
                                             else newTextureCoordString += " ";
                                         }
                                         Log.e("X3DDBG", "   X3D obj new TextureCoord " + newTextureCoordString);
-                                        /*
-                                        newMesh.setTexCoords(texCoords);
-                                        newMesh.setNormals(normals);
-                                        //newMesh.setIndices(charTriangles);
-                                        newMesh.setTriangles(charTriangles);
-                                        //gvrRenderData.setMesh(newMesh);
-                                        */
-
-                                        gvrRenderData.getMesh().setTexCoords(texCoords);
+                                        //gvrRenderData.getMesh().setTexCoords(texCoords);
 
                                         //GVRMesh myQuad = gvrContext.createQuad(6, 4);
                                         //char[] myQuadTriangles = myQuad.getTriangles();
