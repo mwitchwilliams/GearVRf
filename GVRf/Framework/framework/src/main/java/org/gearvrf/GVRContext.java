@@ -292,9 +292,9 @@ public abstract class GVRContext implements IEventReceiver {
 
     /**
      * Throws an exception if the current thread is not a GL thread.
-     * 
+     *
      * @since 1.6.5
-     * 
+     *
      */
     public void assertGLThread() {
         if (Thread.currentThread().getId() != mGLThreadID) {
