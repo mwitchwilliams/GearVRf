@@ -16,6 +16,9 @@
 
 package org.gearvrf.x3d;
 
+import android.content.res.AssetFileDescriptor;
+import android.media.MediaPlayer;
+
 import org.gearvrf.GVRAssetLoader;
 import org.gearvrf.GVRComponent;
 import org.gearvrf.GVRContext;
@@ -38,6 +41,8 @@ import org.gearvrf.animation.keyframe.GVRAnimationBehavior;
 import org.gearvrf.animation.keyframe.GVRAnimationChannel;
 import org.gearvrf.animation.keyframe.GVRKeyFrameAnimation;
 
+import org.gearvrf.scene_objects.GVRVideoSceneObject;
+import org.gearvrf.scene_objects.GVRVideoSceneObjectPlayer;
 import org.gearvrf.script.GVRJavascriptScriptFile;
 
 import org.gearvrf.GVRDrawFrameListener;
@@ -56,6 +61,7 @@ import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Vector;
 
@@ -1741,6 +1747,71 @@ public class AnimationInteractivityManager {
                                     Log.e(TAG, "Error: No url associated with MFString '" + scriptObject.getFieldName(fieldNode) + "' value from SCRIPT '" + scriptObject.getName() + "'." );
                                 }
                             }  // end GVRTexture != null
+                            else if (scriptObjectToDefinedItem.getGVRVideoSceneObject() != null) {
+                                //  MFString change to a GVRVideoSceneObject object
+                                if (scriptObject.getToDefinedItemField(fieldNode).equalsIgnoreCase("url")) {
+                                    String newURL = mfString.get1Value(0);
+                                    GVRVideoSceneObject gvrVideoSceneObject = scriptObjectToDefinedItem.getGVRVideoSceneObject();
+                                    GVRVideoSceneObjectPlayer gvrVideoSceneObjectPlayer = gvrVideoSceneObject.getMediaPlayer();
+                                    MediaPlayer mediaPlayer = (MediaPlayer) gvrVideoSceneObjectPlayer.getPlayer();
+                                    boolean isLooping = mediaPlayer.isLooping();
+                                    //mediaPlayer.g
+                                    mediaPlayer.stop();
+                                    mediaPlayer.reset();
+                                    mediaPlayer.setLooping( isLooping );
+                                    //mediaPlayer.
+                                    //MediaPlayer mediaPlayer = new MediaPlayer();
+                                    //mediaPlayer.setLooping( shaderSettings.getMovieTextureLoop() );
+                                    try {
+
+                                        AssetFileDescriptor fileDescriptor = gvrContext.getContext().getAssets().openFd(
+                                                newURL);
+                                        mediaPlayer.setDataSource(fileDescriptor.getFileDescriptor(),
+                                            fileDescriptor.getStartOffset(), fileDescriptor.getLength());
+                                        fileDescriptor.close();
+
+                                        mediaPlayer.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
+                                            @Override
+                                            public void onPrepared(MediaPlayer mp) {
+                                                Log.d(TAG, "onPrepared");
+                                                mp.start();
+                                            }
+                                        });
+
+                                        mediaPlayer.prepare();
+
+                                        //gvrVideoSceneObject.setMediaPlayer(mediaPlayer);
+
+                                    } catch (IOException e) {
+                                        e.printStackTrace();
+                                        Log.e("X3DDBG", "X3D MovieTexture Assets were not loaded. Stopping application!");
+                                        Log.e(TAG, "X3D MovieTexture Assets were not loaded. Stopping application!");
+                                        mediaPlayer = null;
+                                    } catch (IllegalStateException e) {
+                                        Log.e("X3DDBG", "X3D Movie Texture: Failed to prepare media player");
+                                        Log.e(TAG, "X3D Movie Texture: Failed to prepare media player");
+                                        e.printStackTrace();
+                                        mediaPlayer = null;
+                                    }
+/*
+                                    if (scriptObjectToDefinedItem.getGVRMaterial() != null) {
+                                        // We have the GVRMaterial that contains a GVRVideoSceneObject
+                                        if ( ! scriptObjectToDefinedItem.getGVRTexture().getImage().getFileName().equals(mfString.get1Value(0))) {
+                                            // Only loadTexture if it is different than the current
+                                            GVRAssetLoader.TextureRequest request = new GVRAssetLoader.TextureRequest(assetRequest,
+                                                    scriptObjectToDefinedItem.getGVRTexture(), mfString.get1Value(0));
+                                            assetRequest.loadTexture(request);
+                                        }
+                                    } // end having GVRMaterial containing GVRTexture
+                                    else {
+                                        Log.e(TAG, "Error: No GVRVideoSceneObject associated with MFString MovieTexture url '" + scriptObject.getFieldName(fieldNode) + "' value from SCRIPT '" + scriptObject.getName() + "'." );
+                                    }
+                                    */
+                                }  //  definedItem != null
+                                else {
+                                    Log.e(TAG, "Error: No MovieTexure url associated with MFString '" + scriptObject.getFieldName(fieldNode) + "' value from SCRIPT '" + scriptObject.getName() + "'." );
+                                }
+                            }  // end GVRVideoSceneObject != null
                             else {
                                 Log.e(TAG, "Error: Not setting MFString '" + scriptObject.getFieldName(fieldNode) + "' value from SCRIPT '" + scriptObject.getName() + "'." );
                             }

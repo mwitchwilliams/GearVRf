@@ -31,6 +31,7 @@ import org.gearvrf.GVRRenderData;
 import org.gearvrf.GVRSceneObject;
 import org.gearvrf.GVRTexture;
 import org.gearvrf.GVRVertexBuffer;
+import org.gearvrf.scene_objects.GVRVideoSceneObject;
 import org.joml.AxisAngle4f;
 import org.joml.Vector3f;
 
@@ -59,6 +60,7 @@ public class DefinedItem {
     private GVRTexture gvrTexture = null;
     private GVRRenderData gvrRenderData = null;
     private GVRMaterial gvrMaterial = null;
+    private GVRVideoSceneObject gvrVideoSceneObject = null;
     private Viewpoint viewpoint = null;
     /**
      * X3D Transforms use AxisAngle format for rotations,
@@ -148,6 +150,14 @@ public class DefinedItem {
 
     public GVRTexture getGVRTexture() {
         return this.gvrTexture;
+    }
+
+    public void setGVRVideoSceneObject(GVRVideoSceneObject gvrVideoSceneObject) {
+        this.gvrVideoSceneObject = gvrVideoSceneObject;
+    }
+
+    public GVRVideoSceneObject getGVRVideoSceneObject() {
+        return this.gvrVideoSceneObject;
     }
 
     public void setGVRMesh(GVRMesh gvrMesh) {

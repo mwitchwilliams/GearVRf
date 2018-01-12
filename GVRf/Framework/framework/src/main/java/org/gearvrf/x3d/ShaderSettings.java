@@ -42,8 +42,10 @@ public class ShaderSettings
   private String nameAppearance = ""; // set if there is a DEF in Appearance
                                       // node
   private String nameMaterial = ""; // set if there is a DEF in Material node
+  private String nameMovieTexture = ""; // set if there is a DEF in MovieTexture node
   // private String nameTextureTransform = ""; // set if there is a DEF in
   // TextureTransform node
+  private boolean movieTextureLoop = false;
 
   public float[] textureCenter =
   {
@@ -92,6 +94,8 @@ public class ShaderSettings
 	material = m;
     nameAppearance = ""; // set if there is a DEF in Appearance node
     nameMaterial = ""; // set if there is a DEF in Material node
+    nameMovieTexture = "";
+    movieTextureLoop = false;
     // nameTextureTransform = ""; // set if there is a DEF in TextureTransform
     // node
 
@@ -160,6 +164,26 @@ public class ShaderSettings
   public String getMaterialName()
   {
     return this.nameMaterial;
+  }
+
+  public void setMovieTextureName(String name)
+  {
+    this.nameMovieTexture = name;
+  }
+
+  public String getMovieTextureName()
+  {
+    return this.nameMovieTexture;
+  }
+
+  public void setMovieTextureLoop(boolean movieTextureLoop)
+  {
+    this.movieTextureLoop = movieTextureLoop;
+  }
+
+  public boolean getMovieTextureLoop()
+  {
+    return this.movieTextureLoop;
   }
 
   public void setDiffuseColor(float[] diffuseColor)

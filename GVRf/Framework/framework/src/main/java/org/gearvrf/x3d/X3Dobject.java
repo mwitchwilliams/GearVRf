@@ -2867,21 +2867,13 @@ public class X3Dobject {
                                 }
                         }
 
+                        attributeValue = attributes.getValue("loop");
+                        if (attributeValue != null) {
+                            shaderSettings.setMovieTextureLoop(parseBooleanString(attributeValue) );
+                        }
 
-                        final String defValue = attributes.getValue("DEF");
 
-                            /*
-                            gvrTexture = new GVRTexture(gvrContext, gvrTextureParameters);
-                            GVRAssetLoader.TextureRequest request = new GVRAssetLoader.TextureRequest(assetRequest, gvrTexture, (inlineSubdirectory + filename));
-                            assetRequest.loadTexture(request);
-                            shaderSettings.setTexture(gvrTexture);
-                            if (defValue != null) {
-                                DefinedItem item = new DefinedItem(defValue);
-                                item.setGVRTexture(gvrTexture);
-                                mDefinedItems.add(item);
-                            }
-                            */
-                        //}
+                        shaderSettings.setMovieTextureName(attributes.getValue("DEF") );
                     }
                 } // end <MovieTexture> node
 
@@ -3694,7 +3686,7 @@ public class X3Dobject {
                             if ( !shaderSettings.movieTextures.isEmpty()) {
                                 Log.e("X3DDBG", "shader settings Movie Texture");
                                 MediaPlayer mediaPlayer = new MediaPlayer();
-                                mediaPlayer.setLooping(true);
+                                mediaPlayer.setLooping( shaderSettings.getMovieTextureLoop() );
 
                                 try {
 
@@ -3709,41 +3701,22 @@ public class X3Dobject {
                                         public void onPrepared(MediaPlayer mp) {
                                             Log.d(TAG, "onPrepared");
                                             mp.start();
-                                            Log.e("X3DDBG", "   shader settings movie texture: mp after start(); dur:" + mp.getDuration());
-
                                         }
                                     });
 
                                     mediaPlayer.prepare();
-                                    Log.e("X3DDBG", "   shader settings movie texture: mediaPlayer.prepare()");
 
                                     GVRVideoSceneObject gvrVideoSceneObject =
                                             new GVRVideoSceneObject(gvrContext, gvrRenderData.getMesh(), mediaPlayer,
-                                            //new GVRVideoSceneObject(gvrContext, currentSceneObject.getRenderData().getMesh(), mediaPlayer,
                                                         GVRVideoSceneObject.GVRVideoType.MONO);
                                     currentSceneObject.addChildObject(gvrVideoSceneObject);
                                     meshAttachedSceneObject = gvrVideoSceneObject;
 
-                                    // gvrRenderData is now replaced with the GVRVideoSceneObject's
-                                    //gvrRenderData = gvrVideoSceneObject.getRenderData();
-
+                                    //Mesh derived from a GVRSceneObject that supplies its own child with mesh.
+                                    // This must now be removed since GVRVideoSceneObject creates its own mesh.
+                                    // Otherwise, we will have 2 meshes sharing the same place, and only 1 with a
+                                    // movie texture on it.
                                     List <GVRSceneObject> children = currentSceneObject.getChildren();
-                                    for (GVRSceneObject child: children) {
-                                        Log.e("X3DDBG", "      child " + child.getName());
-                                        if ( child instanceof GVRConeSceneObject) { Log.e("X3DDBG", "         GVRConeSceneObject"); }
-                                        else if ( child instanceof GVRCubeSceneObject) { Log.e("X3DDBG", "         GVRCubeSceneObject"); }
-                                        else if ( child instanceof GVRCylinderSceneObject) { Log.e("X3DDBG", "         GVRCylinderSceneObject"); }
-                                        else if ( child instanceof GVRSphereSceneObject) { Log.e("X3DDBG", "         GVRSphereSceneObject"); }
-
-                                        if ( (child instanceof GVRConeSceneObject) || ( child instanceof GVRCubeSceneObject) ||
-                                                ( child instanceof GVRCylinderSceneObject) || ( child instanceof GVRSphereSceneObject) ||
-                                                ( child instanceof GVRTextViewSceneObject) ) {
-                                            if (child.getRenderData() == gvrRenderData) {
-                                                Log.e("X3DDBG", "            child.getRenderData() == gvrRenderData");
-
-                                            }
-                                        }
-                                    }
                                     for (GVRSceneObject child: children) {
                                         if ( (child instanceof GVRConeSceneObject) || ( child instanceof GVRCubeSceneObject) ||
                                                 ( child instanceof GVRCylinderSceneObject) || ( child instanceof GVRSphereSceneObject) ||
@@ -3755,26 +3728,16 @@ public class X3Dobject {
                                             }
                                         }
                                     }
-                                    /*
-                                    if ( currentSceneObject.getRenderData() != null ) {
-                                        // The mesh was copied to attached to the new GVRVideoSceneObject
-                                        // so we won't be rendering the original scene object
-                                        Log.e("X3DDBG", "   shader settings Movie Texture: detachRenderData() " + currentSceneObject.getName());
-                                        currentSceneObject.detachRenderData();
-                                    }
-                                    */
-                                    //GVRTransform movieGVRTransform = gvrVideoSceneObject.getTransform();
-                                    //movieGVRTransform.setPosition(1, 4f, 1);
 
-                                    Log.e("X3DDBG", "   shader settings movie texture: after GVRVideoSO ctor: " + currentSceneObject.getName());
-                                    //mediaPlayer.prepare();
-                                    //Log.e("X3DDBG", "   shader settings movie texture: mediaPlayer.prepare()");
-                                    //mediaPlayer.start();
-                                    //Log.e("X3DDBG", "   shader settings movie texture: mediaPlayer.start()");
+                                    if ( shaderSettings.getMovieTextureName() != null ) {
+                                        Log.e("X3DDBG", "   shaderSettings.getMovieTextureName(): " + shaderSettings.getMovieTextureName());
+                                        DefinedItem item = new DefinedItem( shaderSettings.getMovieTextureName() );
+                                        item.setGVRVideoSceneObject(gvrVideoSceneObject);
+                                        mDefinedItems.add(item);
+                                    }
 
                                 } catch (IOException e) {
                                     e.printStackTrace();
-                                    //finish();
                                     Log.e("X3DDBG", "X3D MovieTexture Assets were not loaded. Stopping application!");
                                     Log.e(TAG, "X3D MovieTexture Assets were not loaded. Stopping application!");
                                     mediaPlayer = null;
@@ -3784,10 +3747,9 @@ public class X3Dobject {
                                     e.printStackTrace();
                                     mediaPlayer = null;
                                 }
-
                             }
 
-                                // Appearance node thus far contains properties of GVRMaterial
+                            // Appearance node thus far contains properties of GVRMaterial
                             // node
                             if (!shaderSettings.getAppearanceName().isEmpty()) {
                                 DefinedItem definedItem = new DefinedItem(
@@ -3811,25 +3773,12 @@ public class X3Dobject {
 
                 if (meshAttachedSceneObject != null) {
                     // gvrRenderData already attached to a GVRSceneObject such as a
-                    // Cone or Cylinder
+                    // Cone or Cylinder or a Movie Texture
                     Log.e("X3DDBG", "X3D meshAttachedSceneObject != null, " + currentSceneObject.getName());
                     meshAttachedSceneObject = null;
                 } else {
                     Log.e("X3DDBG", "X3D meshAttachedSceneObject == null, " + currentSceneObject.getName());
-                    /*
-                    if ( currentSceneObject.getRenderData() != null ) {
-                        Log.e("X3DDBG", "     currentSceneObject.getRenderData() != null");
-                    }
-                    else {
-                        Log.e("X3DDBG", "     currentSceneObject.getRenderData() == null");
-                    }
-                    */
-                    //if ( shaderSettings.movieTextures.isEmpty() ) {
                     currentSceneObject.attachRenderData(gvrRenderData);
-                    //}
-                    //else {
-                    //    Log.e("X3DDBG", "        !shaderSettings.movieTextures.isEmpty(), no attachRenderData");
-                    //}
                 }
 
                 if (lodManager.shapeLODSceneObject != null) {

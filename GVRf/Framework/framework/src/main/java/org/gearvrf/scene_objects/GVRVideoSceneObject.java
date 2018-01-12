@@ -272,7 +272,7 @@ public class GVRVideoSceneObject extends GVRSceneObject {
 
     /**
      * Sets the current {@link MediaPlayer}
-     * 
+     *
      * @param mediaPlayer
      *            An Android {@link MediaPlayer}
      */
