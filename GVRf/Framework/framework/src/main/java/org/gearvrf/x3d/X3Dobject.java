@@ -3700,6 +3700,7 @@ public class X3Dobject {
                                         @Override
                                         public void onPrepared(MediaPlayer mp) {
                                             Log.d(TAG, "onPrepared");
+                                            Log.d("X3DDBG", "onPrepared");
                                             mp.start();
                                         }
                                     });
@@ -3731,6 +3732,7 @@ public class X3Dobject {
 
                                     if ( shaderSettings.getMovieTextureName() != null ) {
                                         Log.e("X3DDBG", "   shaderSettings.getMovieTextureName(): " + shaderSettings.getMovieTextureName());
+                                        gvrVideoSceneObject.setName( shaderSettings.getMovieTextureName() );
                                         DefinedItem item = new DefinedItem( shaderSettings.getMovieTextureName() );
                                         item.setGVRVideoSceneObject(gvrVideoSceneObject);
                                         mDefinedItems.add(item);

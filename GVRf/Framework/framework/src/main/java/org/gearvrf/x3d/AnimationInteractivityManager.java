@@ -773,7 +773,7 @@ public class AnimationInteractivityManager {
                                 }
                             });
                     interactiveObject.getSensor().addISensorEvents(new ISensorEvents() {
-                        //boolean isRunning;
+                        boolean isMovieStateSet = false;
                         @Override
                         public void onSensorEvent(SensorEvent event) {
                             //Setup SensorEvent callback here
@@ -781,11 +781,84 @@ public class AnimationInteractivityManager {
                                     .getSceneObjectByName(interactiveObjectFinal.getDefinedItem().getName());
                             GVRComponent gvrComponent = gvrSceneObject.getComponent(GVRLightBase.getComponentType());
 
-                            if (event.isOver() && interactiveObjectFinal.getSensorFromField().equals(Sensor.IS_OVER)) {
-                                if (gvrComponent != null) gvrComponent.setEnable(true);
-                            } else {
-                                if (gvrComponent != null) gvrComponent.setEnable(false);
+                            if ( gvrComponent != null ) {
+                                if (event.isOver() && interactiveObjectFinal.getSensorFromField().equals(Sensor.IS_OVER)) {
+                                    if (gvrComponent != null) gvrComponent.setEnable(true);
+                                } else {
+                                    if (gvrComponent != null) gvrComponent.setEnable(false);
+                                }
                             }
+                            else if ( gvrSceneObject instanceof GVRVideoSceneObject) {
+                                // if isOver, but only go thru once per isOver.
+                                if ( event.isOver() && !isMovieStateSet) {
+                                    GVRVideoSceneObject gvrVideoSceneObject = (GVRVideoSceneObject) gvrSceneObject;
+                                    Log.e("X3DDBG", "AIM: touchsensor gvrVideoSceneObject");
+                                    GVRVideoSceneObjectPlayer gvrVideoSceneObjectPlayer = gvrVideoSceneObject.getMediaPlayer();
+                                    try {
+                                        MediaPlayer mediaPlayer = (MediaPlayer) gvrVideoSceneObjectPlayer.getPlayer();
+                                        if (interactiveObjectFinal.getSensorFromField().contains("touchTime")) {
+                                            if (interactiveObjectFinal.getDefinedItemToField().endsWith("stopTime")) {
+                                                //boolean isLooping = mediaPlayer.isLooping();
+                                                Log.e("X3DDBG", "   mediaPlayer.stop() BGN");
+                                                mediaPlayer.stop();
+                                                Log.e("X3DDBG", "   mediaPlayer.isPlaying() BEFORE prepare() " + mediaPlayer.isPlaying());
+                                                mediaPlayer.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
+                                                    @Override
+                                                    public void onPrepared(MediaPlayer mp) {
+                                                        // Added to prevent calling of another Listener (in X3Dobject)
+                                                        // and re-starting the movie
+                                                        Log.d("X3DDBG", "stop for restarting movie onPrepared");
+                                                        //mp.start();
+                                                    }
+                                                });
+                                                mediaPlayer.prepare();
+                                                Log.e("X3DDBG", "   mediaPlayer.isPlaying() AFTER prepare() " + mediaPlayer.isPlaying());
+                                                Log.e("X3DDBG", "   mediaPlayer.stop() END");
+                                                //mediaPlayer.setLooping(isLooping);
+                                            } else if (interactiveObjectFinal.getDefinedItemToField().endsWith("pauseTime")) {
+                                                //boolean isLooping = mediaPlayer.isLooping();
+                                                Log.e("X3DDBG", "   mediaPlayer.pause() BGN");
+                                                Log.e("X3DDBG", "   mediaPlayer.isPlaying() " + mediaPlayer.isPlaying());
+                                                mediaPlayer.pause();
+                                                Log.e("X3DDBG", "   mediaPlayer.isPlaying() " + mediaPlayer.isPlaying());
+                                                Log.e("X3DDBG", "   mediaPlayer.pause() END");
+                                                //mediaPlayer.reset();
+                                                //mediaPlayer.setLooping(isLooping);
+                                            } else if (interactiveObjectFinal.getDefinedItemToField().endsWith("startTime")) {
+                                                //boolean isLooping = mediaPlayer.isLooping();
+                                                Log.e("X3DDBG", "   mediaPlayer.start() BGN");
+                                                Log.e("X3DDBG", "   mediaPlayer.isPlaying() " + mediaPlayer.isPlaying());
+                                                mediaPlayer.start();
+                                                Log.e("X3DDBG", "   mediaPlayer.isPlaying() " + mediaPlayer.isPlaying());
+                                                Log.e("X3DDBG", "   mediaPlayer.start() END");
+                                                //mediaPlayer.reset();
+                                                //mediaPlayer.setLooping(isLooping);
+                                            } else {
+                                                Log.e("X3DDBG", "Error: ROUTE to MovieTexture, " + interactiveObjectFinal.getDefinedItemToField() + " not implemented");
+                                                Log.e(TAG, "Error: ROUTE to MovieTexture, " + interactiveObjectFinal.getDefinedItemToField() + " not implemented");
+                                            }
+                                        } else {
+                                            Log.e("X3DDBG", "Error: ROUTE to MovieTexture, " + interactiveObjectFinal.getSensorFromField() + " not implemented");
+                                            Log.e(TAG, "Error: ROUTE to MovieTexture, " + interactiveObjectFinal.getSensorFromField() + " not implemented");
+                                        }
+                                    } catch (IllegalStateException e) {
+                                        Log.e("X3DDBG", "X3D Movie Texture: IllegalStateException: " + e);
+                                        Log.e(TAG, "X3D Movie Texture: IllegalStateException: " + e);
+                                        e.printStackTrace();
+                                    } catch (Exception e) {
+                                        Log.e("X3DDBG", "X3D Movie Texture Exception: " + e);
+                                        Log.e(TAG, "X3D Movie Texture Exception: " + e);
+                                        e.printStackTrace();
+                                    }
+                                    isMovieStateSet = true;
+                                    Log.e("X3DDBG", "     End State Change");
+                                } // end if event.isOver()
+                                else if ( !event.isOver() && isMovieStateSet){
+                                    // No longer over the TouchSensor
+                                    isMovieStateSet = false;
+                                    Log.e("X3DDBG", "event.isOver() FALSE");
+                                }
+                            } // end if gvrSceneObject
                         }
                     });
                 }  // end if sensor == TOUCH
@@ -1754,14 +1827,11 @@ public class AnimationInteractivityManager {
                                     GVRVideoSceneObject gvrVideoSceneObject = scriptObjectToDefinedItem.getGVRVideoSceneObject();
                                     GVRVideoSceneObjectPlayer gvrVideoSceneObjectPlayer = gvrVideoSceneObject.getMediaPlayer();
                                     MediaPlayer mediaPlayer = (MediaPlayer) gvrVideoSceneObjectPlayer.getPlayer();
+                                    // retain the looping boolean for the new movie
                                     boolean isLooping = mediaPlayer.isLooping();
-                                    //mediaPlayer.g
                                     mediaPlayer.stop();
                                     mediaPlayer.reset();
                                     mediaPlayer.setLooping( isLooping );
-                                    //mediaPlayer.
-                                    //MediaPlayer mediaPlayer = new MediaPlayer();
-                                    //mediaPlayer.setLooping( shaderSettings.getMovieTextureLoop() );
                                     try {
 
                                         AssetFileDescriptor fileDescriptor = gvrContext.getContext().getAssets().openFd(
@@ -1773,15 +1843,13 @@ public class AnimationInteractivityManager {
                                         mediaPlayer.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
                                             @Override
                                             public void onPrepared(MediaPlayer mp) {
+                                                Log.d("X3DDBG", "onPrepared");
                                                 Log.d(TAG, "onPrepared");
                                                 mp.start();
                                             }
                                         });
 
                                         mediaPlayer.prepare();
-
-                                        //gvrVideoSceneObject.setMediaPlayer(mediaPlayer);
-
                                     } catch (IOException e) {
                                         e.printStackTrace();
                                         Log.e("X3DDBG", "X3D MovieTexture Assets were not loaded. Stopping application!");
@@ -1793,20 +1861,6 @@ public class AnimationInteractivityManager {
                                         e.printStackTrace();
                                         mediaPlayer = null;
                                     }
-/*
-                                    if (scriptObjectToDefinedItem.getGVRMaterial() != null) {
-                                        // We have the GVRMaterial that contains a GVRVideoSceneObject
-                                        if ( ! scriptObjectToDefinedItem.getGVRTexture().getImage().getFileName().equals(mfString.get1Value(0))) {
-                                            // Only loadTexture if it is different than the current
-                                            GVRAssetLoader.TextureRequest request = new GVRAssetLoader.TextureRequest(assetRequest,
-                                                    scriptObjectToDefinedItem.getGVRTexture(), mfString.get1Value(0));
-                                            assetRequest.loadTexture(request);
-                                        }
-                                    } // end having GVRMaterial containing GVRTexture
-                                    else {
-                                        Log.e(TAG, "Error: No GVRVideoSceneObject associated with MFString MovieTexture url '" + scriptObject.getFieldName(fieldNode) + "' value from SCRIPT '" + scriptObject.getName() + "'." );
-                                    }
-                                    */
                                 }  //  definedItem != null
                                 else {
                                     Log.e(TAG, "Error: No MovieTexure url associated with MFString '" + scriptObject.getFieldName(fieldNode) + "' value from SCRIPT '" + scriptObject.getName() + "'." );
