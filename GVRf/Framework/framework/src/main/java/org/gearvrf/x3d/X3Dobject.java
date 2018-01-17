@@ -3684,7 +3684,6 @@ public class X3Dobject {
                             }
 
                             if ( !shaderSettings.movieTextures.isEmpty()) {
-                                Log.e("X3DDBG", "shader settings Movie Texture");
                                 MediaPlayer mediaPlayer = new MediaPlayer();
                                 mediaPlayer.setLooping( shaderSettings.getMovieTextureLoop() );
 
@@ -3699,8 +3698,7 @@ public class X3Dobject {
                                     mediaPlayer.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
                                         @Override
                                         public void onPrepared(MediaPlayer mp) {
-                                            Log.d(TAG, "onPrepared");
-                                            Log.d("X3DDBG", "onPrepared");
+                                            Log.d(TAG, "MovieTexture: Prepared, Start");
                                             mp.start();
                                         }
                                     });
@@ -3723,9 +3721,7 @@ public class X3Dobject {
                                                 ( child instanceof GVRCylinderSceneObject) || ( child instanceof GVRSphereSceneObject) ||
                                                 ( child instanceof GVRTextViewSceneObject) ) {
                                             if (child.getRenderData() == gvrRenderData) {
-                                                Log.e("X3DDBG", "            remove child object");
                                                 currentSceneObject.removeChildObject(child);
-                                                //break;
                                             }
                                         }
                                     }
@@ -3776,10 +3772,8 @@ public class X3Dobject {
                 if (meshAttachedSceneObject != null) {
                     // gvrRenderData already attached to a GVRSceneObject such as a
                     // Cone or Cylinder or a Movie Texture
-                    Log.e("X3DDBG", "X3D meshAttachedSceneObject != null, " + currentSceneObject.getName());
                     meshAttachedSceneObject = null;
                 } else {
-                    Log.e("X3DDBG", "X3D meshAttachedSceneObject == null, " + currentSceneObject.getName());
                     currentSceneObject.attachRenderData(gvrRenderData);
                 }
 

@@ -799,40 +799,28 @@ public class AnimationInteractivityManager {
                                         if (interactiveObjectFinal.getSensorFromField().contains("touchTime")) {
                                             if (interactiveObjectFinal.getDefinedItemToField().endsWith("stopTime")) {
                                                 //boolean isLooping = mediaPlayer.isLooping();
-                                                Log.e("X3DDBG", "   mediaPlayer.stop() BGN");
                                                 mediaPlayer.stop();
-                                                Log.e("X3DDBG", "   mediaPlayer.isPlaying() BEFORE prepare() " + mediaPlayer.isPlaying());
+                                                Log.e("X3DDBG", "   mediaPlayer.stop() BGN; mediaPlayer.isPlaying() BEFORE prepare() " + mediaPlayer.isPlaying());
                                                 mediaPlayer.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
                                                     @Override
                                                     public void onPrepared(MediaPlayer mp) {
-                                                        // Added to prevent calling of another Listener (in X3Dobject)
-                                                        // and re-starting the movie
+                                                        // Must catch even though no action. Prevent calling another
+                                                        // Listener (in X3Dobject) and re-starting the movie
                                                         Log.d("X3DDBG", "stop for restarting movie onPrepared");
-                                                        //mp.start();
                                                     }
                                                 });
                                                 mediaPlayer.prepare();
-                                                Log.e("X3DDBG", "   mediaPlayer.isPlaying() AFTER prepare() " + mediaPlayer.isPlaying());
-                                                Log.e("X3DDBG", "   mediaPlayer.stop() END");
-                                                //mediaPlayer.setLooping(isLooping);
+                                                Log.e("X3DDBG", "   mediaPlayer.isPlaying() AFTER prepare() " + mediaPlayer.isPlaying() + "; mediaPlayer.stop() END");
                                             } else if (interactiveObjectFinal.getDefinedItemToField().endsWith("pauseTime")) {
-                                                //boolean isLooping = mediaPlayer.isLooping();
-                                                Log.e("X3DDBG", "   mediaPlayer.pause() BGN");
-                                                Log.e("X3DDBG", "   mediaPlayer.isPlaying() " + mediaPlayer.isPlaying());
-                                                mediaPlayer.pause();
-                                                Log.e("X3DDBG", "   mediaPlayer.isPlaying() " + mediaPlayer.isPlaying());
-                                                Log.e("X3DDBG", "   mediaPlayer.pause() END");
-                                                //mediaPlayer.reset();
-                                                //mediaPlayer.setLooping(isLooping);
+                                                Log.e("X3DDBG", "   mediaPlayer.pause() BGN; mediaPlayer.isPlaying() " + mediaPlayer.isPlaying());
+                                                // can only call pause when running, not in prepared state after stop
+                                                if ( mediaPlayer.isPlaying() )mediaPlayer.pause();
+                                                Log.e("X3DDBG", "   mediaPlayer.isPlaying() " + mediaPlayer.isPlaying() + "; mediaPlayer.pause() END");
                                             } else if (interactiveObjectFinal.getDefinedItemToField().endsWith("startTime")) {
                                                 //boolean isLooping = mediaPlayer.isLooping();
-                                                Log.e("X3DDBG", "   mediaPlayer.start() BGN");
-                                                Log.e("X3DDBG", "   mediaPlayer.isPlaying() " + mediaPlayer.isPlaying());
+                                                Log.e("X3DDBG", "   mediaPlayer.start() BGN; mediaPlayer.isPlaying() " + mediaPlayer.isPlaying());
                                                 mediaPlayer.start();
-                                                Log.e("X3DDBG", "   mediaPlayer.isPlaying() " + mediaPlayer.isPlaying());
-                                                Log.e("X3DDBG", "   mediaPlayer.start() END");
-                                                //mediaPlayer.reset();
-                                                //mediaPlayer.setLooping(isLooping);
+                                                Log.e("X3DDBG", "   mediaPlayer.isPlaying() " + mediaPlayer.isPlaying() + "; mediaPlayer.start() END");
                                             } else {
                                                 Log.e("X3DDBG", "Error: ROUTE to MovieTexture, " + interactiveObjectFinal.getDefinedItemToField() + " not implemented");
                                                 Log.e(TAG, "Error: ROUTE to MovieTexture, " + interactiveObjectFinal.getDefinedItemToField() + " not implemented");
