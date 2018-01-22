@@ -19,6 +19,7 @@ package org.gearvrf.x3d;
 import org.gearvrf.GVRAssetLoader;
 import org.gearvrf.GVRComponent;
 import org.gearvrf.GVRContext;
+import org.gearvrf.GVRImage;
 import org.gearvrf.GVRMeshCollider;
 import org.gearvrf.GVRPointLight;
 import org.gearvrf.GVRSpotLight;
@@ -1167,16 +1168,21 @@ public class AnimationInteractivityManager {
                     }
                     else if (fieldType.equalsIgnoreCase("MFString")) {
                         //TODO: will need to handle multiple strings particularly for Text node
-                        if (definedItem.getGVRTexture() != null) {
+                        GVRTexture gvrTexture = definedItem.getGVRTexture();
+                        if (gvrTexture != null) {
                             // have a url containting a texture map
                             if (scriptObject.getFromDefinedItemField(field).equalsIgnoreCase("url") ) {
-                                if ( definedItem.getGVRTexture().getImage() != null ) {
-                                    if ( definedItem.getGVRTexture().getImage().getFileName() != null) {
-                                        scriptParameters.add("\'" + definedItem.getGVRTexture().getImage().getFileName() + "\'");
+                                GVRImage gvrImage = gvrTexture.getImage();
+                                if ( gvrImage != null ) {
+                                    if ( gvrImage.getFileName() != null) {
+                                        scriptParameters.add("\'" + gvrImage.getFileName() + "\'");
                                     }
                                 }
+                                else Log.e(TAG, "ImageTexture name not DEFined");
                             }
+                            else Log.e(TAG, "ImageTexture SCRIPT node url field not found");
                         }
+                        else Log.e(TAG, "Unable to set MFString in SCRIPT node");
                     } // end MFString
                 }  //  end if definedItem != null
             }  //  end INPUT_ONLY, INPUT_OUTPUT (only ways to pass parameters to JS parser
@@ -1720,15 +1726,16 @@ public class AnimationInteractivityManager {
                         }  //  end SFInt32
                         else if (fieldType.equalsIgnoreCase("MFString")) {
                             MFString mfString = (MFString) returnedJavaScriptValue;
-                            if (scriptObjectToDefinedItem.getGVRTexture() != null) {
+                            GVRTexture gvrTexture = scriptObjectToDefinedItem.getGVRTexture();
+                            if (gvrTexture != null) {
                                 //  MFString change to a GVRTexture object
                                 if (scriptObject.getToDefinedItemField(fieldNode).equalsIgnoreCase("url")) {
                                     if (scriptObjectToDefinedItem.getGVRMaterial() != null) {
                                         // We have the GVRMaterial that contains a GVRTexture
-                                        if ( ! scriptObjectToDefinedItem.getGVRTexture().getImage().getFileName().equals(mfString.get1Value(0))) {
+                                        if ( ! gvrTexture.getImage().getFileName().equals(mfString.get1Value(0))) {
                                             // Only loadTexture if it is different than the current
                                             GVRAssetLoader.TextureRequest request = new GVRAssetLoader.TextureRequest(assetRequest,
-                                                    scriptObjectToDefinedItem.getGVRTexture(), mfString.get1Value(0));
+                                                    gvrTexture, mfString.get1Value(0));
                                             assetRequest.loadTexture(request);
                                         }
                                     } // end having GVRMaterial containing GVRTexture
