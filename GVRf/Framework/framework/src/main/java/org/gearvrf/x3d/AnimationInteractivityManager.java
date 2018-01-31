@@ -18,6 +18,17 @@ package org.gearvrf.x3d;
 
 import android.content.res.AssetFileDescriptor;
 import android.media.MediaPlayer;
+import android.net.Uri;
+
+import com.google.android.exoplayer2.ExoPlayer;
+import com.google.android.exoplayer2.PlaybackParameters;
+import com.google.android.exoplayer2.Player;
+import com.google.android.exoplayer2.SimpleExoPlayer;
+import com.google.android.exoplayer2.extractor.DefaultExtractorsFactory;
+import com.google.android.exoplayer2.source.ExtractorMediaSource;
+import com.google.android.exoplayer2.source.MediaSource;
+import com.google.android.exoplayer2.upstream.AssetDataSource;
+import com.google.android.exoplayer2.upstream.DataSource;
 
 import org.gearvrf.GVRAssetLoader;
 import org.gearvrf.GVRComponent;
@@ -795,32 +806,15 @@ public class AnimationInteractivityManager {
                                     Log.e("X3DDBG", "AIM: touchsensor gvrVideoSceneObject");
                                     GVRVideoSceneObjectPlayer gvrVideoSceneObjectPlayer = gvrVideoSceneObject.getMediaPlayer();
                                     try {
-                                        MediaPlayer mediaPlayer = (MediaPlayer) gvrVideoSceneObjectPlayer.getPlayer();
                                         if (interactiveObjectFinal.getSensorFromField().contains("touchTime")) {
                                             if (interactiveObjectFinal.getDefinedItemToField().endsWith("stopTime")) {
-                                                //boolean isLooping = mediaPlayer.isLooping();
-                                                mediaPlayer.stop();
-                                                Log.e("X3DDBG", "   mediaPlayer.stop() BGN; mediaPlayer.isPlaying() BEFORE prepare() " + mediaPlayer.isPlaying());
-                                                mediaPlayer.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
-                                                    @Override
-                                                    public void onPrepared(MediaPlayer mp) {
-                                                        // Must catch even though no action. Prevent calling another
-                                                        // Listener (in X3Dobject) and re-starting the movie
-                                                        Log.d("X3DDBG", "stop for restarting movie onPrepared");
-                                                    }
-                                                });
-                                                mediaPlayer.prepare();
-                                                Log.e("X3DDBG", "   mediaPlayer.isPlaying() AFTER prepare() " + mediaPlayer.isPlaying() + "; mediaPlayer.stop() END");
+                                                gvrVideoSceneObjectPlayer.pause();
+                                                ExoPlayer exoPlayer = (ExoPlayer) gvrVideoSceneObjectPlayer.getPlayer();
+                                                exoPlayer.seekTo(0);
                                             } else if (interactiveObjectFinal.getDefinedItemToField().endsWith("pauseTime")) {
-                                                Log.e("X3DDBG", "   mediaPlayer.pause() BGN; mediaPlayer.isPlaying() " + mediaPlayer.isPlaying());
-                                                // can only call pause when running, not in prepared state after stop
-                                                if ( mediaPlayer.isPlaying() )mediaPlayer.pause();
-                                                Log.e("X3DDBG", "   mediaPlayer.isPlaying() " + mediaPlayer.isPlaying() + "; mediaPlayer.pause() END");
+                                                gvrVideoSceneObjectPlayer.pause();
                                             } else if (interactiveObjectFinal.getDefinedItemToField().endsWith("startTime")) {
-                                                //boolean isLooping = mediaPlayer.isLooping();
-                                                Log.e("X3DDBG", "   mediaPlayer.start() BGN; mediaPlayer.isPlaying() " + mediaPlayer.isPlaying());
-                                                mediaPlayer.start();
-                                                Log.e("X3DDBG", "   mediaPlayer.isPlaying() " + mediaPlayer.isPlaying() + "; mediaPlayer.start() END");
+                                                gvrVideoSceneObjectPlayer.start();
                                             } else {
                                                 Log.e("X3DDBG", "Error: ROUTE to MovieTexture, " + interactiveObjectFinal.getDefinedItemToField() + " not implemented");
                                                 Log.e(TAG, "Error: ROUTE to MovieTexture, " + interactiveObjectFinal.getDefinedItemToField() + " not implemented");
@@ -1474,6 +1468,7 @@ public class AnimationInteractivityManager {
             gvrJavascriptV8FileFinal.setInputValues(gvrFunctionBindingValues);
             // Now run this Script's actual function
             complete = gvrJavascriptV8FileFinal.invokeFunction(functionNameFinal, parametersFinal, paramStringFinal);
+            Log.e("X3DDBG", "   RunScriptThread invoked " + functionNameFinal);
 
             if (complete) {
                 // The JavaScript (JS) ran ok.  Now get the return
@@ -1540,6 +1535,7 @@ public class AnimationInteractivityManager {
     private void SetResultsFromScript(InteractiveObject interactiveObjectFinal, Bindings localBindings) {
         // A SCRIPT can have mutliple defined objects, so we don't use getDefinedItem()
         // instead we go through the field values
+        Log.e("X3DDBG", "SetResultsFromScript() BGN");
         try {
             ScriptObject scriptObject = interactiveObjectFinal.getScriptObject();
             for (ScriptObject.Field fieldNode : scriptObject.getFieldsArrayList()) {
@@ -1582,7 +1578,8 @@ public class AnimationInteractivityManager {
                             }
                         }  //  end SFBool
                         else if (fieldType.equalsIgnoreCase("SFFloat")) {
-                            SFFloat sfFloat = (SFFloat) returnedJavaScriptValue;
+                            final SFFloat sfFloat = (SFFloat) returnedJavaScriptValue;
+                            Log.e("X3DDBG", "   SFFloat " + sfFloat);
                             if (scriptObjectToDefinedItem.getGVRMaterial() != null) {
                                 if (scriptObject.getToDefinedItemField(fieldNode).equalsIgnoreCase("shininess")) {
                                     scriptObjectToDefinedItem.getGVRMaterial().setSpecularExponent(sfFloat.getValue());
@@ -1618,6 +1615,26 @@ public class AnimationInteractivityManager {
                                     }
                                 }  //  end presumed to be a light
                             }  //  end GVRScriptObject ! null
+                            else if ( scriptObjectToDefinedItem.getGVRVideoSceneObject() != null) {
+                                Log.e("X3DDBG", "SFFloat '" + scriptObject.getFieldName(fieldNode) + "' value from SCRIPT '" + scriptObject.getName() + "'.");
+                                //GVRVideoSceneObject gvrVideoSceneObject = scriptObjectToDefinedItem.getGVRVideoSceneObject();
+                                GVRVideoSceneObjectPlayer gvrVideoSceneObjectPlayer = scriptObjectToDefinedItem.getGVRVideoSceneObject().getMediaPlayer();
+                                ExoPlayer exoPlayer = (ExoPlayer) gvrVideoSceneObjectPlayer.getPlayer();
+                                final ExoPlayer exoPlayerFinal = exoPlayer;
+
+                                exoPlayer.addListener( new ExoPlayer.DefaultEventListener() {
+                                    @Override
+                                    public void onPlaybackParametersChanged(PlaybackParameters playbackParameters) {
+                                        Log.v(TAG, "Listener-onPlaybackParametersChanged...");
+                                    }
+                                });
+
+                                PlaybackParameters currPlaybackParamters = exoPlayer.getPlaybackParameters();
+                                PlaybackParameters playbackParamters = new PlaybackParameters( sfFloat.getValue(), 1);
+                                exoPlayer.setPlaybackParameters( playbackParamters );
+
+                                //exoPlayer.setPlaybackSpeed(4);
+                            }
                             else {
                                 Log.e(TAG, "Error: Not setting SFFloat '" + scriptObject.getFieldName(fieldNode) + "' value from SCRIPT '" + scriptObject.getName() + "'." );
                             }
@@ -1811,45 +1828,32 @@ public class AnimationInteractivityManager {
                             else if (scriptObjectToDefinedItem.getGVRVideoSceneObject() != null) {
                                 //  MFString change to a GVRVideoSceneObject object
                                 if (scriptObject.getToDefinedItemField(fieldNode).equalsIgnoreCase("url")) {
-                                    String newURL = mfString.get1Value(0);
-                                    GVRVideoSceneObject gvrVideoSceneObject = scriptObjectToDefinedItem.getGVRVideoSceneObject();
-                                    GVRVideoSceneObjectPlayer gvrVideoSceneObjectPlayer = gvrVideoSceneObject.getMediaPlayer();
-                                    MediaPlayer mediaPlayer = (MediaPlayer) gvrVideoSceneObjectPlayer.getPlayer();
-                                    // retain the looping boolean for the new movie
-                                    boolean isLooping = mediaPlayer.isLooping();
-                                    mediaPlayer.stop();
-                                    mediaPlayer.reset();
-                                    mediaPlayer.setLooping( isLooping );
+                                    //String newURL = mfString.get1Value(0);
                                     try {
 
-                                        AssetFileDescriptor fileDescriptor = gvrContext.getContext().getAssets().openFd(
-                                                newURL);
-                                        mediaPlayer.setDataSource(fileDescriptor.getFileDescriptor(),
-                                            fileDescriptor.getStartOffset(), fileDescriptor.getLength());
-                                        fileDescriptor.close();
+                                    GVRVideoSceneObjectPlayer gvrVideoSceneObjectPlayer = scriptObjectToDefinedItem.getGVRVideoSceneObject().getMediaPlayer();
+                                    ExoPlayer exoPlayer = (ExoPlayer) gvrVideoSceneObjectPlayer.getPlayer();
+                                    exoPlayer.stop();
 
-                                        mediaPlayer.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
-                                            @Override
-                                            public void onPrepared(MediaPlayer mp) {
-                                                Log.d("X3DDBG", "onPrepared");
-                                                Log.d(TAG, "onPrepared");
-                                                mp.start();
-                                            }
-                                        });
+                                    final DataSource.Factory dataSourceFactory = new DataSource.Factory() {
+                                        @Override
+                                        public DataSource createDataSource() {
+                                            return new AssetDataSource(gvrContext.getContext());
+                                        }
+                                    };
+                                    final MediaSource mediaSource = new ExtractorMediaSource(Uri.parse("asset:///" + mfString.get1Value(0)),
+                                            dataSourceFactory,
+                                            new DefaultExtractorsFactory(), null, null);
+                                    exoPlayer.prepare(mediaSource);
+                                    //SimpleExoPlayer player = exoPlayer.getPlayer();
+                                    gvrVideoSceneObjectPlayer.start();
 
-                                        mediaPlayer.prepare();
-                                    } catch (IOException e) {
+                                    } catch (Exception e) {
+                                        Log.e("X3DDBG", "X3D MovieTexture Asset " + mfString.get1Value(0) + " not loaded." + e);
+                                        Log.e(TAG, "X3D MovieTexture Asset " + mfString.get1Value(0) + " not loaded." + e);
                                         e.printStackTrace();
-                                        Log.e("X3DDBG", "X3D MovieTexture Assets were not loaded. Stopping application!");
-                                        Log.e(TAG, "X3D MovieTexture Assets were not loaded. Stopping application!");
-                                        mediaPlayer = null;
-                                    } catch (IllegalStateException e) {
-                                        Log.e("X3DDBG", "X3D Movie Texture: Failed to prepare media player");
-                                        Log.e(TAG, "X3D Movie Texture: Failed to prepare media player");
-                                        e.printStackTrace();
-                                        mediaPlayer = null;
                                     }
-                                }  //  definedItem != null
+                                }  //  end - definedItem url exists
                                 else {
                                     Log.e(TAG, "Error: No MovieTexure url associated with MFString '" + scriptObject.getFieldName(fieldNode) + "' value from SCRIPT '" + scriptObject.getName() + "'." );
                                 }
@@ -1861,8 +1865,6 @@ public class AnimationInteractivityManager {
                         else {
                             Log.e(TAG, "Error: " + fieldType + " in '" + scriptObject.getFieldName(fieldNode) + "' value from SCRIPT '" + scriptObject.getName() + "' not supported." );
                         }
-
-
 
                     }  //  end value != null
                 }  //  end OUTPUT-ONLY or INPUT_OUTPUT
