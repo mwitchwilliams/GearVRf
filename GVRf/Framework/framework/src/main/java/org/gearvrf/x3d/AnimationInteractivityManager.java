@@ -29,6 +29,8 @@ import com.google.android.exoplayer2.source.ExtractorMediaSource;
 import com.google.android.exoplayer2.source.MediaSource;
 import com.google.android.exoplayer2.upstream.AssetDataSource;
 import com.google.android.exoplayer2.upstream.DataSource;
+import com.google.android.exoplayer2.audio.SonicAudioProcessor;
+
 
 import org.gearvrf.GVRAssetLoader;
 import org.gearvrf.GVRComponent;
@@ -1622,10 +1624,14 @@ public class AnimationInteractivityManager {
                                 ExoPlayer exoPlayer = (ExoPlayer) gvrVideoSceneObjectPlayer.getPlayer();
                                 final ExoPlayer exoPlayerFinal = exoPlayer;
 
+                                //exoPlayer.
+
                                 exoPlayer.addListener( new ExoPlayer.DefaultEventListener() {
                                     @Override
                                     public void onPlaybackParametersChanged(PlaybackParameters playbackParameters) {
-                                        Log.v(TAG, "Listener-onPlaybackParametersChanged...");
+                                        Log.v("X3DDBG", "Listener-onPlaybackParametersChanged...");
+                                        //exoPlayerFinal.setPlaybackSpeed(4.0f);
+
                                     }
                                 });
 
@@ -1633,7 +1639,7 @@ public class AnimationInteractivityManager {
                                 PlaybackParameters playbackParamters = new PlaybackParameters( sfFloat.getValue(), 1);
                                 exoPlayer.setPlaybackParameters( playbackParamters );
 
-                                //exoPlayer.setPlaybackSpeed(4);
+                                //exoPlayerFinal.setPlaybackSpeed(4.0f);
                             }
                             else {
                                 Log.e(TAG, "Error: Not setting SFFloat '" + scriptObject.getFieldName(fieldNode) + "' value from SCRIPT '" + scriptObject.getName() + "'." );
