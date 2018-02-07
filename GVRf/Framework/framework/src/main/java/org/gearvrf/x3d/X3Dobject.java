@@ -94,17 +94,25 @@ import org.joml.AxisAngle4f;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 
+/*
+import com.google.android.exoplayer2.ExoPlaybackException;
+//import com.google.android.exoplayer2.ExoPlayer;
 import com.google.android.exoplayer2.ExoPlayer;
 import com.google.android.exoplayer2.ExoPlayerFactory;
 import com.google.android.exoplayer2.PlaybackParameters;
 import com.google.android.exoplayer2.Player;
 import com.google.android.exoplayer2.SimpleExoPlayer;
+import com.google.android.exoplayer2.Timeline;
+import com.google.android.exoplayer2.audio.AudioAttributes;
+import com.google.android.exoplayer2.audio.SonicAudioProcessor;
 import com.google.android.exoplayer2.extractor.DefaultExtractorsFactory;
 import com.google.android.exoplayer2.source.ExtractorMediaSource;
 import com.google.android.exoplayer2.source.MediaSource;
+import com.google.android.exoplayer2.source.TrackGroupArray;
 import com.google.android.exoplayer2.trackselection.AdaptiveTrackSelection;
 import com.google.android.exoplayer2.trackselection.DefaultTrackSelector;
 import com.google.android.exoplayer2.trackselection.TrackSelection;
+import com.google.android.exoplayer2.trackselection.TrackSelectionArray;
 import com.google.android.exoplayer2.trackselection.TrackSelector;
 import com.google.android.exoplayer2.upstream.AssetDataSource;
 import com.google.android.exoplayer2.upstream.BandwidthMeter;
@@ -114,21 +122,59 @@ import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory;
 import com.google.android.exoplayer2.upstream.FileDataSourceFactory;
 import com.google.android.exoplayer2.upstream.TransferListener;
 import com.google.android.exoplayer2.util.Util;
+*/
+
+import com.google.android.exoplayer2.C;
+import com.google.android.exoplayer2.DefaultLoadControl;
+import com.google.android.exoplayer2.ExoPlaybackException;
+import com.google.android.exoplayer2.ExoPlayer;
+import com.google.android.exoplayer2.ExoPlayerFactory;
+import com.google.android.exoplayer2.PlaybackParameters;
+import com.google.android.exoplayer2.Player;
+import com.google.android.exoplayer2.SimpleExoPlayer;
+import com.google.android.exoplayer2.Timeline;
+import com.google.android.exoplayer2.audio.SonicAudioProcessor;
+import com.google.android.exoplayer2.extractor.DefaultExtractorsFactory;
+import com.google.android.exoplayer2.source.ExtractorMediaSource;
+import com.google.android.exoplayer2.source.MediaSource;
+import com.google.android.exoplayer2.source.TrackGroupArray;
+import com.google.android.exoplayer2.source.dash.DashMediaSource;
+import com.google.android.exoplayer2.source.dash.DefaultDashChunkSource;
+import com.google.android.exoplayer2.source.hls.HlsMediaSource;
+import com.google.android.exoplayer2.source.smoothstreaming.DefaultSsChunkSource;
+import com.google.android.exoplayer2.source.smoothstreaming.SsMediaSource;
+import com.google.android.exoplayer2.trackselection.AdaptiveTrackSelection;
+import com.google.android.exoplayer2.trackselection.DefaultTrackSelector;
+import com.google.android.exoplayer2.trackselection.MappingTrackSelector;
+import com.google.android.exoplayer2.trackselection.TrackSelection;
+import com.google.android.exoplayer2.trackselection.TrackSelectionArray;
+import com.google.android.exoplayer2.upstream.DefaultBandwidthMeter;
+import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory;
+import com.google.android.exoplayer2.util.Util;
+import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory;
+import com.google.android.exoplayer2.upstream.AssetDataSource;
+//import com.google.android.exoplayer2.upstream.BandwidthMeter;
+import com.google.android.exoplayer2.upstream.DataSource;
+
 
 public class X3Dobject {
 
 
     static final boolean USE_EXO_PLAYER = true;
+    //SimpleExoPlayer player = null;
+    //ExoPlayer player = null;
 
     //private GVRVideoSceneObjectPlayer<ExoPlayer> makeExoPlayer() {
-    private GVRVideoSceneObjectPlayer<ExoPlayer> makeExoPlayer( String movieFileName ) {
+    //private GVRVideoSceneObjectPlayer<ExoPlayer> makeExoPlayer(String movieFileName ) {
+    private GVRVideoSceneObjectPlayer<ExoPlayer> makeExoPlayer(String movieFileName ) {
         //Log.e("X3DDBG", "videoSceneObjectPlayer.makeExoPlayer begin");
+        ComponentListener exoPlayerComponentListener = new ComponentListener();
         final Context context = activityContext;
-        final String movieFileNameComment = movieFileName;
+        final String finalMovieFileName = movieFileName;
         final DataSource.Factory dataSourceFactory = new DataSource.Factory() {
                 @Override
                 public DataSource createDataSource() {
-                    Log.e("X3DDBG", "createDataSource " + movieFileNameComment);
+                    Log.e("X3DDBG", "createDataSource " + finalMovieFileName);
                     return new AssetDataSource(context);
                 }
         };
@@ -140,13 +186,17 @@ public class X3Dobject {
         //Log.e("X3DDBG", "   ExtractorMediaSource END");
 
         final SimpleExoPlayer player = ExoPlayerFactory.newSimpleInstance(context,
+        //player = ExoPlayerFactory.newSimpleInstance(context,
                     new DefaultTrackSelector());
         //Log.e("X3DDBG", "   ExoPlayerFactory.newSimpleInstance()");
         player.prepare(mediaSource);
+        player.addListener(exoPlayerComponentListener);
+
         Log.e("X3DDBG", "   player.prepare(mediaSource) " + movieFileName);
 
         return new GVRVideoSceneObjectPlayer<ExoPlayer>() {
                 @Override
+                //public SimpleExoPlayer getPlayer() {
                 public ExoPlayer getPlayer() {
                     return player;
                 }
@@ -202,8 +252,71 @@ public class X3Dobject {
                     player.setPlayWhenReady(true);
                 }
             };
+
+
     }
 
+    //class ComponentListener implements ExoPlayer.EventListener {
+    class ComponentListener implements ExoPlayer.EventListener {
+
+
+        @Override
+        public void onTimelineChanged(Timeline timeline, Object manifest) {
+
+        }
+
+        @Override
+        public void onTracksChanged(TrackGroupArray trackGroups, TrackSelectionArray trackSelections) {
+
+        }
+
+        @Override
+        public void onLoadingChanged(boolean isLoading) {
+
+        }
+
+        @Override
+        public void onPlayerStateChanged(boolean playWhenReady, int playbackState) {
+
+        }
+
+        @Override
+        public void onRepeatModeChanged(int repeatMode) {
+
+        }
+
+        @Override
+        public void onShuffleModeEnabledChanged(boolean shuffleModeEnabled) {
+
+        }
+
+        @Override
+        public void onPlayerError(ExoPlaybackException error) {
+
+        }
+
+       @Override
+        public void onPositionDiscontinuity(int reason) {
+
+        }
+
+        @Override
+        public void onPlaybackParametersChanged(PlaybackParameters playbackParameters) {
+            //AudioAttributes audioAttributes = player.getAudioAttributes();
+            //player.
+            //player.setPlaybackSpeed(playbackParameters.speed);
+            Log.e("X3DDBG", "ComponentListener::onPlaybackParametersChanged: " + playbackParameters.speed);
+            SonicAudioProcessor sonicAudioProcessor= new SonicAudioProcessor();
+            sonicAudioProcessor.setSpeed(playbackParameters.speed);
+            sonicAudioProcessor.setPitch(playbackParameters.pitch);
+            Log.e("X3DDBG", "   ComponentListener::onPlaybackParametersChanged: END");
+        }
+
+        @Override
+        public void onSeekProcessed() {
+
+        }
+    }
     /**
      * This class facilitates construction of GearVRF meshes from X3D data.
      * X3D can have different indices for positions, normals and texture coordinates.

@@ -1470,8 +1470,6 @@ public class AnimationInteractivityManager {
             gvrJavascriptV8FileFinal.setInputValues(gvrFunctionBindingValues);
             // Now run this Script's actual function
             complete = gvrJavascriptV8FileFinal.invokeFunction(functionNameFinal, parametersFinal, paramStringFinal);
-            Log.e("X3DDBG", "   RunScriptThread invoked " + functionNameFinal);
-
             if (complete) {
                 // The JavaScript (JS) ran ok.  Now get the return
                 // values (saved as X3D data types such as SFColor)
@@ -1537,7 +1535,6 @@ public class AnimationInteractivityManager {
     private void SetResultsFromScript(InteractiveObject interactiveObjectFinal, Bindings localBindings) {
         // A SCRIPT can have mutliple defined objects, so we don't use getDefinedItem()
         // instead we go through the field values
-        Log.e("X3DDBG", "SetResultsFromScript() BGN");
         try {
             ScriptObject scriptObject = interactiveObjectFinal.getScriptObject();
             for (ScriptObject.Field fieldNode : scriptObject.getFieldsArrayList()) {
@@ -1581,7 +1578,6 @@ public class AnimationInteractivityManager {
                         }  //  end SFBool
                         else if (fieldType.equalsIgnoreCase("SFFloat")) {
                             final SFFloat sfFloat = (SFFloat) returnedJavaScriptValue;
-                            Log.e("X3DDBG", "   SFFloat " + sfFloat);
                             if (scriptObjectToDefinedItem.getGVRMaterial() != null) {
                                 if (scriptObject.getToDefinedItemField(fieldNode).equalsIgnoreCase("shininess")) {
                                     scriptObjectToDefinedItem.getGVRMaterial().setSpecularExponent(sfFloat.getValue());
@@ -1618,14 +1614,11 @@ public class AnimationInteractivityManager {
                                 }  //  end presumed to be a light
                             }  //  end GVRScriptObject ! null
                             else if ( scriptObjectToDefinedItem.getGVRVideoSceneObject() != null) {
-                                Log.e("X3DDBG", "SFFloat '" + scriptObject.getFieldName(fieldNode) + "' value from SCRIPT '" + scriptObject.getName() + "'.");
                                 //GVRVideoSceneObject gvrVideoSceneObject = scriptObjectToDefinedItem.getGVRVideoSceneObject();
                                 GVRVideoSceneObjectPlayer gvrVideoSceneObjectPlayer = scriptObjectToDefinedItem.getGVRVideoSceneObject().getMediaPlayer();
                                 ExoPlayer exoPlayer = (ExoPlayer) gvrVideoSceneObjectPlayer.getPlayer();
                                 final ExoPlayer exoPlayerFinal = exoPlayer;
-
-                                //exoPlayer.
-
+/*
                                 exoPlayer.addListener( new ExoPlayer.DefaultEventListener() {
                                     @Override
                                     public void onPlaybackParametersChanged(PlaybackParameters playbackParameters) {
@@ -1634,12 +1627,14 @@ public class AnimationInteractivityManager {
 
                                     }
                                 });
-
+*/
                                 PlaybackParameters currPlaybackParamters = exoPlayer.getPlaybackParameters();
+                                //currPlaybackParamters.set
                                 PlaybackParameters playbackParamters = new PlaybackParameters( sfFloat.getValue(), 1);
+                                //Log.e("X3DDBG", "   AIM: Call exoPlayer.setPlaybackParameters()");
+                                Log.e("X3DDBG", "SFFloat '" + scriptObject.getFieldName(fieldNode) + "' to " + sfFloat + " from SCRIPT '" + scriptObject.getName() + "'.");
                                 exoPlayer.setPlaybackParameters( playbackParamters );
-
-                                //exoPlayerFinal.setPlaybackSpeed(4.0f);
+                                //Log.e("X3DDBG", "   AIM: Return exoPlayer.setPlaybackParameters()");
                             }
                             else {
                                 Log.e(TAG, "Error: Not setting SFFloat '" + scriptObject.getFieldName(fieldNode) + "' value from SCRIPT '" + scriptObject.getName() + "'." );
