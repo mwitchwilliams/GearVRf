@@ -3911,6 +3911,7 @@ public class X3Dobject {
 
                             if ( !shaderSettings.movieTextures.isEmpty()) {
                                 if (USE_EXO_PLAYER) {
+                                    /*
                                     try {
                                         Log.e("X3DDBG", "MovieTexture: EXO_PLAYER: " + shaderSettings.movieTextures.get(0));
                                         GVRVideoSceneObjectPlayer<?> videoSceneObjectPlayer =
@@ -3942,6 +3943,7 @@ public class X3Dobject {
                                         Log.e("X3DDBG", "Error: X3D MovieTexture Exception:\n" + e);
                                         Log.e(TAG, "X3D MovieTexture Exception:\n" + e);
                                     }
+                                    */
 
                                 }
                                 else {

@@ -1616,25 +1616,14 @@ public class AnimationInteractivityManager {
                             else if ( scriptObjectToDefinedItem.getGVRVideoSceneObject() != null) {
                                 //GVRVideoSceneObject gvrVideoSceneObject = scriptObjectToDefinedItem.getGVRVideoSceneObject();
                                 GVRVideoSceneObjectPlayer gvrVideoSceneObjectPlayer = scriptObjectToDefinedItem.getGVRVideoSceneObject().getMediaPlayer();
-                                ExoPlayer exoPlayer = (ExoPlayer) gvrVideoSceneObjectPlayer.getPlayer();
-                                final ExoPlayer exoPlayerFinal = exoPlayer;
-/*
-                                exoPlayer.addListener( new ExoPlayer.DefaultEventListener() {
-                                    @Override
-                                    public void onPlaybackParametersChanged(PlaybackParameters playbackParameters) {
-                                        Log.v("X3DDBG", "Listener-onPlaybackParametersChanged...");
-                                        //exoPlayerFinal.setPlaybackSpeed(4.0f);
-
-                                    }
-                                });
-*/
-                                PlaybackParameters currPlaybackParamters = exoPlayer.getPlaybackParameters();
-                                //currPlaybackParamters.set
-                                PlaybackParameters playbackParamters = new PlaybackParameters( sfFloat.getValue(), 1);
-                                //Log.e("X3DDBG", "   AIM: Call exoPlayer.setPlaybackParameters()");
                                 Log.e("X3DDBG", "SFFloat '" + scriptObject.getFieldName(fieldNode) + "' to " + sfFloat + " from SCRIPT '" + scriptObject.getName() + "'.");
+
+                                /*
+                                ExoPlayer exoPlayer = (ExoPlayer) gvrVideoSceneObjectPlayer.getPlayer();
+                                PlaybackParameters currPlaybackParamters = exoPlayer.getPlaybackParameters();
+                                PlaybackParameters playbackParamters = new PlaybackParameters( sfFloat.getValue(), 1);
                                 exoPlayer.setPlaybackParameters( playbackParamters );
-                                //Log.e("X3DDBG", "   AIM: Return exoPlayer.setPlaybackParameters()");
+                                */
                             }
                             else {
                                 Log.e(TAG, "Error: Not setting SFFloat '" + scriptObject.getFieldName(fieldNode) + "' value from SCRIPT '" + scriptObject.getName() + "'." );
