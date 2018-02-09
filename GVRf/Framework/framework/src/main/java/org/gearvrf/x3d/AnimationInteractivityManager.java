@@ -1212,7 +1212,24 @@ public class AnimationInteractivityManager {
                                 scriptParameters.add(parameter);
                             }
                         }
-                    }  // end if SFFloat
+                        if (definedItem.getGVRVideoSceneObject() != null) {
+                            Log.e("X3DDBG", "set parameter for definedItem.getGVRVideoSceneObject() != null");
+                            if (scriptObject.getFromDefinedItemField(field).endsWith("speed")) {
+                                //scriptObject.getToDefinedItemField()
+                                GVRVideoSceneObjectPlayer gvrVideoSceneObjectPlayer = definedItem.getGVRVideoSceneObject().getMediaPlayer();
+                                ExoPlayer exoPlayer = (ExoPlayer) gvrVideoSceneObjectPlayer.getPlayer();
+                                PlaybackParameters currPlaybackParamters = exoPlayer.getPlaybackParameters();
+                                Log.e("X3DDBG", "   double speed starting at " + currPlaybackParamters.speed);
+                                scriptParameters.add( currPlaybackParamters.speed );
+                                /*
+                                ExoPlayer exoPlayer = (ExoPlayer) gvrVideoSceneObjectPlayer.getPlayer();
+                                //PlaybackParameters currPlaybackParamters = exoPlayer.getPlaybackParameters();
+                                PlaybackParameters playbackParamters = new PlaybackParameters( sfFloat.getValue(), sfFloat.getValue());
+                                exoPlayer.setPlaybackParameters( playbackParamters );
+                                 */
+                            }
+                        } // end
+                    }  // end if SFFloat GVRVideoSceneObject
                     else if (fieldType.equalsIgnoreCase("SFInt32")) {
                         int parameter = 0;
                         if (definedItem.getGVRSceneObject() != null) {
@@ -1618,12 +1635,11 @@ public class AnimationInteractivityManager {
                                 GVRVideoSceneObjectPlayer gvrVideoSceneObjectPlayer = scriptObjectToDefinedItem.getGVRVideoSceneObject().getMediaPlayer();
                                 Log.e("X3DDBG", "SFFloat '" + scriptObject.getFieldName(fieldNode) + "' to " + sfFloat + " from SCRIPT '" + scriptObject.getName() + "'.");
 
-                                /*
                                 ExoPlayer exoPlayer = (ExoPlayer) gvrVideoSceneObjectPlayer.getPlayer();
-                                PlaybackParameters currPlaybackParamters = exoPlayer.getPlaybackParameters();
-                                PlaybackParameters playbackParamters = new PlaybackParameters( sfFloat.getValue(), 1);
+                                //PlaybackParameters currPlaybackParamters = exoPlayer.getPlaybackParameters();
+                                PlaybackParameters playbackParamters = new PlaybackParameters( sfFloat.getValue(), sfFloat.getValue());
                                 exoPlayer.setPlaybackParameters( playbackParamters );
-                                */
+
                             }
                             else {
                                 Log.e(TAG, "Error: Not setting SFFloat '" + scriptObject.getFieldName(fieldNode) + "' value from SCRIPT '" + scriptObject.getName() + "'." );

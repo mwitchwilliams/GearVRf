@@ -18,6 +18,7 @@ package org.gearvrf.x3d;
 import android.content.Context;
 import android.content.res.AssetFileDescriptor;
 import android.graphics.Color;
+import android.media.AudioAttributes;
 import android.media.MediaPlayer;
 import android.media.PlaybackParams;
 import android.net.Uri;
@@ -168,7 +169,7 @@ public class X3Dobject {
     //private GVRVideoSceneObjectPlayer<ExoPlayer> makeExoPlayer(String movieFileName ) {
     private GVRVideoSceneObjectPlayer<ExoPlayer> makeExoPlayer(String movieFileName ) {
         //Log.e("X3DDBG", "videoSceneObjectPlayer.makeExoPlayer begin");
-        ComponentListener exoPlayerComponentListener = new ComponentListener();
+        //ComponentListener exoPlayerComponentListener = new ComponentListener();
         final Context context = activityContext;
         final String finalMovieFileName = movieFileName;
         final DataSource.Factory dataSourceFactory = new DataSource.Factory() {
@@ -190,7 +191,7 @@ public class X3Dobject {
                     new DefaultTrackSelector());
         //Log.e("X3DDBG", "   ExoPlayerFactory.newSimpleInstance()");
         player.prepare(mediaSource);
-        player.addListener(exoPlayerComponentListener);
+        //player.addListener(exoPlayerComponentListener);
 
         Log.e("X3DDBG", "   player.prepare(mediaSource) " + movieFileName);
 
@@ -229,6 +230,7 @@ public class X3Dobject {
                     });
 
                     player.setVideoSurface(surface);
+                    player.getAudioAttributes();
                 }
 
                 @Override
@@ -255,50 +257,33 @@ public class X3Dobject {
 
 
     }
-
+/*
     //class ComponentListener implements ExoPlayer.EventListener {
     class ComponentListener implements ExoPlayer.EventListener {
 
+        @Override
+        public void onTimelineChanged(Timeline timeline, Object manifest) {}
 
         @Override
-        public void onTimelineChanged(Timeline timeline, Object manifest) {
-
-        }
+        public void onTracksChanged(TrackGroupArray trackGroups, TrackSelectionArray trackSelections) {}
 
         @Override
-        public void onTracksChanged(TrackGroupArray trackGroups, TrackSelectionArray trackSelections) {
-
-        }
+        public void onLoadingChanged(boolean isLoading) {}
 
         @Override
-        public void onLoadingChanged(boolean isLoading) {
-
-        }
+        public void onPlayerStateChanged(boolean playWhenReady, int playbackState) {}
 
         @Override
-        public void onPlayerStateChanged(boolean playWhenReady, int playbackState) {
-
-        }
+        public void onRepeatModeChanged(int repeatMode) {}
 
         @Override
-        public void onRepeatModeChanged(int repeatMode) {
-
-        }
+        public void onShuffleModeEnabledChanged(boolean shuffleModeEnabled) {}
 
         @Override
-        public void onShuffleModeEnabledChanged(boolean shuffleModeEnabled) {
-
-        }
-
-        @Override
-        public void onPlayerError(ExoPlaybackException error) {
-
-        }
+        public void onPlayerError(ExoPlaybackException error) {}
 
        @Override
-        public void onPositionDiscontinuity(int reason) {
-
-        }
+        public void onPositionDiscontinuity(int reason) {}
 
         @Override
         public void onPlaybackParametersChanged(PlaybackParameters playbackParameters) {
@@ -306,10 +291,10 @@ public class X3Dobject {
             //player.
             //player.setPlaybackSpeed(playbackParameters.speed);
             Log.e("X3DDBG", "ComponentListener::onPlaybackParametersChanged: " + playbackParameters.speed);
-            SonicAudioProcessor sonicAudioProcessor= new SonicAudioProcessor();
-            sonicAudioProcessor.setSpeed(playbackParameters.speed);
-            sonicAudioProcessor.setPitch(playbackParameters.pitch);
-            Log.e("X3DDBG", "   ComponentListener::onPlaybackParametersChanged: END");
+            //SonicAudioProcessor sonicAudioProcessor= new SonicAudioProcessor();
+            //sonicAudioProcessor.setSpeed(playbackParameters.speed);
+            //sonicAudioProcessor.setPitch(playbackParameters.pitch);
+            //Log.e("X3DDBG", "   ComponentListener::onPlaybackParametersChanged: END");
         }
 
         @Override
@@ -317,6 +302,8 @@ public class X3Dobject {
 
         }
     }
+    */
+
     /**
      * This class facilitates construction of GearVRF meshes from X3D data.
      * X3D can have different indices for positions, normals and texture coordinates.
@@ -3911,7 +3898,6 @@ public class X3Dobject {
 
                             if ( !shaderSettings.movieTextures.isEmpty()) {
                                 if (USE_EXO_PLAYER) {
-                                    /*
                                     try {
                                         Log.e("X3DDBG", "MovieTexture: EXO_PLAYER: " + shaderSettings.movieTextures.get(0));
                                         GVRVideoSceneObjectPlayer<?> videoSceneObjectPlayer =
@@ -3927,8 +3913,6 @@ public class X3Dobject {
                                         currentSceneObject.addChildObject(gvrVideoSceneObject);
                                         meshAttachedSceneObject = gvrVideoSceneObject;
 
-                                        //videoSceneObjectPlayer.start();
-
                                         if (shaderSettings.getMovieTextureName() != null) {
                                             Log.e("X3DDBG", "   shaderSettings.getMovieTextureName(): " + shaderSettings.getMovieTextureName());
                                             gvrVideoSceneObject.setName(shaderSettings.getMovieTextureName());
@@ -3943,8 +3927,6 @@ public class X3Dobject {
                                         Log.e("X3DDBG", "Error: X3D MovieTexture Exception:\n" + e);
                                         Log.e(TAG, "X3D MovieTexture Exception:\n" + e);
                                     }
-                                    */
-
                                 }
                                 else {
                                     MediaPlayer mediaPlayer = new MediaPlayer();
