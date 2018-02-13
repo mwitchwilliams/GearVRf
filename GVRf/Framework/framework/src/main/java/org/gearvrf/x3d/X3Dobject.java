@@ -162,14 +162,8 @@ public class X3Dobject {
 
 
     static final boolean USE_EXO_PLAYER = true;
-    //SimpleExoPlayer player = null;
-    //ExoPlayer player = null;
 
-    //private GVRVideoSceneObjectPlayer<ExoPlayer> makeExoPlayer() {
-    //private GVRVideoSceneObjectPlayer<ExoPlayer> makeExoPlayer(String movieFileName ) {
     private GVRVideoSceneObjectPlayer<ExoPlayer> makeExoPlayer(String movieFileName ) {
-        //Log.e("X3DDBG", "videoSceneObjectPlayer.makeExoPlayer begin");
-        //ComponentListener exoPlayerComponentListener = new ComponentListener();
         final Context context = activityContext;
         final String finalMovieFileName = movieFileName;
         final DataSource.Factory dataSourceFactory = new DataSource.Factory() {
@@ -179,25 +173,15 @@ public class X3Dobject {
                     return new AssetDataSource(context);
                 }
         };
-        Log.e("X3DDBG", "makeExoPlayer: " + movieFileName);
-        //final MediaSource mediaSource = new ExtractorMediaSource(Uri.parse("asset:///video.mp4"),
         final MediaSource mediaSource = new ExtractorMediaSource(Uri.parse("asset:///" + movieFileName),
                 dataSourceFactory,
                 new DefaultExtractorsFactory(), null, null);
-        //Log.e("X3DDBG", "   ExtractorMediaSource END");
-
         final SimpleExoPlayer player = ExoPlayerFactory.newSimpleInstance(context,
-        //player = ExoPlayerFactory.newSimpleInstance(context,
                     new DefaultTrackSelector());
-        //Log.e("X3DDBG", "   ExoPlayerFactory.newSimpleInstance()");
         player.prepare(mediaSource);
-        //player.addListener(exoPlayerComponentListener);
-
-        Log.e("X3DDBG", "   player.prepare(mediaSource) " + movieFileName);
 
         return new GVRVideoSceneObjectPlayer<ExoPlayer>() {
                 @Override
-                //public SimpleExoPlayer getPlayer() {
                 public ExoPlayer getPlayer() {
                     return player;
                 }
@@ -210,27 +194,21 @@ public class X3Dobject {
                         public void onPlayerStateChanged(boolean playWhenReady, int playbackState) {
                             switch (playbackState) {
                                 case Player.STATE_BUFFERING:
-                                    //Log.e("X3DDBG", "   Player.STATE_BUFFERING");
                                     break;
                                 case Player.STATE_ENDED:
-                                    //Log.e("X3DDBG", "   Player.STATE_ENDED");
                                     player.seekTo(0);
                                     break;
                                 case Player.STATE_IDLE:
-                                    //Log.e("X3DDBG", "   Player.STATE_IDLE");
                                     break;
                                 case Player.STATE_READY:
-                                    //Log.e("X3DDBG", "   Player.STATE_READY");
                                     break;
                                 default:
-                                    //Log.e("X3DDBG", "   default");
                                     break;
                             }
                         }
                     });
 
                     player.setVideoSurface(surface);
-                    player.getAudioAttributes();
                 }
 
                 @Override
@@ -250,59 +228,12 @@ public class X3Dobject {
 
                 @Override
                 public void start() {
-                    Log.e("X3DDBG", "   call to start(){setPlayWhenReady(true)}");
                     player.setPlayWhenReady(true);
                 }
             };
 
-
     }
-/*
-    //class ComponentListener implements ExoPlayer.EventListener {
-    class ComponentListener implements ExoPlayer.EventListener {
 
-        @Override
-        public void onTimelineChanged(Timeline timeline, Object manifest) {}
-
-        @Override
-        public void onTracksChanged(TrackGroupArray trackGroups, TrackSelectionArray trackSelections) {}
-
-        @Override
-        public void onLoadingChanged(boolean isLoading) {}
-
-        @Override
-        public void onPlayerStateChanged(boolean playWhenReady, int playbackState) {}
-
-        @Override
-        public void onRepeatModeChanged(int repeatMode) {}
-
-        @Override
-        public void onShuffleModeEnabledChanged(boolean shuffleModeEnabled) {}
-
-        @Override
-        public void onPlayerError(ExoPlaybackException error) {}
-
-       @Override
-        public void onPositionDiscontinuity(int reason) {}
-
-        @Override
-        public void onPlaybackParametersChanged(PlaybackParameters playbackParameters) {
-            //AudioAttributes audioAttributes = player.getAudioAttributes();
-            //player.
-            //player.setPlaybackSpeed(playbackParameters.speed);
-            Log.e("X3DDBG", "ComponentListener::onPlaybackParametersChanged: " + playbackParameters.speed);
-            //SonicAudioProcessor sonicAudioProcessor= new SonicAudioProcessor();
-            //sonicAudioProcessor.setSpeed(playbackParameters.speed);
-            //sonicAudioProcessor.setPitch(playbackParameters.pitch);
-            //Log.e("X3DDBG", "   ComponentListener::onPlaybackParametersChanged: END");
-        }
-
-        @Override
-        public void onSeekProcessed() {
-
-        }
-    }
-    */
 
     /**
      * This class facilitates construction of GearVRF meshes from X3D data.
@@ -3038,7 +2969,6 @@ public class X3Dobject {
                             }
                         }
                         if (useItem != null) {
-                            Log.e("X3DDBG", "MovieTexture USE not implemented");
                             gvrTexture = useItem.getGVRTexture();
                             shaderSettings.setTexture(gvrTexture);
                         }
@@ -3046,37 +2976,25 @@ public class X3Dobject {
                             Log.e(TAG, "Error: MovieTexture USE='" + attributeValue + "'; No matching DEF='" + attributeValue + "'.");
                         }
                     } else {
-                        //Log.e("X3DDBG", "MovieTexture (not fully implemented)");
                         String description = "";
                         boolean loop = false;
 
-                        /*
-                        gvrTextureParameters = new GVRTextureParameters(gvrContext);
-                        gvrTextureParameters.setWrapSType(TextureWrapType.GL_REPEAT);
-                        gvrTextureParameters.setWrapTType(TextureWrapType.GL_REPEAT);
-                        gvrTextureParameters.setMinFilterType(GVRTextureParameters.TextureFilterType.GL_LINEAR_MIPMAP_NEAREST);
-*/
                         String urlAttribute = attributes.getValue("url");
                         if (urlAttribute != null) {
                             String[] urlsString = parseMFString(urlAttribute);
                             for (int i = 0; i < urlsString.length; i++) {
                                 shaderSettings.movieTextures.add(urlsString[i]);
-                                //Log.e("X3DDBG", "   MovieTexture url["+i+"]=" + shaderSettings.movieTextures.get(i));
                             }
                         }
 
                         String repeatSAttribute = attributes.getValue("repeatS");
                         if (repeatSAttribute != null) {
                                 if (!parseBooleanString(repeatSAttribute)) {
-                                    //gvrTextureParameters
-                                    //        .setWrapSType(TextureWrapType.GL_CLAMP_TO_EDGE);
                                 }
                         }
                         String repeatTAttribute = attributes.getValue("repeatT");
                         if (repeatTAttribute != null) {
                                 if (!parseBooleanString(repeatTAttribute)) {
-                                    //gvrTextureParameters
-                                    //        .setWrapTType(TextureWrapType.GL_CLAMP_TO_EDGE);
                                 }
                         }
 
@@ -3899,13 +3817,10 @@ public class X3Dobject {
                             if ( !shaderSettings.movieTextures.isEmpty()) {
                                 if (USE_EXO_PLAYER) {
                                     try {
-                                        Log.e("X3DDBG", "MovieTexture: EXO_PLAYER: " + shaderSettings.movieTextures.get(0));
                                         GVRVideoSceneObjectPlayer<?> videoSceneObjectPlayer =
                                             makeExoPlayer( shaderSettings.movieTextures.get(0) );
-                                        Log.e("X3DDBG", "return from videoSceneObjectPlayer");
 
                                         videoSceneObjectPlayer.start();
-                                        Log.e("X3DDBG", "return from videoSceneObjectPlayer.start() " + shaderSettings.movieTextures.get(0));
 
                                         GVRVideoSceneObject gvrVideoSceneObject =
                                                 new GVRVideoSceneObject(gvrContext, gvrRenderData.getMesh(), videoSceneObjectPlayer,
@@ -3914,7 +3829,6 @@ public class X3Dobject {
                                         meshAttachedSceneObject = gvrVideoSceneObject;
 
                                         if (shaderSettings.getMovieTextureName() != null) {
-                                            Log.e("X3DDBG", "   shaderSettings.getMovieTextureName(): " + shaderSettings.getMovieTextureName());
                                             gvrVideoSceneObject.setName(shaderSettings.getMovieTextureName());
                                             DefinedItem item = new DefinedItem(shaderSettings.getMovieTextureName());
                                             item.setGVRVideoSceneObject(gvrVideoSceneObject);
@@ -3924,7 +3838,6 @@ public class X3Dobject {
 
                                     } catch (Exception e) {
                                         e.printStackTrace();
-                                        Log.e("X3DDBG", "Error: X3D MovieTexture Exception:\n" + e);
                                         Log.e(TAG, "X3D MovieTexture Exception:\n" + e);
                                     }
                                 }
@@ -3973,7 +3886,6 @@ public class X3Dobject {
                                         }
 
                                         if (shaderSettings.getMovieTextureName() != null) {
-                                            Log.e("X3DDBG", "   shaderSettings.getMovieTextureName(): " + shaderSettings.getMovieTextureName());
                                             gvrVideoSceneObject.setName(shaderSettings.getMovieTextureName());
                                             DefinedItem item = new DefinedItem(shaderSettings.getMovieTextureName());
                                             item.setGVRVideoSceneObject(gvrVideoSceneObject);
@@ -3982,11 +3894,9 @@ public class X3Dobject {
 
                                     } catch (IOException e) {
                                         e.printStackTrace();
-                                        Log.e("X3DDBG", "X3D MovieTexture Assets were not loaded. Stopping application!");
                                         Log.e(TAG, "X3D MovieTexture Assets were not loaded. Stopping application!");
                                         mediaPlayer = null;
                                     } catch (IllegalStateException e) {
-                                        Log.e("X3DDBG", "X3D Movie Texture: Failed to prepare media player");
                                         Log.e(TAG, "X3D Movie Texture: Failed to prepare media player");
                                         e.printStackTrace();
                                         mediaPlayer = null;
@@ -4248,7 +4158,7 @@ public class X3Dobject {
                     animationInteractivityManager.InitializeScript();
                 }
                 catch (Exception exception) {
-                    Log.e(TAG, "Error initialing X3D <ROUTE> or <Script> node related to Animation or Interactivity.");
+                    Log.e(TAG, "Error initialing X3D <ROUTE> or <Script> node related to Animation or Interactivity.\n" + exception);
                 }
 
             } // end </scene>

@@ -738,6 +738,7 @@ public class AnimationInteractivityManager {
                                     if (!stateChanged) {
                                         stateChanged = true;
                                         // Run this SCRIPT's actual JavaScript function
+                                        Log.e("X3DDBG", "RunScript: " + functionName + "; parameters[0]:" + parameters[0]);
                                         RunScript(interactiveObjectFinal, functionName, parameters);
                                     }
                                 } else if (event.isActive() && interactiveObjectFinal.getSensorFromField().equals(Sensor.IS_ACTIVE)) {
@@ -753,6 +754,7 @@ public class AnimationInteractivityManager {
                                     // An "isOver event', but just existed being over the object - i.e. TouchSensor = false
                                     stateChanged = false;
                                     // Run this SCRIPT's actual JavaScript function
+                                    Log.e("X3DDBG", "RunScript: " + functionName + "; parameters[0]:" + parameters[0]);
                                     RunScript(interactiveObjectFinal, functionName, parameters);
                                 } else if (!event.isActive() && interactiveObjectFinal.getSensorFromField().equals(Sensor.IS_ACTIVE)) {
                                     isActiveDone = false;
@@ -805,7 +807,6 @@ public class AnimationInteractivityManager {
                                 // if isOver, but only go thru once per isOver.
                                 if ( event.isOver() && !isMovieStateSet) {
                                     GVRVideoSceneObject gvrVideoSceneObject = (GVRVideoSceneObject) gvrSceneObject;
-                                    Log.e("X3DDBG", "AIM: touchsensor gvrVideoSceneObject");
                                     GVRVideoSceneObjectPlayer gvrVideoSceneObjectPlayer = gvrVideoSceneObject.getMediaPlayer();
                                     try {
                                         if (interactiveObjectFinal.getSensorFromField().contains("touchTime")) {
@@ -818,30 +819,22 @@ public class AnimationInteractivityManager {
                                             } else if (interactiveObjectFinal.getDefinedItemToField().endsWith("startTime")) {
                                                 gvrVideoSceneObjectPlayer.start();
                                             } else {
-                                                Log.e("X3DDBG", "Error: ROUTE to MovieTexture, " + interactiveObjectFinal.getDefinedItemToField() + " not implemented");
                                                 Log.e(TAG, "Error: ROUTE to MovieTexture, " + interactiveObjectFinal.getDefinedItemToField() + " not implemented");
                                             }
                                         } else {
-                                            Log.e("X3DDBG", "Error: ROUTE to MovieTexture, " + interactiveObjectFinal.getSensorFromField() + " not implemented");
                                             Log.e(TAG, "Error: ROUTE to MovieTexture, " + interactiveObjectFinal.getSensorFromField() + " not implemented");
                                         }
                                     } catch (IllegalStateException e) {
-                                        Log.e("X3DDBG", "X3D Movie Texture: IllegalStateException: " + e);
                                         Log.e(TAG, "X3D Movie Texture: IllegalStateException: " + e);
-                                        e.printStackTrace();
                                     } catch (Exception e) {
-                                        Log.e("X3DDBG", "X3D Movie Texture Exception: " + e);
                                         Log.e(TAG, "X3D Movie Texture Exception: " + e);
-                                        e.printStackTrace();
                                     }
                                     isMovieStateSet = true;
-                                    Log.e("X3DDBG", "     End State Change");
                                 } // end if event.isOver()
                                 else if ( !event.isOver() && isMovieStateSet){
                                     // No longer over the TouchSensor
                                     isMovieStateSet = false;
-                                    Log.e("X3DDBG", "event.isOver() FALSE");
-                                }
+                                 }
                             } // end if gvrSceneObject
                         }
                     });
@@ -1014,6 +1007,11 @@ public class AnimationInteractivityManager {
                 EventUtility eventUtility = scriptObject.getFromEventUtility(field);
                 TimeSensor timeSensor = scriptObject.getFromTimeSensor(field);
 
+                if ( !fieldType.equalsIgnoreCase("SFBool")){
+                    Log.e("X3DDBG", "--------------------------------");
+                    Log.e("X3DDBG", "INPUT or INPUT_OUTPUT not SFBool");
+                }
+
                 if (fieldType.equalsIgnoreCase("SFBool")) {
                     if (definedItem != null) {
                         if (definedItem.getGVRSceneObject() != null) {
@@ -1182,6 +1180,7 @@ public class AnimationInteractivityManager {
                     }  // end if SFVec3f
 
                     else if (fieldType.equalsIgnoreCase("SFFloat")) {
+                        Log.e("X3DDBG", "set SFFloat value");
                         if (definedItem.getGVRMaterial() != null) {
                             if (scriptObject.getFromDefinedItemField(field).equalsIgnoreCase("shininess")) {
                                 scriptParameters.add(
@@ -1213,20 +1212,23 @@ public class AnimationInteractivityManager {
                             }
                         }
                         if (definedItem.getGVRVideoSceneObject() != null) {
-                            Log.e("X3DDBG", "set parameter for definedItem.getGVRVideoSceneObject() != null");
                             if (scriptObject.getFromDefinedItemField(field).endsWith("speed")) {
-                                //scriptObject.getToDefinedItemField()
+                                Log.e("X3DDBG", "   INPUT scriptObject.getFromDefinedItemField(field).endsWith(speed)");
                                 GVRVideoSceneObjectPlayer gvrVideoSceneObjectPlayer = definedItem.getGVRVideoSceneObject().getMediaPlayer();
-                                ExoPlayer exoPlayer = (ExoPlayer) gvrVideoSceneObjectPlayer.getPlayer();
-                                PlaybackParameters currPlaybackParamters = exoPlayer.getPlaybackParameters();
-                                Log.e("X3DDBG", "   double speed starting at " + currPlaybackParamters.speed);
-                                scriptParameters.add( currPlaybackParamters.speed );
-                                /*
-                                ExoPlayer exoPlayer = (ExoPlayer) gvrVideoSceneObjectPlayer.getPlayer();
-                                //PlaybackParameters currPlaybackParamters = exoPlayer.getPlaybackParameters();
-                                PlaybackParameters playbackParamters = new PlaybackParameters( sfFloat.getValue(), sfFloat.getValue());
-                                exoPlayer.setPlaybackParameters( playbackParamters );
-                                 */
+                                if ( gvrVideoSceneObjectPlayer == null) {
+                                    Log.e("X3DDBG", "      INPUT: gvrVideoSceneObjectPlayer == null");
+                                    // special case upon initialization of the movie texture, so the speed is init to 1
+                                    scriptParameters.add( 1 );
+                                }
+                                else if ( gvrVideoSceneObjectPlayer.getPlayer() == null) {
+                                    Log.e("X3DDBG", "      INPUT: gvrVideoSceneObjectPlayer.getPlayer() == null");
+                                }
+                                else {
+                                    ExoPlayer exoPlayer = (ExoPlayer) gvrVideoSceneObjectPlayer.getPlayer();
+                                    PlaybackParameters currPlaybackParamters = exoPlayer.getPlaybackParameters();
+                                    Log.e("X3DDBG", "   INPUT double/halve speed starting at " + currPlaybackParamters.speed);
+                                    scriptParameters.add( currPlaybackParamters.speed );
+                                }
                             }
                         } // end
                     }  // end if SFFloat GVRVideoSceneObject
@@ -1486,6 +1488,7 @@ public class AnimationInteractivityManager {
             //set the bindings from X3D Script field with inputOnly / inputOutput
             gvrJavascriptV8FileFinal.setInputValues(gvrFunctionBindingValues);
             // Now run this Script's actual function
+            Log.e("X3DDBG","   RunScriptThreadm invoke: " + functionNameFinal);
             complete = gvrJavascriptV8FileFinal.invokeFunction(functionNameFinal, parametersFinal, paramStringFinal);
             if (complete) {
                 // The JavaScript (JS) ran ok.  Now get the return
@@ -1552,6 +1555,7 @@ public class AnimationInteractivityManager {
     private void SetResultsFromScript(InteractiveObject interactiveObjectFinal, Bindings localBindings) {
         // A SCRIPT can have mutliple defined objects, so we don't use getDefinedItem()
         // instead we go through the field values
+        Log.e("X3DDBG", "SetResultsFromScript");
         try {
             ScriptObject scriptObject = interactiveObjectFinal.getScriptObject();
             for (ScriptObject.Field fieldNode : scriptObject.getFieldsArrayList()) {
@@ -1561,6 +1565,7 @@ public class AnimationInteractivityManager {
                     DefinedItem scriptObjectToDefinedItem = scriptObject.getToDefinedItem(fieldNode);
                     EventUtility scriptObjectToEventUtility = scriptObject.getToEventUtility(fieldNode);
                     Object returnedJavaScriptValue = localBindings.get(scriptObject.getFieldName(fieldNode));
+                    Log.e("X3DDBG", "   OUTPUT_ONLY or INPUT_OUTPUT value.");
 
                     // Script fields contain all the values that can be returned from a JavaScript function.
                     // However, not all JavaScript functions set returned-values, and thus left null.  For
@@ -1594,7 +1599,8 @@ public class AnimationInteractivityManager {
                             }
                         }  //  end SFBool
                         else if (fieldType.equalsIgnoreCase("SFFloat")) {
-                            final SFFloat sfFloat = (SFFloat) returnedJavaScriptValue;
+                            SFFloat sfFloat = (SFFloat) returnedJavaScriptValue;
+                            Log.e("X3DDBG", "      OUTPUT SFFloat value " + sfFloat);
                             if (scriptObjectToDefinedItem.getGVRMaterial() != null) {
                                 if (scriptObject.getToDefinedItemField(fieldNode).equalsIgnoreCase("shininess")) {
                                     scriptObjectToDefinedItem.getGVRMaterial().setSpecularExponent(sfFloat.getValue());
@@ -1632,11 +1638,10 @@ public class AnimationInteractivityManager {
                             }  //  end GVRScriptObject ! null
                             else if ( scriptObjectToDefinedItem.getGVRVideoSceneObject() != null) {
                                 //GVRVideoSceneObject gvrVideoSceneObject = scriptObjectToDefinedItem.getGVRVideoSceneObject();
+                                Log.e("X3DDBG", "      OUTPUT: SFFloat '" + scriptObject.getFieldName(fieldNode) + "' to " + sfFloat + " from SCRIPT '" + scriptObject.getName() + "'.");
                                 GVRVideoSceneObjectPlayer gvrVideoSceneObjectPlayer = scriptObjectToDefinedItem.getGVRVideoSceneObject().getMediaPlayer();
-                                Log.e("X3DDBG", "SFFloat '" + scriptObject.getFieldName(fieldNode) + "' to " + sfFloat + " from SCRIPT '" + scriptObject.getName() + "'.");
-
                                 ExoPlayer exoPlayer = (ExoPlayer) gvrVideoSceneObjectPlayer.getPlayer();
-                                //PlaybackParameters currPlaybackParamters = exoPlayer.getPlaybackParameters();
+                                Log.e("X3DDBG", "      OUTPUT: got Media Player: " + exoPlayer.getContentPosition() + ": duration " + exoPlayer.getDuration());
                                 PlaybackParameters playbackParamters = new PlaybackParameters( sfFloat.getValue(), sfFloat.getValue());
                                 exoPlayer.setPlaybackParameters( playbackParamters );
 
