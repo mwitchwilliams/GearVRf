@@ -18,6 +18,7 @@ package org.gearvrf.x3d;
 import android.content.Context;
 import android.graphics.Color;
 
+import org.gearvrf.GVRShaderId;
 import org.gearvrf.io.GVRCursorController;
 import org.gearvrf.GVRMeshCollider;
 import org.gearvrf.io.GVRControllerType;
@@ -585,6 +586,8 @@ public class X3Dobject {
 
     private static final String TAG = "X3DObject";
 
+    public GVRShaderId x3DShader;
+
     // Like a C++ pre-compiler switch to select shaders.
     // Default is true to use Universal lights shader.
     public final static boolean UNIVERSAL_LIGHTS = true;
@@ -768,7 +771,7 @@ public class X3Dobject {
             this.gvrContext = assetRequest.getContext();
             this.activityContext = gvrContext.getContext();
             this.root = root;
-
+            x3DShader = gvrContext.getShaderManager().getShaderType(X3DShader.class);
             meshCreator = new MeshCreator(this.gvrContext);
             // Camera rig setup code based on GVRScene::init()
             GVRCamera leftCamera = new GVRPerspectiveCamera(gvrContext);
@@ -1405,7 +1408,7 @@ public class X3Dobject {
                 gvrRenderData.setAlphaToCoverage(true);
                 gvrRenderData.setRenderingOrder(GVRRenderingOrder.GEOMETRY);
                 gvrRenderData.setCullFace(GVRCullFaceEnum.Back);
-                shaderSettings.initializeTextureMaterial(new GVRMaterial(gvrContext, GVRMaterial.GVRShaderType.Phong.ID));
+                shaderSettings.initializeTextureMaterial(new GVRMaterial(gvrContext, x3DShader));
 
                 // Check if this Shape node is part of a Level-of-Detail
                 // If there is an active Level-of-Detail (LOD)
@@ -2538,7 +2541,7 @@ public class X3Dobject {
                     params.FacingOut = solid;
                     params.HasTopCap = false;
                     params.HasBottomCap = bottom;
-                    params.Material = new GVRMaterial(gvrContext, GVRMaterial.GVRShaderType.Phong.ID);
+                    params.Material = new GVRMaterial(gvrContext, x3DShader);
                     GVRCylinderSceneObject cone = new GVRCylinderSceneObject(gvrContext,
                             params);
 
@@ -2588,7 +2591,7 @@ public class X3Dobject {
                     params.HasBottomCap = bottom;
                     params.HasTopCap = top;
                     params.FacingOut = solid;
-                    params.Material = new GVRMaterial(gvrContext, GVRMaterial.GVRShaderType.Phong.ID);
+                    params.Material = new GVRMaterial(gvrContext, x3DShader);
                     GVRCylinderSceneObject gvrCylinderSceneObject = new GVRCylinderSceneObject(
                             gvrContext, params);
                     currentSceneObject.addChildObject(gvrCylinderSceneObject);
@@ -2610,7 +2613,7 @@ public class X3Dobject {
                         solid = parseBooleanString(attributeValue);
                     }
                     GVRSphereSceneObject gvrSphereSceneObject = new GVRSphereSceneObject(
-                            gvrContext, solid, new GVRMaterial(gvrContext, GVRMaterial.GVRShaderType.Phong.ID), radius);
+                            gvrContext, solid, new GVRMaterial(gvrContext, x3DShader), radius);
                     currentSceneObject.addChildObject(gvrSphereSceneObject);
                     meshAttachedSceneObject = gvrSphereSceneObject;
 
