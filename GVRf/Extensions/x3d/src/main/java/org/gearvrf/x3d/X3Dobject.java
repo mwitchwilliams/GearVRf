@@ -606,7 +606,7 @@ public class X3Dobject {
     // Default is true to use Universal lights shader.
     public final static boolean UNIVERSAL_LIGHTS = true;
 
-    private final static String JAVASCRIPT_IMPORT_PACKAGE = "importPackage(org.gearvrf.x3d.data_types)\nimportPackage(org.joml)\nimportPackage(org.gearvrf)\nnimportPackage(org.gearvrf.x3ddemo)";
+    private final static String JAVASCRIPT_IMPORT_PACKAGE = "importPackage(org.gearvrf.x3d.data_types)\nimportPackage(org.joml)\nimportPackage(org.gearvrf)";
 
     // Strings appended to GVRScene names when there are multiple
     // animations on the same <Transform> or GVRSceneObject
