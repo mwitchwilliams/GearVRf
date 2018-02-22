@@ -42,6 +42,7 @@ import javax.xml.parsers.SAXParserFactory;
 
 import org.gearvrf.script.GVRJavascriptScriptFile;
 import org.gearvrf.script.javascript.GVRJavascriptV8File;
+import org.joml.Matrix3f;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
@@ -1655,6 +1656,9 @@ public class X3Dobject {
                             2, false, false);
                     shaderSettings.setTextureTranslation(translation);
                 }
+                // TODO: make this matrix from the TextureTransform settings
+//                Matrix3f texMatrix = new Matrix3f();
+//                shaderSettings.textureMatrix = texMatrix;
             }
 
             /********** IndexedFaceSet **********/
@@ -3638,6 +3642,13 @@ public class X3Dobject {
                                         definedItem.setGVRMaterial(gvrMaterial);
                                         break;
                                     }
+                                }
+                                if (shaderSettings.textureMatrix != null)
+                                {
+                                    float[] texMtx = new float[9];
+                                    shaderSettings.textureMatrix.get(texMtx);
+                                    gvrMaterial.setFloatArray("texture_matrix", texMtx);
+                                    shaderSettings.textureMatrix = null;
                                 }
                             }
 

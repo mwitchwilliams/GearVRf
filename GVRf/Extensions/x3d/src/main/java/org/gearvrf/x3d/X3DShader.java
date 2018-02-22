@@ -26,7 +26,7 @@ public class X3DShader extends GVRShaderTemplate
 
     public X3DShader(GVRContext gvrcontext)
     {
-        super("float4 ambient_color; float4 diffuse_color; float4 specular_color; float4 emissive_color; float specular_exponent",
+        super("float4 ambient_color; float4 diffuse_color; float4 specular_color; float4 emissive_color; mat3 texture_matrix; float specular_exponent",
               "sampler2D diffuseTexture",
               "float3 a_position float2 a_texcoord float3 a_normal float4 a_bone_weights int4 a_bone_indices float4 a_tangent float4 a_bitangent",
               GLSLESVersion.VULKAN);
@@ -37,7 +37,7 @@ public class X3DShader extends GVRShaderTemplate
             fragTemplate = TextFile.readTextFile(context, org.gearvrf.R.raw.fragment_template);
             vtxTemplate = TextFile.readTextFile(context, org.gearvrf.R.raw.vertex_template);
             surfaceShader = TextFile.readTextFile(context, org.gearvrf.x3d.R.raw.x3d_surface);
-            vtxShader = TextFile.readTextFile(context, org.gearvrf.R.raw.pos_norm_tex);
+            vtxShader = TextFile.readTextFile(context, org.gearvrf.R.raw.x3d_vertex);
             addLight = TextFile.readTextFile(context, org.gearvrf.R.raw.addlight);
         }
         setSegment("FragmentTemplate", fragTemplate);

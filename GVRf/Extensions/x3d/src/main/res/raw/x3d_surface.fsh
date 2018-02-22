@@ -22,14 +22,15 @@ Surface @ShaderName()
 #ifdef HAS_diffuseTexture
 #ifdef HAS_LIGHTSOURCES
 	diffuse *= texture(diffuseTexture, diffuse_coord.xy);
+    diffuse.xyz *= diffuse.w;
 #else
     diffuse = vec4(0, 0, 0, 1);
     specular = vec4(0, 0, 0, 1);
     ambient = vec4(0, 0, 0, 1);
 	emission *= texture(diffuseTexture, diffuse_coord.xy);
+    emission.xyz *= emission.w;
 #endif
 #endif
-    diffuse.xyz *= diffuse.w;
 	viewspaceNormal = viewspace_normal;
 	return Surface(viewspaceNormal, ambient, diffuse, specular, emission);
 }
