@@ -19,18 +19,13 @@ Surface @ShaderName()
 	vec4 ambient = ambient_color;
 	vec3 viewspaceNormal;
 
+#ifndef HAS_LIGHTSOURCES
+    diffuse = emission;
+#endif
 #ifdef HAS_diffuseTexture
-#ifdef HAS_LIGHTSOURCES
-	diffuse *= texture(diffuseTexture, diffuse_coord.xy);
+    diffuse *= texture(diffuseTexture, diffuse_coord.xy);
+#endif
     diffuse.xyz *= diffuse.w;
-#else
-    diffuse = vec4(0, 0, 0, 1);
-    specular = vec4(0, 0, 0, 1);
-    ambient = vec4(0, 0, 0, 1);
-	emission *= texture(diffuseTexture, diffuse_coord.xy);
-    emission.xyz *= emission.w;
-#endif
-#endif
 	viewspaceNormal = viewspace_normal;
 	return Surface(viewspaceNormal, ambient, diffuse, specular, emission);
 }
