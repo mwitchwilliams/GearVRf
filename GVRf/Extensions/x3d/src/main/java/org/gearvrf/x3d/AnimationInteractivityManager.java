@@ -64,6 +64,8 @@ import java.util.Vector;
 
 import javax.script.Bindings;
 
+import lu.flier.script.V8Object;
+
 
 /**
  * @author m1.williams
@@ -1231,6 +1233,12 @@ public class AnimationInteractivityManager {
             // if the objects required for this function were constructed, then
             //   check if this <SCRIPT> has an initialize() method that is run just once.
             if (gvrJavascriptV8FileFinal.getScriptText().contains(INITIALIZE_FUNCTION)) {
+                // need to initialize the 'gvrf' varaible
+                Bindings gvrFunctionBindingValues = gvrJavascriptV8FileFinal.getLocalBindings();
+                gvrFunctionBindingValues.put("gvrf", this.gvrContext);
+                gvrJavascriptV8FileFinal.setInputValues(gvrFunctionBindingValues);
+
+                // call any JavaScript fnctions with an optional 'initialize()' method
                 complete = gvrJavascriptV8FileFinal.invokeFunction(INITIALIZE_FUNCTION, parametersFinal, "");
 
                 if (complete) {
@@ -1440,6 +1448,7 @@ public class AnimationInteractivityManager {
         boolean complete = gvrJavascriptV8FileFinal.invokeFunction(GEARVR_INIT_JAVASCRIPT_FUNCTION_NAME, parametersFinal, paramStringFinal);
         if ( complete ) {
             Bindings gvrFunctionBindingValues = gvrJavascriptV8FileFinal.getLocalBindings();
+            gvrFunctionBindingValues.put("gvrf", this.gvrContext);
             //set the bindings from X3D Script field with inputOnly / inputOutput
             gvrJavascriptV8FileFinal.setInputValues(gvrFunctionBindingValues);
             // Now run this Script's actual function
@@ -1524,7 +1533,8 @@ public class AnimationInteractivityManager {
                     // However, not all JavaScript functions set returned-values, and thus left null.  For
                     // example the initialize() method may not set some Script field values, so don't
                     // process those and thus check if returnedJavaScriptValue != null
-                    if (returnedJavaScriptValue != null) {
+                    //if (returnedJavaScriptValue != null) {
+                    if ((returnedJavaScriptValue != null) || ( !(returnedJavaScriptValue instanceof V8Object) )) {
                         if (fieldType.equalsIgnoreCase("SFBool")) {
                             SFBool sfBool = (SFBool) returnedJavaScriptValue;
                             if ( scriptObjectToDefinedItem != null) {
