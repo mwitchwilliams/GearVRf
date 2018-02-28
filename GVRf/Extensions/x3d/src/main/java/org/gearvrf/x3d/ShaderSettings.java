@@ -21,6 +21,7 @@ import org.gearvrf.GVRMaterial;
 
 
 import org.gearvrf.GVRTexture;
+import org.joml.Matrix3f;
 
 /**
  * 
@@ -58,6 +59,7 @@ public class ShaderSettings
       0, 0
   };
 
+  public Matrix3f textureMatrix = null;
   public float ambientIntensity = 0.2f;
   public float[] diffuseColor =
   {
