@@ -340,6 +340,7 @@ public class AnimationInteractivityManager {
                     if ((interactiveObject.getSensor() == null) && (routeFromSensor != null)) {
                         //This sensor already exists as part of an interactive Object
                         interactiveObject.setSensor(routeFromSensor, fromField);
+                        //interactiveObject.setSensorToScript(routeFromSensor, fromField, toField);
                         routeToScriptObjectFound = true;
                     }  //  end Sensor
                     else if ((interactiveObject.getDefinedItem() == null) && (routeFromDefinedItem != null)) {
@@ -379,6 +380,13 @@ public class AnimationInteractivityManager {
                 interactiveObject.setScriptObject(routeToScriptObject);
                 if (routeFromSensor != null) {
                     interactiveObject.setSensor(routeFromSensor, fromField);
+                    //interactiveObject.setSensorToScript(routeFromSensor, fromField, toField);
+                    for (ScriptObject.Field field : routeToScriptObject.getFieldsArrayList()) {
+                        if (toField.equalsIgnoreCase(routeToScriptObject.getFieldName(field))) {
+                            routeToScriptObject.setFromDefinedItem(field, routeFromDefinedItem, fromField);
+                        }
+                    }
+
                 }
                 else if (routeFromDefinedItem != null) {
                     // happens when scripting and sending values from item to the script
@@ -707,8 +715,23 @@ public class AnimationInteractivityManager {
 
                                 Object[] parameters = SetJavaScriptArguments(interactiveObjectFinal, event.isOver(), stateChanged);
                                 ScriptObject scriptObject = interactiveObjectFinal.getScriptObject();
-                                ScriptObject.Field firstField = scriptObject.getField(0);
-                                String functionName = scriptObject.getFieldName(firstField);
+
+                                String functionName = scriptObject.getFieldName( scriptObject.getField(0) ); // default
+                                for (ScriptObject.Field field : scriptObject.getFieldsArrayList()) {
+                                    //Log.e("X3DDBG", "interactiveObjectFinal.getSensorFromField() "+ interactiveObjectFinal.getSensorFromField() );
+                                    //Log.e("X3DDBG", "scriptObject.getFromDefinedItemField(field) " + scriptObject.getFromDefinedItemField(field) );
+                                    if (interactiveObjectFinal.getSensorFromField().equals(scriptObject.getFromDefinedItemField(field))) {
+                                        //Log.e("X3DDBG", "MATCH scriptObject.getFieldName(field) " + scriptObject.getFieldName(field));
+                                        functionName = scriptObject.getFieldName(field);
+                                    }
+                                    //if (toField.equalsIgnoreCase(routeToScriptObject.getFieldName(field))) {
+                                    //    routeToScriptObject.setFromDefinedItem(field, routeFromDefinedItem, fromField);
+                                    //}
+                                }
+
+
+                                //ScriptObject.Field firstField = scriptObject.getField(0);
+                                //String functionName = scriptObject.getFieldName(firstField);
 
                                 if (interactiveObjectFinal.getSensorFromField().equals(Sensor.IS_OVER)) {
                                     parameters[0] = event.isOver();
@@ -725,13 +748,26 @@ public class AnimationInteractivityManager {
                                     if (!stateChanged) {
                                         stateChanged = true;
                                         // Run this SCRIPT's actual JavaScript function
+                                        //Log.e("X3DDBG", "   isOver func: " + functionName);
+
                                         RunScript(interactiveObjectFinal, functionName, parameters);
                                     }
                                 } else if (event.isActive() && interactiveObjectFinal.getSensorFromField().equals(Sensor.IS_ACTIVE)) {
                                     // CLICKED while over a sensored object
                                     stateChanged = !stateChanged;
                                     if (!isActiveDone) {
+                                        for (ScriptObject.Field field : scriptObject.getFieldsArrayList()) {
+                                            if (scriptObject.getFromDefinedItemField(field).equals(Sensor.IS_ACTIVE)) {
+                                                Log.e("X3DDBG", "MATCH scriptObject.getFieldName(field) " + scriptObject.getFieldName(field));
+                                                functionName = scriptObject.getFieldName(field);
+                                            }
+                                            //if (toField.equalsIgnoreCase(routeToScriptObject.getFieldName(field))) {
+                                            //    routeToScriptObject.setFromDefinedItem(field, routeFromDefinedItem, fromField);
+                                            //}
+                                        }
+
                                         // Run this SCRIPT's actual JavaScript function
+                                        Log.e("X3DDBG", "   isActive func: " + functionName);
                                         RunScript(interactiveObjectFinal, functionName, parameters);
                                     }
                                     isActiveDone = true;
@@ -1465,6 +1501,8 @@ public class AnimationInteractivityManager {
             else {
                 Log.e(TAG, "Error in SCRIPT node '" + interactiveObjectFinal.getScriptObject().getName() +
                         "' JavaScript function '" + functionNameFinal + "'");
+                Log.e("X3DDBG", "Error in SCRIPT node '" + interactiveObjectFinal.getScriptObject().getName() +
+                        "' JavaScript function '" + functionNameFinal + "'");
             }
         } // first complete check
     }  //  end RunScriptThread
@@ -1519,21 +1557,31 @@ public class AnimationInteractivityManager {
     private void SetResultsFromScript(InteractiveObject interactiveObjectFinal, Bindings localBindings) {
         // A SCRIPT can have mutliple defined objects, so we don't use getDefinedItem()
         // instead we go through the field values
+        String fieldType = null;
+        DefinedItem scriptObjectToDefinedItem = null;
+        EventUtility scriptObjectToEventUtility = null;
+        Object returnedJavaScriptValue = null;
+
         try {
             ScriptObject scriptObject = interactiveObjectFinal.getScriptObject();
             for (ScriptObject.Field fieldNode : scriptObject.getFieldsArrayList()) {
                 if ((scriptObject.getFieldAccessType(fieldNode) == ScriptObject.AccessType.OUTPUT_ONLY) ||
                         (scriptObject.getFieldAccessType(fieldNode) == ScriptObject.AccessType.INPUT_OUTPUT)) {
+                    /*
                     String fieldType = scriptObject.getFieldType(fieldNode);
                     DefinedItem scriptObjectToDefinedItem = scriptObject.getToDefinedItem(fieldNode);
                     EventUtility scriptObjectToEventUtility = scriptObject.getToEventUtility(fieldNode);
                     Object returnedJavaScriptValue = localBindings.get(scriptObject.getFieldName(fieldNode));
+                    */
+                    fieldType = scriptObject.getFieldType(fieldNode);
+                    scriptObjectToDefinedItem = scriptObject.getToDefinedItem(fieldNode);
+                    scriptObjectToEventUtility = scriptObject.getToEventUtility(fieldNode);
+                    returnedJavaScriptValue = localBindings.get(scriptObject.getFieldName(fieldNode));
 
                     // Script fields contain all the values that can be returned from a JavaScript function.
                     // However, not all JavaScript functions set returned-values, and thus left null.  For
                     // example the initialize() method may not set some Script field values, so don't
                     // process those and thus check if returnedJavaScriptValue != null
-                    //if (returnedJavaScriptValue != null) {
                     if ((returnedJavaScriptValue != null) || ( !(returnedJavaScriptValue instanceof V8Object) )) {
                         if (fieldType.equalsIgnoreCase("SFBool")) {
                             SFBool sfBool = (SFBool) returnedJavaScriptValue;
@@ -1817,18 +1865,13 @@ public class AnimationInteractivityManager {
                                     Log.e(TAG, "Error: No url associated with MFString '" + scriptObject.getFieldName(fieldNode) + "' value from SCRIPT '" + scriptObject.getName() + "'." );
                                 }
                             }  // end GVRTexture != null
-
-                            if (scriptObjectToDefinedItem.getGVRTextViewSceneObject() != null) {
+                            else if (scriptObjectToDefinedItem.getGVRTextViewSceneObject() != null) {
                                 GVRTextViewSceneObject gvrTextViewSceneObject = scriptObjectToDefinedItem.getGVRTextViewSceneObject();
                                 if (scriptObject.getToDefinedItemField(fieldNode).equalsIgnoreCase("string")) {
                                     gvrTextViewSceneObject.setText(mfString.get1Value(0));
                                 }
                                 else Log.e(TAG, "Error: Setting not MFString string '" + scriptObject.getFieldName(fieldNode) + "' value from SCRIPT '" + scriptObject.getName() + "'." );
-                            }
-
-                            else {
-                                Log.e(TAG, "Error: Not setting MFString '" + scriptObject.getFieldName(fieldNode) + "' value from SCRIPT '" + scriptObject.getName() + "'." );
-                            }
+                            } // else GVRTextView != null
                         }  //  end MFString
                         else {
                             Log.e(TAG, "Error: " + fieldType + " in '" + scriptObject.getFieldName(fieldNode) + "' value from SCRIPT '" + scriptObject.getName() + "' not supported." );
@@ -1838,7 +1881,9 @@ public class AnimationInteractivityManager {
             }  // end for-loop list of fields for a single script
         } catch (Exception e) {
             Log.e(TAG, "Error setting values returned from JavaScript in SCRIPT node." +
-                    "  Check JavaScript or ROUTE's.  Exception: " + e);
+                    "  Check JavaScript or ROUTE's.   Error values: fieldType = " + fieldType + "; scriptObjectToDefinedItem = " +
+                    scriptObjectToDefinedItem.getName() + "; returnedJavaScriptValue = " +
+                    returnedJavaScriptValue.toString() + ".  Exception: " + e);
         }
     }  //  end  SetResultsFromScript
 
