@@ -3652,7 +3652,8 @@ public class X3Dobject {
 
                             // Texture Transform
                             // If DEFined iteam, add to the DeFinedItem list. Maay be interactive
-                             if ( shaderSettings.getTextureTransformName() != null); {
+                             if ( !shaderSettings.getTextureTransformName().isEmpty() )
+                             {
                                 DefinedItem definedItem = new DefinedItem(
                                         shaderSettings.getTextureTransformName());
                                 definedItem.setGVRMaterial(gvrMaterial);
@@ -3670,9 +3671,10 @@ public class X3Dobject {
 
                             float[] texMtx = new float[9];
                              textureTransform.get( texMtx );
-                            gvrMaterial.setFloatArray("texture_matrix", texMtx);
+                            // TODO: make this matrix from the TextureTransform settings
+                            //gvrMaterial.setFloatArray("texture_matrix", texMtx);
 /*
-+                // TODO: make this matrix from the TextureTransform settings
+
 +//                Matrix3f texMatrix = new Matrix3f();
 +//                shaderSettings.textureMatrix = texMatrix;
 

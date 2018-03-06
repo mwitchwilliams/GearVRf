@@ -1373,6 +1373,11 @@ public class AnimationInteractivityManager {
                             "( params[" + argumentNum + "]);\n";
                         argumentNum += 1;
                     }  // end if MFString
+                    else if (fieldType.equalsIgnoreCase("SFVec2f")) {
+                        gearVRinitJavaScript += scriptObject.getFieldName(field) + " = new " + scriptObject.getFieldType(field) +
+                                "( arg" + argumentNum + ", arg" + (argumentNum + 1) + ");\n";
+                        argumentNum += 2;
+                    }  // end if SFVec2f
                     else {
                         Log.e(TAG, "Error unsupported field type '" + fieldType + "' in SCRIPT '" +
                             interactiveObject.getScriptObject().getName() + "'");
@@ -1563,6 +1568,27 @@ public class AnimationInteractivityManager {
                                 } else if (scriptObject.getToDefinedItemField(fieldNode).equalsIgnoreCase("transparency")) {
                                     scriptObjectToDefinedItem.getGVRMaterial().setOpacity(sfFloat.getValue());
                                 }
+                                else if (scriptObject.getToDefinedItemField(fieldNode).equalsIgnoreCase("rotation")) {
+                                    scriptObjectToDefinedItem.setTextureRotation( sfFloat);
+                                    // set the new texture transform matrix
+                                    Matrix3f textureTransform = SetTextureTransformMatrix(
+                                            scriptObjectToDefinedItem.getTextureTranslation(),
+                                            scriptObjectToDefinedItem.getTextureCenter(),
+                                            scriptObjectToDefinedItem.getTextureScale(),
+                                            scriptObjectToDefinedItem.getTextureRotation() );
+                                    float[] texureMatrix = new float[9];
+                                    textureTransform.get( texureMatrix );
+                                    //scriptObjectToDefinedItem.getGVRMaterial().setFloatArray("texture_matrix", texureMatrix);
+                                    Log.e("X3DDBG", "Texture Transform under construction. texureMatrixm set rotation:");
+                                    Log.e("X3DDBG", "   [ " + texureMatrix[0] + ", " + texureMatrix[1] + ", " + texureMatrix[2] + ";  "
+                                                + texureMatrix[3] + ", " + texureMatrix[4] + ", " + texureMatrix[5] + ";  "
+                                                + texureMatrix[6] + ", " + texureMatrix[7] + ", " + texureMatrix[8] + " ]"
+                                    );
+                                }  //  texture rotation
+                                else {
+                                    Log.e(TAG, "Material or Texture Transform field " +
+                                        scriptObject.getToDefinedItemField(fieldNode) + " not supported");
+                                }
                             } else if (scriptObjectToDefinedItem.getGVRSceneObject() != null) {
                                 GVRComponent gvrComponent = scriptObjectToDefinedItem.getGVRSceneObject().getComponent(
                                         GVRLight.getComponentType());
@@ -1731,6 +1757,49 @@ public class AnimationInteractivityManager {
                                 Log.e(TAG, "Error: Not setting SFRotation '" + scriptObject.getFieldName(fieldNode) + "' value from SCRIPT '" + scriptObject.getName() + "'." );
                             }
                         }  //  end SFRotation
+                        else if (fieldType.equalsIgnoreCase("SFVec2f")) {
+                            SFVec2f sfVec2f = (SFVec2f) returnedJavaScriptValue;
+                            if (scriptObjectToDefinedItem.getGVRMaterial() != null) {
+                                //  SFVec2f change to a GVRMaterial
+                                // currently only done by GVRMaterial.
+                                if (scriptObject.getToDefinedItemField(fieldNode).equalsIgnoreCase("translation")) {
+                                    scriptObjectToDefinedItem.setTextureTranslation( sfVec2f );
+                                    /*
+                                    textureTransform = SetTextureTransformMatrix( sfVec2f,
+                                            scriptObjectToDefinedItem.getTextureCenter(),
+                                            scriptObjectToDefinedItem.getTextureScale(),
+                                            scriptObjectToDefinedItem.getTextureRotation() );
+                                    */
+                                }  //  texture translation
+                                else if (scriptObject.getToDefinedItemField(fieldNode).equalsIgnoreCase("scale")) {
+                                    scriptObjectToDefinedItem.setTextureScale( sfVec2f );
+                                }  //  texture scale
+                                else if (scriptObject.getToDefinedItemField(fieldNode).equalsIgnoreCase("center")) {
+                                    scriptObjectToDefinedItem.setTextureCenter( sfVec2f );
+                                }  //  texture center
+                                else {
+                                    Log.e(TAG, "Material or Texture Transform SFVec2f field " +
+                                            scriptObject.getToDefinedItemField(fieldNode) + " not supported");
+                                }
+                                // set the new texture transform matrix
+                                Matrix3f textureTransform = SetTextureTransformMatrix(
+                                        scriptObjectToDefinedItem.getTextureTranslation(),
+                                        scriptObjectToDefinedItem.getTextureCenter(),
+                                        scriptObjectToDefinedItem.getTextureScale(),
+                                        scriptObjectToDefinedItem.getTextureRotation() );
+                                float[] texureMatrix = new float[9];
+                                textureTransform.get( texureMatrix );
+                                //scriptObjectToDefinedItem.getGVRMaterial().setFloatArray("texture_matrix", texureMatrix);
+                                Log.e("X3DDBG", "Texture Transform under construction. texureMatrix:");
+                                Log.e("X3DDBG", "   [ " + texureMatrix[0] + ", " + texureMatrix[1] + ", " + texureMatrix[2] + ";  "
+                                        + texureMatrix[3] + ", " + texureMatrix[4] + ", " + texureMatrix[5] + ";  "
+                                        + texureMatrix[6] + ", " + texureMatrix[7] + ", " + texureMatrix[8] + " ]"
+                                );
+                            }  // end GVRMaterial Texture Transforms
+                            else {
+                                Log.e(TAG, "Error: Not setting SFVec2f '" + scriptObject.getFieldName(fieldNode) + "' value from SCRIPT '" + scriptObject.getName() + "'." );
+                            }
+                        }  //  end SFVec2f
                         else if (fieldType.equalsIgnoreCase("SFInt32")) {
                             try {
                                 SFInt32 sfInt32 = new SFInt32(new Integer(returnedJavaScriptValue.toString()).intValue() );
