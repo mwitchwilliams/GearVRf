@@ -16,12 +16,18 @@
 package org.gearvrf.x3d;
 
 import android.content.Context;
+import android.content.res.AssetFileDescriptor;
 import android.graphics.Color;
+import android.media.MediaPlayer;
+import android.media.PlaybackParams;
 
+import org.gearvrf.GVRExternalTexture;
 import org.gearvrf.io.GVRCursorController;
 import org.gearvrf.GVRMeshCollider;
 import org.gearvrf.io.GVRControllerType;
 import org.gearvrf.io.GVRInputManager;
+import org.gearvrf.scene_objects.GVRVideoSceneObject;
+import org.gearvrf.GVRImage;
 import org.gearvrf.utility.Log;
 
 import java.io.FileNotFoundException;
@@ -70,6 +76,7 @@ import org.gearvrf.GVRTextureParameters;
 import org.gearvrf.GVRTextureParameters.TextureWrapType;
 import org.gearvrf.GVRTransform;
 import org.gearvrf.GVRVertexBuffer;
+import org.gearvrf.scene_objects.GVRConeSceneObject;
 import org.gearvrf.scene_objects.GVRCubeSceneObject;
 import org.gearvrf.scene_objects.GVRCylinderSceneObject;
 import org.gearvrf.scene_objects.GVRSphereSceneObject;
@@ -232,6 +239,7 @@ public class X3Dobject {
         private FloatArray mOutputTexCoords = new FloatArray(64 * 3);
         private GVRContext mContext;
         private DefinedItem mVertexBufferDefine;
+        private float mMaxYTexcoord = Float.NEGATIVE_INFINITY;
         private boolean mUseNormals;
         private boolean mUseTexCoords;
 
@@ -254,6 +262,7 @@ public class X3Dobject {
             mPositionIndices.clear();
             mNormalIndices.clear();
             mTexcoordIndices.clear();
+            mMaxYTexcoord = Float.NEGATIVE_INFINITY;
         }
 
         void defineVertexBuffer(DefinedItem item)
@@ -332,7 +341,11 @@ public class X3Dobject {
         void addInputTexcoord(float[] tc)
         {
             if (mUseTexCoords) {
-                        mInputTexCoords.add(tc);
+                if (tc[1] > mMaxYTexcoord)
+                {
+                    mMaxYTexcoord = tc[1];
+                }
+                mInputTexCoords.add(tc);
             }
         }
 
@@ -487,7 +500,8 @@ public class X3Dobject {
                     int tindex = texcoordIndices[f] * 2;
                     mInputTexCoords.get(tindex, tc);
                     // flip the Y texture coordinate
-                    tc[1] = -tc[1];
+                    //tc[1] = -tc[1];
+                    tc[1] = mMaxYTexcoord - tc[1];
                     key += String.valueOf(tc[0]) + String.valueOf(tc[1]);
                 }
                 if (hasNormals)
@@ -581,7 +595,8 @@ public class X3Dobject {
                 int n = texCoords.length;
                 for(int i=1; i<n; i+=2)
                 {
-                    texCoords[i] = -texCoords[i];
+                    //texCoords[i] = -texCoords[i];
+                    texCoords[i] = mMaxYTexcoord - texCoords[i];
                 }
                 vbuffer.setFloatArray("a_texcoord", texCoords, 2, 0);
             }
@@ -1758,7 +1773,7 @@ public class X3Dobject {
                         // were DEFined earlier. We don't want to share the entire GVRMesh
                         // since the 2 meshes may have different Normals and
                         // Texture Coordinates.  So as an alternative, copy the vertices.
-                            gvrVertexBuffer = useItem.getVertexBuffer();
+                        gvrVertexBuffer = useItem.getVertexBuffer();
                         reorganizeVerts = false;
                     }
                 } // end USE Coordinate
@@ -1793,12 +1808,12 @@ public class X3Dobject {
                     }
                     if (useItem != null) {
 
-                            // 'useItem' points to GVRVertexBuffer who's useItem.getVertexBuffer
+                        // 'useItem' points to GVRVertexBuffer who's useItem.getVertexBuffer
                         // TextureCoordinates were DEFined earlier.
-                            // We don't want to share the entire GVRVertexBuffer since the
-                            // the 2 meshes may have different Normals and Positions
+                        // We don't want to share the entire GVRVertexBuffer since the
+                        // the 2 meshes may have different Normals and Positions
                         // So as an alternative, copy the texture coordinates.
-                            gvrVertexBuffer.setFloatArray("a_texcoord", useItem.getVertexBuffer().getFloatArray("a_texcoord"));
+                        gvrVertexBuffer.setFloatArray("a_texcoord", useItem.getVertexBuffer().getFloatArray("a_texcoord"));
                         reorganizeVerts = false;
                     }
                 } // end USE TextureCoordinate
@@ -1836,11 +1851,11 @@ public class X3Dobject {
                     }
                     if (useItem != null) {
 
-                            // 'useItem' points to GVRVertexBuffer who's useItem.getVertexBuffer Coordinates
-                            // were DEFined earlier. We don't want to share the entire vertex buffer since
-                            // the 2 vertex buffers may have different Normals and Texture Coordinates
+                        // 'useItem' points to GVRVertexBuffer who's useItem.getVertexBuffer Coordinates
+                        // were DEFined earlier. We don't want to share the entire vertex buffer since
+                        // the 2 vertex buffers may have different Normals and Texture Coordinates
                         // So as an alternative, copy the normals.
-                            gvrVertexBuffer.setFloatArray("a_normal", useItem.getVertexBuffer().getFloatArray("a_normal"));
+                        gvrVertexBuffer.setFloatArray("a_normal", useItem.getVertexBuffer().getFloatArray("a_normal"));
                         reorganizeVerts = false;
                     }
                 } // end USE Coordinate
@@ -2832,8 +2847,6 @@ public class X3Dobject {
                         attributeValue = attributes.getValue("spacing");
                         if (attributeValue != null) {
                             Text_FontParams.spacing = 10.0f * (parseSingleFloatString(attributeValue, false, true) - 1);
-                            //Text_FontParams.spacing = parseSingleFloatString(attributeValue, false, true);
-                            //Text_FontParams.spacing = 10.0f * (Text_FontParams.spacing - 1.0f);
                         }
                         attributeValue = attributes.getValue("size");
                         if (attributeValue != null) {
@@ -3140,6 +3153,58 @@ public class X3Dobject {
                         currentScriptObject.addField(name, accessType, type);
                     }
                 }  //  end <field> node
+
+                /********** MovieTexture **********/
+                else if (qName.equalsIgnoreCase("MovieTexture")) {
+                    attributeValue = attributes.getValue("USE");
+                    if (attributeValue != null) {
+                        DefinedItem useItem = null;
+                        for (DefinedItem definedItem : mDefinedItems) {
+                            if (attributeValue.equals(definedItem.getName())) {
+                                useItem = definedItem;
+                                break;
+                            }
+                        }
+                        if (useItem != null) {
+                            Log.e(TAG, "MovieTexture USE not implemented");
+                            gvrTexture = useItem.getGVRTexture();
+                            shaderSettings.setTexture(gvrTexture);
+                        }
+                        else {
+                            Log.e(TAG, "Error: MovieTexture USE='" + attributeValue + "'; No matching DEF='" + attributeValue + "'.");
+                        }
+                    } else {
+                        String description = "";
+                        boolean loop = false;
+
+                        String urlAttribute = attributes.getValue("url");
+                        if (urlAttribute != null) {
+                            String[] urlsString = parseMFString(urlAttribute);
+
+                            for (int i = 0; i < urlsString.length; i++) {
+                                shaderSettings.movieTextures.add(urlsString[i]);
+                                Log.e(TAG, "   MovieTexture url["+i+"]=" + shaderSettings.movieTextures.get(i));
+                            }
+                        }
+                        attributeValue = attributes.getValue("loop");
+                        if (attributeValue != null) {
+                            shaderSettings.setMovieTextureLoop(parseBooleanString(attributeValue) );
+                        }
+                        String repeatSAttribute = attributes.getValue("repeatS");
+                        if (repeatSAttribute != null) {
+                                if (!parseBooleanString(repeatSAttribute)) {
+                                    //TODO: gvrTextureParameters.setWrapSType(TextureWrapType.GL_CLAMP_TO_EDGE);
+                                }
+                        }
+                        String repeatTAttribute = attributes.getValue("repeatT");
+                        if (repeatTAttribute != null) {
+                                if (!parseBooleanString(repeatTAttribute)) {
+                                    //TODO: gvrTextureParameters.setWrapTType(TextureWrapType.GL_CLAMP_TO_EDGE);
+                                }
+                        }
+                        shaderSettings.setMovieTextureName(attributes.getValue("DEF") );
+                    }
+                } // end <MovieTexture> node
 
 
                 /********** BooleanToggle **********/
@@ -3540,8 +3605,8 @@ public class X3Dobject {
                 else {
                     Log.e(TAG, "X3D node " + qName + " not implemented.");
                 }
-            }
-        }
+            }  // end 'else { if stmt' at ROUTE, which should be deleted
+        }  //  end startElement
 
         @Override
         public void endElement(String uri, String localName, String qName)
@@ -3599,7 +3664,6 @@ public class X3Dobject {
                                 gvrRenderData.setMaterial(gvrMaterial);
                             } else {
                                 // This GVRSceneObject came with a GVRRenderData and GVRMaterial
-
                                 // already attached.  Examples of this are Text or primitives
                                 // such as the Box, Cone, Cylinder, Sphere
 
@@ -3607,7 +3671,6 @@ public class X3Dobject {
                                 if (gvrRenderData != null) {
                                     // <Shape> node created an unused gvrRenderData
                                     // Check if we had a DEF in Shape node so that we can point to
-
                                     // the new gvrRenderData
                                     for (DefinedItem definedItem : mDefinedItems) {
                                         if (definedItem.getGVRRenderData() == gvrRenderData) {
@@ -3663,6 +3726,64 @@ public class X3Dobject {
                                 }
                             }
 
+                            if ( !shaderSettings.movieTextures.isEmpty()) {
+                                MediaPlayer mediaPlayer = new MediaPlayer();
+                                mediaPlayer.setLooping( shaderSettings.getMovieTextureLoop() );
+                                try {
+                                    AssetFileDescriptor fileDescriptor = gvrContext.getContext().getAssets().openFd(
+                                            shaderSettings.movieTextures.get(0));
+                                    mediaPlayer.setDataSource(fileDescriptor.getFileDescriptor(),
+                                        fileDescriptor.getStartOffset(), fileDescriptor.getLength());
+                                    fileDescriptor.close();
+
+                                    mediaPlayer.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
+                                        @Override
+                                        public void onPrepared(MediaPlayer mp) {
+                                            mp.start();
+                                        }
+                                    });
+
+                                    mediaPlayer.prepare();
+
+                                    GVRVideoSceneObject gvrVideoSceneObject =
+                                                new GVRVideoSceneObject(gvrContext, gvrRenderData.getMesh(), mediaPlayer,
+                                                        GVRVideoSceneObject.GVRVideoType.MONO);
+                                        currentSceneObject.addChildObject(gvrVideoSceneObject);
+                                    meshAttachedSceneObject = gvrVideoSceneObject;
+
+                                    //Mesh derived from a GVRSceneObject that supplies its own child with mesh.
+                                    // This must now be removed since GVRVideoSceneObject creates its own mesh.
+                                    // Otherwise, we will have 2 meshes sharing the same place, and only 1 with a
+                                    // movie texture on it. Such meshes are primitives
+                                    List <GVRSceneObject> children = currentSceneObject.getChildren();
+
+                                    for (GVRSceneObject child: children) {
+                                        if ( (child instanceof GVRConeSceneObject) || ( child instanceof GVRCubeSceneObject) ||
+                                                ( child instanceof GVRCylinderSceneObject) || ( child instanceof GVRSphereSceneObject) ||
+                                                ( child instanceof GVRTextViewSceneObject) ) {
+                                            if (child.getRenderData() == gvrRenderData) {
+                                                currentSceneObject.removeChildObject(child);
+                                            }
+                                        }
+                                    }
+
+                                    if ( shaderSettings.getMovieTextureName() != null ) {
+                                        gvrVideoSceneObject.setName( shaderSettings.getMovieTextureName() );
+                                        DefinedItem item = new DefinedItem( shaderSettings.getMovieTextureName() );
+                                        item.setGVRVideoSceneObject(gvrVideoSceneObject);
+                                        mDefinedItems.add(item);
+                                    }
+                                } catch (IOException e) {
+                                    e.printStackTrace();
+                                    Log.e(TAG, "X3D MovieTexture Assets were not loaded. Stopping application!");
+                                    mediaPlayer = null;
+                                } catch (IllegalStateException e) {
+                                    Log.e(TAG, "X3D Movie Texture: Failed to prepare media player");
+                                    e.printStackTrace();
+                                    mediaPlayer = null;
+                                }
+                            }  // end MovieTexture
+
                             // Appearance node thus far contains properties of GVRMaterial
                             // node
                             if (!shaderSettings.getAppearanceName().isEmpty()) {
@@ -3687,7 +3808,7 @@ public class X3Dobject {
 
                 if (meshAttachedSceneObject != null) {
                     // gvrRenderData already attached to a GVRSceneObject such as a
-                    // Cone or Cylinder
+                    // Cone or Cylinder or a Movie Texture
                     meshAttachedSceneObject = null;
                 } else
                     currentSceneObject.attachRenderData(gvrRenderData);
@@ -3872,6 +3993,8 @@ public class X3Dobject {
                 ;
             } else if (qName.equalsIgnoreCase("Background")) {
                 ;
+            } else if (qName.equalsIgnoreCase("MovieTexture")) {
+                ;
             } else if (qName.equalsIgnoreCase("ElevationGrid")) {
                 ;
             }
@@ -3935,7 +4058,7 @@ public class X3Dobject {
             else if (qName.equalsIgnoreCase("x3d")) {
                 ;
             } // end </x3d>
-        }
+        }  // end endElement
 
 
         @Override
