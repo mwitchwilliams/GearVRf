@@ -18,6 +18,17 @@ package org.gearvrf.x3d;
 
 import android.content.res.AssetFileDescriptor;
 import android.media.MediaPlayer;
+import android.net.Uri;
+
+import com.google.android.exoplayer2.ExoPlayer;
+import com.google.android.exoplayer2.PlaybackParameters;
+import com.google.android.exoplayer2.Player;
+import com.google.android.exoplayer2.SimpleExoPlayer;
+import com.google.android.exoplayer2.extractor.DefaultExtractorsFactory;
+import com.google.android.exoplayer2.source.ExtractorMediaSource;
+import com.google.android.exoplayer2.source.MediaSource;
+import com.google.android.exoplayer2.upstream.AssetDataSource;
+import com.google.android.exoplayer2.upstream.DataSource;
 import org.gearvrf.GVRAssetLoader;
 import org.gearvrf.GVRComponent;
 import org.gearvrf.GVRContext;
@@ -799,22 +810,15 @@ public class AnimationInteractivityManager {
                                     GVRVideoSceneObject gvrVideoSceneObject = (GVRVideoSceneObject) gvrSceneObject;
                                     GVRVideoSceneObjectPlayer gvrVideoSceneObjectPlayer = gvrVideoSceneObject.getMediaPlayer();
                                     try {
-                                        MediaPlayer mediaPlayer = (MediaPlayer) gvrVideoSceneObjectPlayer.getPlayer();
                                         if (interactiveObjectFinal.getSensorFromField().contains("touchTime")) {
                                             if (interactiveObjectFinal.getDefinedItemToField().endsWith("stopTime")) {
-                                                mediaPlayer.stop();
-                                                mediaPlayer.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
-                                                    @Override
-                                                    public void onPrepared(MediaPlayer mp) {
-                                                        // Must catch even though no action. Prevent calling another
-                                                        // Listener (in X3Dobject) and re-starting the movie
-                                                    }
-                                                });
-                                                mediaPlayer.prepare();
+                                                gvrVideoSceneObjectPlayer.pause();
+                                                ExoPlayer exoPlayer = (ExoPlayer) gvrVideoSceneObjectPlayer.getPlayer();
+                                                exoPlayer.seekTo(0);
                                             } else if (interactiveObjectFinal.getDefinedItemToField().endsWith("pauseTime")) {
-                                                if ( mediaPlayer.isPlaying() )mediaPlayer.pause();
+                                                gvrVideoSceneObjectPlayer.pause();
                                             } else if (interactiveObjectFinal.getDefinedItemToField().endsWith("startTime")) {
-                                                mediaPlayer.start();
+                                                gvrVideoSceneObjectPlayer.start();
                                             } else {
                                                 Log.e(TAG, "Error: ROUTE to MovieTexture, " + interactiveObjectFinal.getDefinedItemToField() + " not implemented");
                                             }
@@ -1203,7 +1207,8 @@ public class AnimationInteractivityManager {
                             else if ( StringFieldMatch( scriptObject.getFromDefinedItemField(field), "transparency") ) {
                                 scriptParameters.add(definedItem.getGVRMaterial().getOpacity());
                             }
-                        } else if (definedItem.getGVRSceneObject() != null) {
+                        }
+                        else if (definedItem.getGVRSceneObject() != null) {
                             // checking if it's a light
                             GVRComponent gvrComponent = definedItem.getGVRSceneObject().getComponent(
                                     GVRLight.getComponentType());
@@ -1226,7 +1231,42 @@ public class AnimationInteractivityManager {
                                 scriptParameters.add(parameter);
                             }
                         }
+                        else if (definedItem.getGVRVideoSceneObject() != null) {
+                            GVRVideoSceneObjectPlayer gvrVideoSceneObjectPlayer = definedItem.getGVRVideoSceneObject().getMediaPlayer();
+                            if ( StringFieldMatch( scriptObject.getFromDefinedItemField(field),"speed") ) {
+                                if ( gvrVideoSceneObjectPlayer == null) {
+                                    // special case upon initialization of the movie texture, so the speed is init to 1
+                                    scriptParameters.add( 1 );
+                                }
+                                else if ( gvrVideoSceneObjectPlayer.getPlayer() == null) {
+                                    ; // could occur prior to movie engine is setup
+                                }
+                                else {
+                                    ExoPlayer exoPlayer = (ExoPlayer) gvrVideoSceneObjectPlayer.getPlayer();
+                                    PlaybackParameters currPlaybackParamters = exoPlayer.getPlaybackParameters();
+                                    scriptParameters.add( currPlaybackParamters.speed );
+                                }
+                            } // end check for speed
+                        }  // end if SFFloat GVRVideoSceneObject
                     }  // end if SFFloat
+                    else if (fieldType.equalsIgnoreCase("SFTime")) {
+                        if (definedItem.getGVRVideoSceneObject() != null) {
+                            GVRVideoSceneObjectPlayer gvrVideoSceneObjectPlayer = definedItem.getGVRVideoSceneObject().getMediaPlayer();
+                            if ( StringFieldMatch( scriptObject.getFromDefinedItemField(field),"duration") ) {
+                                if ( gvrVideoSceneObjectPlayer == null) {
+                                    // special case upon initialization of the movie texture, so the speed is init to 1
+                                    scriptParameters.add( 1 );
+                                }
+                                else if ( gvrVideoSceneObjectPlayer.getPlayer() == null) {
+                                    ; // could occur prior to movie engine is setup
+                                }
+                                else {
+                                    ExoPlayer exoPlayer = (ExoPlayer) gvrVideoSceneObjectPlayer.getPlayer();
+                                    scriptParameters.add( exoPlayer.getDuration() );
+                                }
+                            } // end check for duration
+                        }  // end if SFTime GVRVideoSceneObject
+                    } // end if SFTime
                     else if (fieldType.equalsIgnoreCase("SFInt32")) {
                         int parameter = 0;
                         if (definedItem.getGVRSceneObject() != null) {
@@ -1421,12 +1461,12 @@ public class AnimationInteractivityManager {
                                 + "], params[" + (argumentNum + 3) + "]);\n";
                         argumentNum += 4;
                     }  // end if SFRotation, a 4-value parameter
-
-                    else if ((fieldType.equalsIgnoreCase("SFFloat")) || (fieldType.equalsIgnoreCase("SFBool")) || (fieldType.equalsIgnoreCase("SFInt32")) ) {
+                    else if ((fieldType.equalsIgnoreCase("SFFloat")) || (fieldType.equalsIgnoreCase("SFBool"))
+                            || (fieldType.equalsIgnoreCase("SFInt32")) || (fieldType.equalsIgnoreCase("SFTime")) ) {
                         gearVRinitJavaScript += scriptObject.getFieldName(field) + " = new " + scriptObject.getFieldType(field) +
                                 "( params[" + argumentNum + "]);\n";
                         argumentNum += 1;
-                    }  // end if SFFloat, SFBool or SFInt32 - a single parameter
+                    }  // end if SFFloat, SFBool, SFInt32 or SFTime - a single parameter
                     else if (fieldType.equalsIgnoreCase("SFString") ) {
                         gearVRinitJavaScript += scriptObject.getFieldName(field) + " = new " + scriptObject.getFieldType(field) +
                                 "( params[" + argumentNum + "]);\n";
@@ -1657,8 +1697,19 @@ public class AnimationInteractivityManager {
                                     }
                                 }  //  end presumed to be a light
                             }  //  end GVRScriptObject ! null
+                            else if ( scriptObjectToDefinedItem.getGVRVideoSceneObject() != null) {
+                                if ( StringFieldMatch( scriptObject.getToDefinedItemField(fieldNode), "speed") ||
+                                        StringFieldMatch( scriptObject.getToDefinedItemField(fieldNode), "pitch") ) {
+                                    GVRVideoSceneObjectPlayer gvrVideoSceneObjectPlayer = scriptObjectToDefinedItem.getGVRVideoSceneObject().getMediaPlayer();
+                                    ExoPlayer exoPlayer = (ExoPlayer) gvrVideoSceneObjectPlayer.getPlayer();
+
+                                    PlaybackParameters currPlaybackParamters = exoPlayer.getPlaybackParameters();
+                                    PlaybackParameters playbackParamters = new PlaybackParameters(sfFloat.getValue(), sfFloat.getValue());
+                                    exoPlayer.setPlaybackParameters(playbackParamters);
+                                }
+                            }
                             else {
-                                Log.e(TAG, "Error: Not setting SFFloat '" + scriptObject.getFieldName(fieldNode) + "' value from SCRIPT '" + scriptObject.getName() + "'." );
+                                Log.e(TAG, "Error: Not setting SFFloat '" + scriptObject.getToDefinedItemField(fieldNode) + "' value from SCRIPT '" + scriptObject.getName() + "'." );
                             }
                         }  //  end SFFloat
                         else if (fieldType.equalsIgnoreCase("SFTime")) {
@@ -1674,8 +1725,25 @@ public class AnimationInteractivityManager {
                                 else if ( StringFieldMatch( scriptObject.getFieldName(fieldNode), "cycleInterval") ) {
                                     timeSensor.setCycleInterval( (float)sfTime.getValue() );
                                 }
-                                else Log.e(TAG, "Error: Not setting SFTime '" + scriptObject.getFieldName(fieldNode) + "' value from SCRIPT '" + scriptObject.getName() + "'." );
-                           }
+                                else Log.e(TAG, "Error: Not setting " + (float)sfTime.getValue() + " to SFTime '" +
+                                            scriptObject.getFieldName(fieldNode) + "' value from SCRIPT '" + scriptObject.getName() + "'." );
+                            }
+                            else if ( scriptObject.getToDefinedItemField( fieldNode ) != null) {
+                                DefinedItem definedItem = scriptObject.getToDefinedItem(fieldNode);
+                                if ( definedItem.getGVRVideoSceneObject() != null ) {
+                                    GVRVideoSceneObjectPlayer gvrVideoSceneObjectPlayer = scriptObjectToDefinedItem.getGVRVideoSceneObject().getMediaPlayer();
+                                    ExoPlayer exoPlayer = (ExoPlayer) gvrVideoSceneObjectPlayer.getPlayer();
+                                    if (StringFieldMatch(scriptObject.getToDefinedItemField(fieldNode), "startTime")) {
+                                        exoPlayer.seekTo( (long)sfTime.getValue() );
+                                    }
+                                    else Log.e(TAG, "Error: MovieTexture " + scriptObject.getToDefinedItemField(fieldNode) + " in " +
+                                            scriptObject.getName() + " script not supported." );
+                                }
+                                else Log.e(TAG, "Error: Not setting " + (float)sfTime.getValue() + " to SFTime. " +
+                                        "MovieTexture node may not be defined to connect from SCRIPT '" + scriptObject.getName() + "'." );
+
+                            }
+                            else Log.e(TAG, "Error: Not setting SFTime '" + scriptObject.getFieldName(fieldNode) + "' value from SCRIPT '" + scriptObject.getName() + "'." );
                         }  //  end SFTime
                         else if (fieldType.equalsIgnoreCase("SFColor")) {
                             SFColor sfColor = (SFColor) returnedJavaScriptValue;
@@ -1877,43 +1945,30 @@ public class AnimationInteractivityManager {
 
                             else if (scriptObjectToDefinedItem.getGVRVideoSceneObject() != null) {
                                 //  MFString change to a GVRVideoSceneObject object
-                                if (scriptObject.getToDefinedItemField(fieldNode).equalsIgnoreCase("url")) {
-                                    String newURL = mfString.get1Value(0);
-                                    GVRVideoSceneObject gvrVideoSceneObject = scriptObjectToDefinedItem.getGVRVideoSceneObject();
-                                    GVRVideoSceneObjectPlayer gvrVideoSceneObjectPlayer = gvrVideoSceneObject.getMediaPlayer();
-                                    MediaPlayer mediaPlayer = (MediaPlayer) gvrVideoSceneObjectPlayer.getPlayer();
-                                    // retain the looping boolean for the new movie
-                                    boolean isLooping = mediaPlayer.isLooping();
-                                    mediaPlayer.stop();
-                                    mediaPlayer.reset();
-                                    mediaPlayer.setLooping( isLooping );
+                                if (StringFieldMatch(scriptObject.getToDefinedItemField(fieldNode), "url")) {
                                     try {
+                                        GVRVideoSceneObjectPlayer gvrVideoSceneObjectPlayer = scriptObjectToDefinedItem.getGVRVideoSceneObject().getMediaPlayer();
+                                        ExoPlayer exoPlayer = (ExoPlayer) gvrVideoSceneObjectPlayer.getPlayer();
+                                        exoPlayer.stop();
 
-                                        AssetFileDescriptor fileDescriptor = gvrContext.getContext().getAssets().openFd(
-                                                newURL);
-                                        mediaPlayer.setDataSource(fileDescriptor.getFileDescriptor(),
-                                            fileDescriptor.getStartOffset(), fileDescriptor.getLength());
-                                        fileDescriptor.close();
-
-                                        mediaPlayer.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
+                                        final DataSource.Factory dataSourceFactory = new DataSource.Factory() {
                                             @Override
-                                            public void onPrepared(MediaPlayer mp) {
-                                                Log.d(TAG, "onPrepared");
-                                                mp.start();
+                                            public DataSource createDataSource() {
+                                                return new AssetDataSource(gvrContext.getContext());
                                             }
-                                        });
-                                        mediaPlayer.prepare();
-                                    } catch (IOException e) {
+                                        };
+                                        final MediaSource mediaSource = new ExtractorMediaSource(Uri.parse("asset:///" + mfString.get1Value(0)),
+                                                dataSourceFactory,
+                                                new DefaultExtractorsFactory(), null, null);
+                                        exoPlayer.prepare(mediaSource);
+                                        Log.e(TAG, "Load movie " + mfString.get1Value(0) + ".");
+                                        gvrVideoSceneObjectPlayer.start();
+                                    } catch (Exception e) {
+                                        Log.e(TAG, "X3D MovieTexture Asset " + mfString.get1Value(0) + " not loaded." + e);
                                         e.printStackTrace();
-                                        Log.e(TAG, "X3D MovieTexture Assets were not loaded. Stopping application!");
-                                        mediaPlayer = null;
-                                    } catch (IllegalStateException e) {
-                                        Log.e(TAG, "X3D Movie Texture: Failed to prepare media player");
-                                        e.printStackTrace();
-                                        mediaPlayer = null;
                                     }
 
-                                }  //  definedItem != null
+                                }  //  end definedItem != null, contains url
                                 else {
                                     Log.e(TAG, "Error: No MovieTexure url associated with MFString '" + scriptObject.getFieldName(fieldNode) + "' value from SCRIPT '" + scriptObject.getName() + "'." );
                                 }
@@ -1937,8 +1992,9 @@ public class AnimationInteractivityManager {
                 }  //  end OUTPUT-ONLY or INPUT_OUTPUT
             }  // end for-loop list of fields for a single script
         } catch (Exception e) {
-            Log.e(TAG, "Error setting values returned from JavaScript in SCRIPT node." +
-                    "  Check JavaScript or ROUTE's.  Exception: " + e);
+            Log.e(TAG, "Error setting values returned from JavaScript in SCRIPT '" +
+                            interactiveObjectFinal.getScriptObject().getName() +
+                    "'. Check JavaScript or ROUTE's.  Exception: " + e);
         }
     }  //  end  SetResultsFromScript
 
