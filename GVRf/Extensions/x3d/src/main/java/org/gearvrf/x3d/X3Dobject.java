@@ -18,6 +18,10 @@ package org.gearvrf.x3d;
 import android.content.Context;
 import android.graphics.Color;
 
+import org.gearvrf.GVRExternalScene;
+import org.gearvrf.GVRResourceVolume;
+import org.gearvrf.GVRScene;
+import org.gearvrf.animation.GVRAnimator;
 import org.gearvrf.io.GVRCursorController;
 import org.gearvrf.GVRMeshCollider;
 import org.gearvrf.io.GVRControllerType;
@@ -3978,16 +3982,33 @@ public class X3Dobject {
                     String[] urls = inlineObject.getURL();
                     for (int j = 0; j < urls.length; j++) {
                         GVRAndroidResource gvrAndroidResource = null;
+                        GVRResourceVolume gvrResourceVolume = null;
                         try {
+                            String filename = urls[j];
                             inlineSubdirectory = "";
                             int lastIndex = urls[j].lastIndexOf('/');
                             if (lastIndex != -1) {
                                 inlineSubdirectory = urls[j].substring(0, urls[j].lastIndexOf('/')+1);
+                                filename = urls[j].substring(urls[j].lastIndexOf('/')+1, urls[j].length());
                             }
-                            gvrAndroidResource = new GVRAndroidResource(gvrContext, urls[j]);
-                            inputStream = gvrAndroidResource.getStream();
-                            currentSceneObject = inlineObject.getInlineGVRSceneObject();
-                            saxParser.parse(inputStream, userhandler);
+
+                            gvrResourceVolume = new GVRResourceVolume(gvrContext, urls[j]);
+                            gvrAndroidResource = gvrResourceVolume.openResource( filename );
+
+                            if ( filename.toLowerCase().endsWith(".x3d")) {
+                                inputStream = gvrAndroidResource.getStream();
+                                currentSceneObject = inlineObject.getInlineGVRSceneObject();
+                                saxParser.parse(inputStream, userhandler);
+                            }
+                            else {
+                                GVRExternalScene gvrExternalScene = new GVRExternalScene(gvrContext, urls[j], false);
+                                currentSceneObject = inlineObject.getInlineGVRSceneObject();
+                                if (currentSceneObject == null) root.attachComponent(gvrExternalScene);
+                                else currentSceneObject.attachComponent(gvrExternalScene);
+                                GVRScene gvrScene = gvrContext.getMainScene();
+                                gvrExternalScene.load(gvrScene);
+                                GVRAnimator gvrAnimator = gvrExternalScene.getAnimator();
+                            }
                         } catch (FileNotFoundException e) {
                             Log.e(TAG,
                                     "Inline file reading: File Not Found: url " + urls[j] + ", Exception "
