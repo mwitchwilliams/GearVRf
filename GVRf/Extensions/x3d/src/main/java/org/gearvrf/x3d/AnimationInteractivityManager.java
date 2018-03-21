@@ -1265,6 +1265,21 @@ public class AnimationInteractivityManager {
                                     scriptParameters.add( exoPlayer.getDuration() );
                                 }
                             } // end check for duration
+                            else if ( StringFieldMatch( scriptObject.getFromDefinedItemField(field),"elapsedTime") ) {
+                                if ( gvrVideoSceneObjectPlayer == null) {
+                                    // special case upon initialization of the movie texture, so the elapsedTime is init to 0
+                                    scriptParameters.add( 0 );
+                                }
+                                else if ( gvrVideoSceneObjectPlayer.getPlayer() == null) {
+                                    ; // could occur prior to movie engine is setup
+                                }
+                                else {
+                                    ExoPlayer exoPlayer = (ExoPlayer) gvrVideoSceneObjectPlayer.getPlayer();
+                                    // getContentPosition is for possible advertisements, and returns the same
+                                    // value as getCurrentPosition if no ads.
+                                    scriptParameters.add( exoPlayer.getContentPosition() );
+                                }
+                            } // end check for elapsedTime
                         }  // end if SFTime GVRVideoSceneObject
                     } // end if SFTime
                     else if (fieldType.equalsIgnoreCase("SFInt32")) {

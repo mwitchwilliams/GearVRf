@@ -103,9 +103,7 @@ import com.google.android.exoplayer2.upstream.DataSource;
 public class X3Dobject {
 
 
-    static final boolean USE_EXO_PLAYER = true;
-
-    private GVRVideoSceneObjectPlayer<ExoPlayer> makeExoPlayer(String movieFileName ) {
+    protected GVRVideoSceneObjectPlayer<ExoPlayer> makeExoPlayer(String movieFileName ) {
 
         GVRVideoSceneObjectPlayer<ExoPlayer> gvrVideoSceneObjectPlayer = null;
 
@@ -113,9 +111,6 @@ public class X3Dobject {
             final Context context = activityContext;
             final String movieFileNameFinal = movieFileName;
 
-            //DataSource.Factory dataSourceFactory = null;
-                //final DataSource.Factory dataSourceFactory = new DataSource.Factory() {
-                //DataSource.Factory dataSourceFactory = new DataSource.Factory() {
             DataSource.Factory dataSourceFactory = new DataSource.Factory() {
                 @Override
                 public DataSource createDataSource() {
@@ -3829,92 +3824,39 @@ public class X3Dobject {
                             }
 
                             if ( !shaderSettings.movieTextures.isEmpty()) {
-                                if (USE_EXO_PLAYER) {
+                                try {
+                                    GVRVideoSceneObjectPlayer<?> videoSceneObjectPlayer = null;
                                     try {
-                                        GVRVideoSceneObjectPlayer<?> videoSceneObjectPlayer = null;
-                                        try {
-                                            videoSceneObjectPlayer = makeExoPlayer(shaderSettings.movieTextures.get(0));
-                                        }
-                                        catch (Exception e) {
-                                            Log.e(TAG, "Exception getting videoSceneObjectPlayer: " + e);
-                                        }
-                                        videoSceneObjectPlayer.start();
-
-                                        GVRVideoSceneObject gvrVideoSceneObject =
-                                                new GVRVideoSceneObject(gvrContext, gvrRenderData.getMesh(), videoSceneObjectPlayer,
-                                                        GVRVideoSceneObject.GVRVideoType.MONO);
-                                        currentSceneObject.addChildObject(gvrVideoSceneObject);
-                                        meshAttachedSceneObject = gvrVideoSceneObject;
-
-                                        if (shaderSettings.getMovieTextureName() != null) {
-                                            gvrVideoSceneObject.setName(shaderSettings.getMovieTextureName());
-                                            DefinedItem item = new DefinedItem(shaderSettings.getMovieTextureName());
-                                            item.setGVRVideoSceneObject(gvrVideoSceneObject);
-                                            mDefinedItems.add(item);
-                                        }
-
-
-                                    } catch (Exception e) {
-                                        e.printStackTrace();
-                                        Log.e(TAG, "X3D MovieTexture Exception:\n" + e);
-                                    }                                }
-                                else { // use Android media player
-                                    MediaPlayer mediaPlayer = new MediaPlayer();
-                                    mediaPlayer.setLooping(shaderSettings.getMovieTextureLoop());
-                                    try {
-                                        AssetFileDescriptor fileDescriptor = gvrContext.getContext().getAssets().openFd(
-                                                shaderSettings.movieTextures.get(0));
-                                        mediaPlayer.setDataSource(fileDescriptor.getFileDescriptor(),
-                                                fileDescriptor.getStartOffset(), fileDescriptor.getLength());
-                                        fileDescriptor.close();
-
-                                        mediaPlayer.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
-                                            @Override
-                                            public void onPrepared(MediaPlayer mp) {
-                                                mp.start();
-                                            }
-                                        });
-
-                                        mediaPlayer.prepare();
-
-                                        GVRVideoSceneObject gvrVideoSceneObject =
-                                                new GVRVideoSceneObject(gvrContext, gvrRenderData.getMesh(), mediaPlayer,
-                                                        GVRVideoSceneObject.GVRVideoType.MONO);
-                                        currentSceneObject.addChildObject(gvrVideoSceneObject);
-                                        meshAttachedSceneObject = gvrVideoSceneObject;
-
-                                        //Mesh derived from a GVRSceneObject that supplies its own child with mesh.
-                                        // This must now be removed since GVRVideoSceneObject creates its own mesh.
-                                        // Otherwise, we will have 2 meshes sharing the same place, and only 1 with a
-                                        // movie texture on it. Such meshes are primitives
-                                        List<GVRSceneObject> children = currentSceneObject.getChildren();
-
-                                        for (GVRSceneObject child : children) {
-                                            if ((child instanceof GVRConeSceneObject) || (child instanceof GVRCubeSceneObject) ||
-                                                    (child instanceof GVRCylinderSceneObject) || (child instanceof GVRSphereSceneObject) ||
-                                                    (child instanceof GVRTextViewSceneObject)) {
-                                                if (child.getRenderData() == gvrRenderData) {
-                                                    currentSceneObject.removeChildObject(child);
-                                                }
-                                            }
-                                        }
-
-                                        if (shaderSettings.getMovieTextureName() != null) {
-                                            gvrVideoSceneObject.setName(shaderSettings.getMovieTextureName());
-                                            DefinedItem item = new DefinedItem(shaderSettings.getMovieTextureName());
-                                            item.setGVRVideoSceneObject(gvrVideoSceneObject);
-                                            mDefinedItems.add(item);
-                                        }
-                                    } catch (IOException e) {
-                                        e.printStackTrace();
-                                        Log.e(TAG, "X3D MovieTexture Assets were not loaded. Stopping application!");
-                                        mediaPlayer = null;
-                                    } catch (IllegalStateException e) {
-                                        Log.e(TAG, "X3D Movie Texture: Failed to prepare media player");
-                                        e.printStackTrace();
-                                        mediaPlayer = null;
+                                        videoSceneObjectPlayer = makeExoPlayer(shaderSettings.movieTextures.get(0));
                                     }
-                                } // end using Android Media Player [USE_EXO_PLAYER = false]
+                                    catch (Exception e) {
+                                        Log.e(TAG, "Exception getting videoSceneObjectPlayer: " + e);
+                                    }
+                                    videoSceneObjectPlayer.start();
+
+                                    GVRVideoSceneObject gvrVideoSceneObject =
+                                            new GVRVideoSceneObject(gvrContext, gvrRenderData.getMesh(), videoSceneObjectPlayer,
+                                                    GVRVideoSceneObject.GVRVideoType.MONO);
+                                    currentSceneObject.addChildObject(gvrVideoSceneObject);
+                                    // Primitives such as Box, Cone, etc come with their own mesh
+                                    // so we need to remove these.
+                                    if ( meshAttachedSceneObject != null) {
+                                        GVRSceneObject primitiveParent = meshAttachedSceneObject.getParent();
+                                        primitiveParent.removeChildObject(meshAttachedSceneObject);
+                                    }
+                                    meshAttachedSceneObject = gvrVideoSceneObject;
+
+                                    if (shaderSettings.getMovieTextureName() != null) {
+                                        gvrVideoSceneObject.setName(shaderSettings.getMovieTextureName());
+                                        DefinedItem item = new DefinedItem(shaderSettings.getMovieTextureName());
+                                        item.setGVRVideoSceneObject(gvrVideoSceneObject);
+                                        mDefinedItems.add(item);
+                                    }
+
+                                } catch (Exception e) {
+                                    e.printStackTrace();
+                                    Log.e(TAG, "X3D MovieTexture Exception:\n" + e);
+                                }
                             }  // end MovieTexture
 
                             // Appearance node thus far contains properties of GVRMaterial
