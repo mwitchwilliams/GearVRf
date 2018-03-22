@@ -13,17 +13,9 @@
  * limitations under the License.
  */
 
-#ifndef FRAMEWORK_VULKAN_HEADERS_H
-#define FRAMEWORK_VULKAN_HEADERS_H
-#define VK_USE_PLATFORM_ANDROID_KHR
+package org.gearvrf;
 
-#include "vulkan_wrapper.h"
-#include "vulkanInfoWrapper.h"
-#include <vector>
-#include "glm/glm.hpp"
-#include "vulkanCore.h"
-#include "vulkan.h"
-#include "vulkan_uniform_block.h"
-
-
-#endif //FRAMEWORK_VULKAN_HEADERS_H
+public class SystemPropertyUtil {
+    public static native boolean isSystemPropertySet(String name);
+    public static native int getSystemProperty(String name);
+}

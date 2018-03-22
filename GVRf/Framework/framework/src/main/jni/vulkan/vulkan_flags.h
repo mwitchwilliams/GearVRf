@@ -13,17 +13,24 @@
  * limitations under the License.
  */
 
-#ifndef FRAMEWORK_VULKAN_HEADERS_H
-#define FRAMEWORK_VULKAN_HEADERS_H
-#define VK_USE_PLATFORM_ANDROID_KHR
+#ifndef FRAMEWORK_VULKAN_FLAGS_H
+#define FRAMEWORK_VULKAN_FLAGS_H
 
-#include "vulkan_wrapper.h"
-#include "vulkanInfoWrapper.h"
-#include <vector>
-#include "glm/glm.hpp"
-#include "vulkanCore.h"
+
+#include <unordered_map>
 #include "vulkan.h"
-#include "vulkan_uniform_block.h"
+#include "GLES3/gl3.h"
+
+namespace  gvr {
+
+    namespace vkflags {
+
+        extern std::unordered_map<int, int> glToVulkan;
+
+        extern void initVkRenderFlags();
+    }
+}
+#endif //FRAMEWORK_VULKAN_FLAGS_H
 
 
-#endif //FRAMEWORK_VULKAN_HEADERS_H
+
