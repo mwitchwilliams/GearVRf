@@ -3364,11 +3364,20 @@ public class X3Dobject {
                     }
                     if (headlight) {
                         GVRSceneObject headlightSceneObject = new GVRSceneObject(gvrContext);
-                        GVRDirectLight headLight = new GVRDirectLight(gvrContext);
-                        headlightSceneObject.attachLight(headLight);
-                        headLight.setDiffuseIntensity(1, 1, 1, 1);
+                        GVRDirectLight directionalHeadLight = new GVRDirectLight(gvrContext);
+                        headlightSceneObject.attachLight(directionalHeadLight);
+                        directionalHeadLight.setDiffuseIntensity(1, 1, 1, 1);
                         headlightSceneObject.setName("HeadLight");
-                        cameraRigAtRoot.addChildObject(headlightSceneObject);
+                        GVRSceneObject headTransformObject = cameraRigAtRoot.getHeadTransformObject();
+                        //cameraRigAtRoot.addChildObject(headlightSceneObject);
+                        headTransformObject.addChildObject(headlightSceneObject);
+                        Log.e("X3dDBG", "add headlight");
+                        /*
+                        GVRSceneObject newDirectionalLightSceneObj = AddGVRSceneObject();
+                        GVRDirectLight newDirectionalLight = new GVRDirectLight(gvrContext);
+                        newDirectionalLightSceneObj.attachLight(newDirectionalLight);
+
+                         */
                     }
 
                 } // end <NavigationInfo> node
@@ -3673,7 +3682,11 @@ public class X3Dobject {
 
                             // Texture Transform
                             // If DEFined iteam, add to the DeFinedItem list. Maay be interactive
-                             if ( shaderSettings.getTextureTransformName() != null); {
+                            //if ( shaderSettings.getTextureTransformName() != null); {
+                            Log.e("X3DDBG", "Note fixed error @ 'shaderSettings.getTextureTransformName() != null'");
+                            Log.e("X3DDBG", "   currentSceneObject: '" + currentSceneObject.getName() + "'");
+
+                            if ( shaderSettings.getTextureTransformName() != null) {
                                 DefinedItem definedItem = new DefinedItem(
                                         shaderSettings.getTextureTransformName());
                                 definedItem.setGVRMaterial(gvrMaterial);
@@ -3697,7 +3710,9 @@ public class X3Dobject {
                             shaderSettings.textureMatrix = textureTransform;
                             float[] texMtx = new float[9];
                             shaderSettings.textureMatrix.get(texMtx);
+                            Log.e("X3DDBG", "       before texture_matrix");
                             gvrMaterial.setFloatArray("texture_matrix", texMtx);
+                            Log.e("X3DDBG", "       after texture_matrix");
 
                             // Appearance node thus far contains properties of GVRMaterial
                             // node
