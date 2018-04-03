@@ -799,8 +799,9 @@ public class X3Dobject {
             this.gvrContext = assetRequest.getContext();
             this.activityContext = gvrContext.getContext();
             this.root = root;
-            x3DShader = gvrContext.getShaderManager().getShaderType(X3DShader.class);
-
+//            x3DShader = gvrContext.getShaderManager().getShaderType(X3DShader.class);
+            x3DShader = gvrContext.getShaderManager().getShaderType(X3DLayeredShader.class);
+            shaderSettings = new ShaderSettings(new GVRMaterial(gvrContext, x3DShader));
 
             EnumSet<GVRImportSettings> settings = assetRequest.getImportSettings();
             blockLighting = settings.contains(GVRImportSettings.NO_LIGHTING);

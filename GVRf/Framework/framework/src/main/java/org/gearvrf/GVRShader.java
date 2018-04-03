@@ -51,7 +51,7 @@ import android.os.Environment;
  */
 public class GVRShader
 {
-    protected boolean mWriteShadersToDisk = false;
+    protected boolean mWriteShadersToDisk = true;
     protected GLSLESVersion mGLSLVersion = GLSLESVersion.V100;
     protected boolean mHasVariants = false;
     protected boolean mUsesLights = false;
@@ -402,8 +402,6 @@ public class GVRShader
     protected void setSegment(String segmentName, String shaderSource)
     {
         mShaderSegments.put(segmentName, shaderSource);
-        if (shaderSource == null)
-            throw new java.lang.IllegalArgumentException("Shader source is null for segment " + segmentName + " of shader");
     }
 
     private boolean isImplemented(String methodName, Class<?> ...paramTypes)
