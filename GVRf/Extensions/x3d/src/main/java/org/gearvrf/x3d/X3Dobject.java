@@ -46,6 +46,7 @@ import javax.xml.parsers.SAXParserFactory;
 
 import org.gearvrf.script.GVRJavascriptScriptFile;
 import org.gearvrf.script.javascript.GVRJavascriptV8File;
+import org.gearvrf.x3d.data_types.MFString;
 import org.joml.Matrix3f;
 import org.joml.Vector2f;
 import org.xml.sax.Attributes;
@@ -1651,6 +1652,10 @@ public class X3Dobject {
                                 item.setGVRTexture(gvrTexture);
                                 mDefinedItems.add(item);
                             }
+
+                            if ( shaderSettings.getMultiTexture() ) {
+                                shaderSettings.setMultiTextureGVRTexture( gvrTexture );
+                            }
                         }
                     }
                 }
@@ -3158,6 +3163,54 @@ public class X3Dobject {
                 }  //  end <field> node
 
 
+                /********** MultiTexture **********/
+                else if (qName.equalsIgnoreCase("MultiTexture")) {
+                    Log.e("X3DDBG", "MultiTexture");
+                    String name = "";
+                    float alpha = 1;
+                    float[] color = { 1, 1, 1 };
+                    String[] function = {""};
+                    //String[] mode = {"MODULATE"};
+                    MFString mode = new MFString("MODULATE");
+                    String[] source = {""};
+
+                    shaderSettings.setMultiTexture( true );
+
+                    attributeValue = attributes.getValue("DEF");
+                    if (attributeValue != null) {
+                        //name = attributeValue;
+                        shaderSettings.setMultiTextureName( attributeValue );
+                    }
+                    attributeValue = attributes.getValue("alpha");
+                    if (attributeValue != null) {
+                        alpha = parseSingleFloatString(attributeValue, true,
+                                true);
+                    }
+                    attributeValue = attributes.getValue("color");
+                    if (attributeValue != null) {
+                        color = parseFixedLengthFloatString(attributeValue, 3, true,
+                                false);
+                    }
+                    attributeValue = attributes.getValue("function");
+                    if (attributeValue != null) {
+                        function = parseMFString(attributeValue);
+                    }
+                    attributeValue = attributes.getValue("mode");
+                    if (attributeValue != null) {
+                        String[] modeString = parseMFString(attributeValue);
+                        mode.setValue(modeString.length, modeString);
+                    }
+                    attributeValue = attributes.getValue("source");
+                    if (attributeValue != null) {
+                        source = parseMFString(attributeValue);
+                    }
+
+                    shaderSettings.setMultiTextureMode( mode );
+
+                    Log.e("X3DDBG", "MultiTexture parsing done");
+                }  //  end <MultiTexture> node
+
+
                 /********** BooleanToggle **********/
                 else if (qName.equalsIgnoreCase("BooleanToggle")) {
                     String name = "";
@@ -3665,7 +3718,23 @@ public class X3Dobject {
                                 // objects with USE
                             }
 
-                            if (shaderSettings.texture != null) {
+                            if ( shaderSettings.getMultiTexture()) {
+                                if ( !shaderSettings.getMultiTextureName().isEmpty() ) {
+                                    DefinedItem definedItem = new DefinedItem(
+                                            shaderSettings.getMultiTextureName() );
+                                    definedItem.setGVRMaterial(gvrMaterial);
+                                    mDefinedItems.add(definedItem); // Add gvrMaterial to Array list
+                                }
+                                gvrMaterial.setTexture("diffuseTexture", shaderSettings.getMultiTextureGVRTexture(1) );
+                                gvrMaterial.setTexture("diffuseTexture1", shaderSettings.getMultiTextureGVRTexture(0) );
+                                // 0:Mul; 1=for ADD; 2 for SUBTRACT; 3 for DIVIDE; 4=smooth add; 5=Signed add
+                                gvrMaterial.setInt("diffuseTexture1_blendop", 1);
+                                gvrMaterial.setTexCoord("diffuseTexture", "a_texcoord", "diffuse_coord1");
+                                //gvrMaterial.setTexCoord("diffuseTexture1", "a_texcoord", "diffuse_coord1");
+                                gvrMaterial.setTexCoord("diffuseTexture1", "a_texcoord", "diffuse_coord");
+
+                            }
+                            else if (shaderSettings.texture != null) {
                                 gvrMaterial.setTexture("diffuseTexture",
                                         shaderSettings.texture);
                                 // if the TextureMap is a DEFined item, then set the
@@ -3678,6 +3747,7 @@ public class X3Dobject {
                                     }
                                 }
                             }
+
 
                             // Texture Transform
                             // If DEFined iteam, add to the DeFinedItem list. Maay be interactive
@@ -3916,6 +3986,8 @@ public class X3Dobject {
                 currentScriptObject = null;
             } else if (qName.equalsIgnoreCase("field")) {
                 ; // embedded inside a <SCRIPT> node
+            } else if (qName.equalsIgnoreCase("MultiTexture")) {
+                Log.e("X3DDBG", "MultiTexture end");
             } else if (qName.equalsIgnoreCase("BooleanToggle")) {
                 ;
             } else if (qName.equalsIgnoreCase("NavigationInfo")) {

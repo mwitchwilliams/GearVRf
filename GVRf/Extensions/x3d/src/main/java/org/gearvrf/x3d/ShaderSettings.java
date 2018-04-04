@@ -21,6 +21,7 @@ import org.gearvrf.GVRMaterial;
 
 
 import org.gearvrf.GVRTexture;
+import org.gearvrf.x3d.data_types.MFString;
 import org.gearvrf.x3d.data_types.SFFloat;
 import org.gearvrf.x3d.data_types.SFVec2f;
 import org.joml.Matrix3f;
@@ -43,6 +44,16 @@ public class ShaderSettings
   private String nameMaterial = ""; // set if there is a DEF in Material node
   private String nameTextureTransform = ""; // set if there is a DEF in
   // TextureTransform node
+
+  // Multi-Texture variables
+  //TODO: just an initial version of MultiTexture.
+  private boolean multiTexture = false; // set true if multi-texturing
+  private String nameMultiTexture = ""; // set if there is a DEF in
+  // MultiTexture node
+  private MFString multiTexture_mode = new MFString(); // can be "Add", etc.
+  private GVRTexture textureMap0 = null;
+  private GVRTexture textureMap1 = null;
+
 
   private SFVec2f textureCenter = new SFVec2f( 0, 0 );
   private SFVec2f textureScale =  new SFVec2f( 1, 1 );
@@ -110,6 +121,13 @@ public class ShaderSettings
           modelMatrix[i * 4 + j] = 1;
       }
     }
+
+    multiTexture = false; // set true if multi-texturing
+    nameMultiTexture = ""; // set if there is a DEF in
+    // MultiTexture node
+    multiTexture_mode.clear();
+    textureMap0 = null;
+    textureMap1 = null;
 
     texture = null;
     textureMatrix = null;
@@ -241,4 +259,45 @@ public class ShaderSettings
   {
       return this.textureTranslation;
   }
+
+  protected void setMultiTexture(boolean multiTextureBoolean)
+  {
+    this.multiTexture = multiTextureBoolean;
+  }
+  protected boolean getMultiTexture()
+  {
+    return this.multiTexture;
+  }
+  protected void setMultiTextureName(String multiTextureString)
+  {
+    this.nameMultiTexture = multiTextureString;
+  }
+  protected String getMultiTextureName()
+  {
+    return this.nameMultiTexture;
+  }
+  protected void setMultiTextureMode(MFString mode)
+  {
+    this.multiTexture_mode = mode;
+  }
+  protected MFString getMultiTextureMode()
+  {
+    return this.multiTexture_mode;
+  }
+  protected void setMultiTextureGVRTexture(GVRTexture textureMap)
+  {
+    if (this.textureMap0 != null) this.textureMap1 = textureMap;
+    else this.textureMap0 = textureMap;
+  }
+  protected void setMultiTextureGVRTexture(GVRTexture textureMap, int number)
+  {
+    if (number == 1) this.textureMap1 = textureMap;
+    else this.textureMap0 = textureMap;
+  }
+  protected GVRTexture getMultiTextureGVRTexture(int number)
+  {
+    if (number == 1) return this.textureMap1;
+    return this.textureMap0;
+  }
+
 }
