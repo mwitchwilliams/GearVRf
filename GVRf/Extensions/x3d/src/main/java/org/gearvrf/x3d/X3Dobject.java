@@ -1706,8 +1706,8 @@ public class X3Dobject {
                     }
                     attributeValue = attributes.getValue("solid");
                     if (attributeValue != null) {
-                        if (parseBooleanString(attributeValue)) {
-                            Log.e(TAG, "IndexedFaceSet solid=true attribute not implemented. ");
+                        if ( !parseBooleanString(attributeValue)) {
+                            Log.e(TAG, "IndexedFaceSet solid=false not implemented. ");
                         }
                     }
                     attributeValue = attributes.getValue("ccw");
@@ -2693,7 +2693,7 @@ public class X3Dobject {
                         fieldOfView = parseSingleFloatString(attributeValue, false, true);
                         if (fieldOfView > (float) Math.PI)
                             fieldOfView = (float) Math.PI;
-                        Log.e(TAG, "Viewpoint fieldOfView attribute not implemented. ");
+                        Log.e(TAG, "X3D Viewpoint fieldOfView not implemented in GearVR. ");
                     }
                     attributeValue = attributes.getValue("jump");
                     if (attributeValue != null) {
@@ -3968,18 +3968,6 @@ public class X3Dobject {
                         gazeController.setOrigin(cameraPosition[0], cameraPosition[1], cameraPosition[2]);
                     }
                 } // end setting based on new camera rig
-
-                try {
-                    animationInteractivityManager.initAnimationsAndInteractivity();
-                    // Need to build a JavaScript function that constructs the
-                    // X3D data type objects used with a SCRIPT.
-                    // Scripts can also have an initialize() method.
-                    animationInteractivityManager.InitializeScript();
-                }
-                catch (Exception exception) {
-                    Log.e(TAG, "Error initialing X3D <ROUTE> or <Script> node related to Animation or Interactivity.");
-                }
-
             } // end </scene>
             else if (qName.equalsIgnoreCase("x3d")) {
                 ;
@@ -4037,6 +4025,15 @@ public class X3Dobject {
                                 filename = urls[j].substring(urls[j].lastIndexOf('/')+1, urls[j].length());
                             }
 
+                            // Get rid of any single or double quotes surrounding the filename.
+                            // this happens when the url = '"filename.x3d"' for example
+                            if ( (filename.indexOf("\"") == 0) || (filename.indexOf("\'") == 0) ) {
+                                filename = filename.substring(1, filename.length());
+                            }
+                            if ( (filename.indexOf("\"") == (filename.length()-1)) || (filename.indexOf("\'") == (filename.length()-1)) ) {
+                                filename = filename.substring(0, filename.length()-1);
+                            }
+
                             gvrResourceVolume = new GVRResourceVolume(gvrContext, urls[j]);
                             gvrAndroidResource = gvrResourceVolume.openResource( filename );
 
@@ -4054,13 +4051,6 @@ public class X3Dobject {
                                 gvrExternalScene.load(gvrScene);
                                 GVRAnimator gvrAnimator = gvrExternalScene.getAnimator();
                             }
-/*
-                            gvrAndroidResource = new GVRAndroidResource(gvrContext, urls[j]);
-                            inputStream = gvrAndroidResource.getStream();
-
-                            currentSceneObject = inlineObject.getInlineGVRSceneObject();
-                            saxParser.parse(inputStream, userhandler);
-                            */
                         } catch (FileNotFoundException e) {
                             Log.e(TAG,
                                     "Inline file reading: File Not Found: url " + urls[j] + ", Exception "
@@ -4076,6 +4066,18 @@ public class X3Dobject {
                     }
                 }
             }
+
+            try {
+                animationInteractivityManager.initAnimationsAndInteractivity();
+                // Need to build a JavaScript function that constructs the
+                // X3D data type objects used with a SCRIPT.
+                // Scripts can also have an initialize() method.
+                animationInteractivityManager.InitializeScript();
+            }
+            catch (Exception exception) {
+                Log.e(TAG, "Error initialing X3D <ROUTE> or <Script> node related to Animation or Interactivity.");
+            }
+
         } catch (Exception exception) {
             Log.e(TAG, "X3D/XML Parsing Exception = " + exception);
         }
