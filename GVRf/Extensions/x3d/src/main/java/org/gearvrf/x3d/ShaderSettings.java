@@ -46,7 +46,7 @@ public class ShaderSettings
     private String nameMovieTexture = ""; // set if there is a DEF in MovieTexture node
     private boolean movieTextureLoop = false;
 
-  private String nameTextureTransform = null; // set if there is a DEF in
+  private String nameTextureTransform = ""; // set if there is a DEF in
 
   // TextureTransform node
 
@@ -89,7 +89,7 @@ public class ShaderSettings
     nameMaterial = ""; // set if there is a DEF in Material node
       nameMovieTexture = "";
         movieTextureLoop = false;
-    nameTextureTransform = null; // set if there is a DEF in TextureTransform
+    nameTextureTransform = ""; // set if there is a DEF in TextureTransform
     // node
 
     // initialize texture values
@@ -176,9 +176,9 @@ public class ShaderSettings
     this.movieTextureLoop = movieTextureLoop;
   }
 
-  public boolean getMovieTextureLoop()
-  {
+  public boolean getMovieTextureLoop() {
     return this.movieTextureLoop;
+  }
 
   public void setTextureTransformName(String name)
   {
