@@ -34,6 +34,7 @@ import org.gearvrf.GVRComponent;
 import org.gearvrf.GVRContext;
 import org.gearvrf.GVRImage;
 import org.gearvrf.GVRLight;
+import org.gearvrf.GVRMaterial;
 import org.gearvrf.GVRMeshCollider;
 import org.gearvrf.GVRPointLight;
 import org.gearvrf.GVRSpotLight;
@@ -1200,6 +1201,28 @@ public class AnimationInteractivityManager {
                         }  // end SFVec3f GVRSceneObject
                     }  // end if SFVec3f
 
+                    else if (fieldType.equalsIgnoreCase("SFVec2f")) {
+                        float[] parameter = {0, 0};
+                        if (definedItem.getGVRMaterial() != null) {
+                            if ( StringFieldMatch( scriptObject.getFromDefinedItemField(field), "translation") ) {
+                                parameter[0] = definedItem.getTextureTranslation().getX();
+                                parameter[1] = -definedItem.getTextureTranslation().getY();
+                            }
+                            else if ( StringFieldMatch( scriptObject.getFromDefinedItemField(field), "scale") ) {
+                                parameter[0] = definedItem.getTextureScale().getX();
+                                parameter[1] = definedItem.getTextureScale().getY();
+                            }
+                            else if ( StringFieldMatch( scriptObject.getFromDefinedItemField(field), "center") ) {
+                                parameter[0] = -definedItem.getTextureCenter().getX();
+                                parameter[1] = definedItem.getTextureCenter().getY();
+                            }
+                            // append the parameters of the lights passed to the SCRIPT's javascript code
+                            for (int i = 0; i < parameter.length; i++) {
+                                scriptParameters.add(parameter[i]);
+                            }
+                        }  // end SFVec3f GVRMaterial
+                    }  // end if SFVec2f
+
                     else if (fieldType.equalsIgnoreCase("SFFloat")) {
                         if (definedItem.getGVRMaterial() != null) {
                             if ( StringFieldMatch( scriptObject.getFromDefinedItemField(field), "shininess") ) {
@@ -1210,8 +1233,12 @@ public class AnimationInteractivityManager {
                             else if ( StringFieldMatch( scriptObject.getFromDefinedItemField(field), "transparency") ) {
                                 scriptParameters.add(definedItem.getGVRMaterial().getOpacity());
                             }
-                        }
-                        else if (definedItem.getGVRSceneObject() != null) {
+
+                            else if ( StringFieldMatch( scriptObject.getFromDefinedItemField(field), "rotation") ) {
+                                scriptParameters.add(definedItem.getTextureRotation().getValue());
+                            }
+
+                        } else if (definedItem.getGVRSceneObject() != null) {
                             // checking if it's a light
                             GVRComponent gvrComponent = definedItem.getGVRSceneObject().getComponent(
                                     GVRLight.getComponentType());
@@ -1474,6 +1501,12 @@ public class AnimationInteractivityManager {
                                 + "], params[" + (argumentNum + 3) + "]);\n";
                         argumentNum += 4;
                     }  // end if SFRotation, a 4-value parameter
+                    else if (fieldType.equalsIgnoreCase("SFVec2f")) {
+                        gearVRinitJavaScript += scriptObject.getFieldName(field) + " = new " + scriptObject.getFieldType(field) +
+                                "( params[" + argumentNum + "], params[" + (argumentNum + 1) + "]);\n";
+                        argumentNum += 2;
+                    }  // end if SFVec2f, a 2-value parameter
+
                     else if ((fieldType.equalsIgnoreCase("SFFloat")) || (fieldType.equalsIgnoreCase("SFBool"))
                             || (fieldType.equalsIgnoreCase("SFInt32")) || (fieldType.equalsIgnoreCase("SFTime")) ) {
                         gearVRinitJavaScript += scriptObject.getFieldName(field) + " = new " + scriptObject.getFieldType(field) +
@@ -1675,10 +1708,29 @@ public class AnimationInteractivityManager {
                         else if (fieldType.equalsIgnoreCase("SFFloat")) {
                             SFFloat sfFloat = (SFFloat) returnedJavaScriptValue;
                             if (scriptObjectToDefinedItem.getGVRMaterial() != null) {
+                                GVRMaterial gvrMaterial= scriptObjectToDefinedItem.getGVRMaterial();
+                                // shininess and transparency are part of X3D Material node
                                 if ( StringFieldMatch( scriptObject.getToDefinedItemField(fieldNode), "shininess") ) {
-                                    scriptObjectToDefinedItem.getGVRMaterial().setSpecularExponent(sfFloat.getValue());
+                                    gvrMaterial.setSpecularExponent(sfFloat.getValue());
                                 } else if ( StringFieldMatch( scriptObject.getToDefinedItemField(fieldNode), "transparency") ) {
-                                    scriptObjectToDefinedItem.getGVRMaterial().setOpacity(sfFloat.getValue());
+                                    gvrMaterial.setOpacity(sfFloat.getValue());
+                                }
+                                else if ( StringFieldMatch( scriptObject.getToDefinedItemField(fieldNode), "rotation")  ) {
+                                    // rotationn is part of TextureTransform node
+                                    scriptObjectToDefinedItem.setTextureRotation( sfFloat.getValue() );
+
+                                    Matrix3f textureTransform = SetTextureTransformMatrix(
+                                            scriptObjectToDefinedItem.getTextureTranslation(),
+                                            scriptObjectToDefinedItem.getTextureCenter(),
+                                            scriptObjectToDefinedItem.getTextureScale(),
+                                            scriptObjectToDefinedItem.getTextureRotation());
+
+                                    float[] texMtx = new float[9];
+                                    textureTransform.get(texMtx);
+                                    gvrMaterial.setFloatArray("texture_matrix", texMtx);
+                                }
+                                else {
+                                    Log.e(TAG, "Error: Not setting SFFloat to Material '" + scriptObject.getFieldName(fieldNode) + "' value from SCRIPT '" + scriptObject.getName() + "'." );
                                 }
                             } else if (scriptObjectToDefinedItem.getGVRSceneObject() != null) {
                                 GVRComponent gvrComponent = scriptObjectToDefinedItem.getGVRSceneObject().getComponent(
@@ -1855,6 +1907,41 @@ public class AnimationInteractivityManager {
                                 Log.e(TAG, "Error: Not setting SFVec3f '" + scriptObject.getFieldName(fieldNode) + "' value from SCRIPT '" + scriptObject.getName() + "'." );
                             }
                         }  //  end SFVec3f
+                        else if (fieldType.equalsIgnoreCase("SFVec2f")) {
+                            SFVec2f sfVec2f = (SFVec2f) returnedJavaScriptValue;
+                            if (scriptObjectToDefinedItem.getGVRMaterial() != null) {
+                                //  SFVec2f change to a Texture Transform
+                                GVRMaterial gvrMaterial= scriptObjectToDefinedItem.getGVRMaterial();
+                                if ( StringFieldMatch( scriptObject.getToDefinedItemField(fieldNode), "translation")  ||
+                                        StringFieldMatch( scriptObject.getToDefinedItemField(fieldNode), "scale")  ||
+                                        StringFieldMatch( scriptObject.getToDefinedItemField(fieldNode), "center")  ) {
+
+                                    if ( StringFieldMatch( scriptObject.getToDefinedItemField(fieldNode), "translation")  )
+                                        scriptObjectToDefinedItem.setTextureTranslation(sfVec2f.getX(), -sfVec2f.getY());
+                                    else if ( StringFieldMatch( scriptObject.getToDefinedItemField(fieldNode), "scale")  )
+                                        scriptObjectToDefinedItem.setTextureScale( sfVec2f.getX(), sfVec2f.getY() );
+                                    else if ( StringFieldMatch( scriptObject.getToDefinedItemField(fieldNode), "center")  )
+                                        scriptObjectToDefinedItem.setTextureCenter( -sfVec2f.getX(), sfVec2f.getY());
+
+
+                                    Matrix3f textureTransform = SetTextureTransformMatrix(
+                                            scriptObjectToDefinedItem.getTextureTranslation(),
+                                            scriptObjectToDefinedItem.getTextureCenter(),
+                                            scriptObjectToDefinedItem.getTextureScale(),
+                                            scriptObjectToDefinedItem.getTextureRotation());
+                                    float[] texMtx = new float[9];
+                                    textureTransform.get(texMtx);
+                                    gvrMaterial.setFloatArray("texture_matrix", texMtx);
+                                }
+
+                                else {
+                                    Log.e(TAG, "Error: Not setting SFVec2f '" + scriptObject.getFieldName(fieldNode) + "' value from SCRIPT '" + scriptObject.getName() + "'." );
+                                }
+                            }
+                            else {
+                                Log.e(TAG, "Error: Not setting SFVec2f '" + scriptObject.getFieldName(fieldNode) + "' value from SCRIPT '" + scriptObject.getName() + "'." );
+                            }
+                        } // end SFVec2f
                         else if (fieldType.equalsIgnoreCase("SFRotation")) {
                             SFRotation sfRotation = (SFRotation) returnedJavaScriptValue;
                             if (scriptObjectToDefinedItem.getGVRSceneObject() != null) {
