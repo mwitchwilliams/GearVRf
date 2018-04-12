@@ -127,5 +127,5 @@ void main() {
         gl_Position = mvp  * vertex.local_position;
 #else
 	gl_Position = u_mvp * vertex.local_position;	
-#endif	
+#endif
 }

@@ -801,7 +801,7 @@ public class X3Dobject {
             this.activityContext = gvrContext.getContext();
             this.root = root;
 //            x3DShader = gvrContext.getShaderManager().getShaderType(X3DShader.class);
-            x3DShader = gvrContext.getShaderManager().getShaderType(X3DLayeredShader.class);
+            x3DShader = gvrContext.getShaderManager().getShaderType(X3DShader.class);
             shaderSettings = new ShaderSettings(new GVRMaterial(gvrContext, x3DShader));
 
             EnumSet<GVRImportSettings> settings = assetRequest.getImportSettings();
@@ -2538,6 +2538,7 @@ public class X3Dobject {
                     Vector3f sizeVector = new Vector3f(size[0], size[1], size[2]);
                     GVRCubeSceneObject gvrCubeSceneObject = new GVRCubeSceneObject(
                             gvrContext, solid, sizeVector);
+                    gvrCubeSceneObject.getRenderData().setMaterial(new GVRMaterial(gvrContext, x3DShader));
                     currentSceneObject.addChildObject(gvrCubeSceneObject);
                     meshAttachedSceneObject = gvrCubeSceneObject;
 
@@ -3572,6 +3573,7 @@ public class X3Dobject {
 
                         GVRCubeSceneObject mCubeEvironment = new GVRCubeSceneObject(
                                 gvrContext, false, textureList);
+                        mCubeEvironment.getRenderData().setMaterial(new GVRMaterial(gvrContext, x3DShader));
                         mCubeEvironment.getTransform().setScale(CUBE_WIDTH, CUBE_WIDTH,
                                 CUBE_WIDTH);
 
