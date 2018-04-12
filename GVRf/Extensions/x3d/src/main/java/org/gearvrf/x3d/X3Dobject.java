@@ -3718,7 +3718,7 @@ public class X3Dobject {
                                 // objects with USE
                             }
 
-                            if ( shaderSettings.getMultiTexture()) {
+                            if ( shaderSettings.getMultiTexture()) { 
                                 if ( !shaderSettings.getMultiTextureName().isEmpty() ) {
                                     DefinedItem definedItem = new DefinedItem(
                                             shaderSettings.getMultiTextureName() );
