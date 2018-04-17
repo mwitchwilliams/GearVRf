@@ -761,6 +761,12 @@ public class X3Dobject {
     private boolean reorganizeVerts = false;
 
     private static final float CUBE_WIDTH = 20.0f; // used for cube maps
+
+    //GearVR Multi-Texture settings:
+    //  0:MULTIPLY; 1=for ADD; 2 for SUBTRACT; 3 for DIVIDE; 4=SMOOTH_ADD; 5=SIGNED_ADD
+    public enum MultiTextureModes { MULTIPLY, ADD, SUBTRACT, DIVIDE,
+        SMOOTH_ADD, SIGNED_ADD };
+
     private GVRAssetLoader.AssetRequest assetRequest = null;
     private GVRContext gvrContext = null;
     private Context activityContext = null;
@@ -3890,7 +3896,7 @@ public class X3Dobject {
                                 gvrMaterial.setTexture("diffuseTexture", shaderSettings.getMultiTextureGVRTexture(1) );
                                 gvrMaterial.setTexture("diffuseTexture1", shaderSettings.getMultiTextureGVRTexture(0) );
                                 // 0:Mul; 1=for ADD; 2 for SUBTRACT; 3 for DIVIDE; 4=smooth add; 5=Signed add
-                                gvrMaterial.setInt("diffuseTexture1_blendop", 1);
+                                gvrMaterial.setInt("diffuseTexture1_blendop", shaderSettings.getMultiTextureMode().ordinal());
                                 gvrMaterial.setTexCoord("diffuseTexture", "a_texcoord", "diffuse_coord1");
                                 //gvrMaterial.setTexCoord("diffuseTexture1", "a_texcoord", "diffuse_coord1");
                                 gvrMaterial.setTexCoord("diffuseTexture1", "a_texcoord", "diffuse_coord");
