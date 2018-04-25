@@ -3183,6 +3183,43 @@ public class X3Dobject {
                 } // end <TouchSensor> node
 
 
+                /********** PlaneSensor **********/
+                else if (qName.equalsIgnoreCase("PlaneSensor")) {
+                    String name = "";
+                    String description = "";
+                    boolean enabled = true;
+                    SFVec2f minPosition = new SFVec2f(0, 0);
+                    SFVec2f maxPosition = new SFVec2f(-1, -1);
+                    attributeValue = attributes.getValue("DEF");
+                    if (attributeValue != null) {
+                        name = attributeValue;
+                    }
+                    attributeValue = attributes.getValue("description");
+                    if (attributeValue != null) {
+                        description = attributeValue;
+                    }
+                    attributeValue = attributes.getValue("enabled");
+                    if (attributeValue != null) {
+                        enabled = parseBooleanString(attributeValue);
+                    }
+                    attributeValue = attributes.getValue("maxPosition");
+                    if (attributeValue != null) {
+                        float[] maxValues = parseFixedLengthFloatString(attributeValue, 2, false, false);
+                        maxPosition.setValue(maxValues[0], maxValues[1]);
+                    }
+                    attributeValue = attributes.getValue("minPosition");
+                    if (attributeValue != null) {
+                        float[] minValues = parseFixedLengthFloatString(attributeValue, 2, false, false);
+                        minPosition.setValue(minValues[0], minValues[1]);
+                    }
+
+                    Sensor sensor = new Sensor(name, Sensor.Type.PLANE, currentSceneObject);
+                    sensors.add(sensor);
+                    // add colliders to all objects under the touch sensor
+                    currentSceneObject.attachCollider(new GVRMeshCollider(gvrContext, true));
+                } // end <PlaneSensor> node
+
+
                 /********** ProximitySensor **********/
                 else if (qName.equalsIgnoreCase("ProximitySensor")) {
                     Log.e(TAG, "ProximitySensor currently not implemented. ");

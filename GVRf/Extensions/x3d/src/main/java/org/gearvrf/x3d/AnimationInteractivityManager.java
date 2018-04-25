@@ -30,12 +30,14 @@ import com.google.android.exoplayer2.source.MediaSource;
 import com.google.android.exoplayer2.upstream.AssetDataSource;
 import com.google.android.exoplayer2.upstream.DataSource;
 import org.gearvrf.GVRAssetLoader;
+import org.gearvrf.GVRCameraRig;
 import org.gearvrf.GVRComponent;
 import org.gearvrf.GVRContext;
 import org.gearvrf.GVRImage;
 import org.gearvrf.GVRLight;
 import org.gearvrf.GVRMaterial;
 import org.gearvrf.GVRMeshCollider;
+import org.gearvrf.GVRPicker;
 import org.gearvrf.GVRPointLight;
 import org.gearvrf.GVRSpotLight;
 import org.gearvrf.GVRDirectLight;
@@ -135,6 +137,7 @@ public class AnimationInteractivityManager {
 
 
     private PerFrameScripting perFrameScripting = new PerFrameScripting();
+    private SensorImplementation sensorImplementation = new SensorImplementation();
 
     // Append this incremented value to GVRSceneObject names to insure unique
     // GVRSceneObjects when new GVRScene objects are generated to support animation
@@ -846,6 +849,67 @@ public class AnimationInteractivityManager {
                         }
                     });
                 }  // end if sensor == TOUCH
+                else if (interactiveObject.getSensor().getSensorType() == Sensor.Type.PLANE) {
+                    interactiveObject.getSensor().getOwnerObject().forAllDescendants(
+                            new GVRSceneObject.SceneVisitor()
+                            {
+                                public boolean visit (GVRSceneObject obj)
+                                {
+                                    obj.attachCollider(new GVRMeshCollider(gvrContext, true));
+                                    return true;
+                                }
+                            });
+                    interactiveObject.getSensor().addISensorEvents(new ISensorEvents() {
+                        boolean isActive = false;
+                        @Override
+                        public void onSensorEvent(SensorEvent event) {
+                            //Setup SensorEvent callback here
+                            GVRSceneObject gvrSceneObject = root
+                                    .getSceneObjectByName(interactiveObjectFinal.getDefinedItem().getName());
+
+                            if ( event.isActive() && !isActive ) {
+                                isActive = true;
+                                Log.e("X3DDBG", "PLANE Sensor isActive");
+                                GVRPicker.GVRPickedObject gvrPickedObject = event.getPickedObject();
+                                float[] hitLocation = gvrPickedObject.getHitLocation();
+                                float hitDistance = gvrPickedObject.getHitDistance();
+                                Log.e("X3DDBG", "   BGN HitDist: " + hitDistance + "; hitLocation: " +
+                                        hitLocation[0] + ", " + hitLocation[1] + ", " + hitLocation[2]);
+
+                                sensorImplementation.registerDrawFrameListerner( gvrPickedObject, interactiveObjectFinal );
+
+                                /*
+                                GVRCameraRig gvrCameraRig = gvrContext.getMainScene().getMainCameraRig();
+                                float[] lookAt = gvrCameraRig.getLookAt();
+
+                                //float[] lookAt = gvrContext.getMainScene().getMainCameraRig().getLookAt();
+                                Vector3f cameraDir = new Vector3f(lookAt[0], lookAt[1], lookAt[2]);
+                                Log.e("X3DDBG", "   cameraDir: " +
+                                        cameraDir.x + ", " + cameraDir.y + ", " + cameraDir.z );
+                                Quaternionf q = ConvertDirectionalVectorToQuaternion(cameraDir);
+                                AxisAngle4f cameraAxisAngle = new AxisAngle4f();
+                                q.get(cameraAxisAngle);
+                                Log.e("X3DDBG", "   camera-Axis-Angle: " +
+                                        cameraAxisAngle.x + ", " + cameraAxisAngle.y + ", " + cameraAxisAngle.z +
+                                        ", angle: " + cameraAxisAngle.angle);
+                                */
+
+                            }
+                            else if ( !event.isActive() && isActive ) {
+                                sensorImplementation.unregisterDrawFrameListerner();
+                                GVRPicker.GVRPickedObject gvrPickedObject = event.getPickedObject();
+                                float[] hitLocation = gvrPickedObject.getHitLocation();
+                                float hitDistance = gvrPickedObject.getHitDistance();
+                                Log.e("X3DDBG", "   END HitDist: " + hitDistance + "; hitLocation: " +
+                                        hitLocation[0] + ", " + hitLocation[1] + ", " + hitLocation[2]);
+
+                                Log.e("X3DDBG", "PLANE Sensor isActive reset");
+                                isActive = false;
+                            }
+                        }
+                    });
+                }  // end if sensor == PLANESensor
+
             }  //  end sensor and definedItem != null
             // Sensor (such as TouchSensor) to an EventUnity (such as BoleanToggle)
             else if ((interactiveObject.getSensor() != null) &&
@@ -904,6 +968,119 @@ public class AnimationInteractivityManager {
     }   //  end initAnimationsAndInteractivity.
 
 
+    private final class SensorActiveDrawFrame implements GVRDrawFrameListener {
+        @Override
+        public void onDrawFrame(float frameTime) {
+            sensorImplementation.onSensorActiveDrawFrame(frameTime);
+        }
+    }
+
+    // Supports CylinderSensor, PlaneSensor, SphereSensor
+    private class SensorImplementation {
+
+        GVRDrawFrameListener mSensorOnDrawFrame = null;
+        InteractiveObject mInteractiveObjectFinal = null;
+        GVRPicker.GVRPickedObject mGVRPickedObject = null;
+        GVRSceneObject mGVRSceneObject = null;
+        Sensor.Type mSensorType;
+        String fromField = "";
+        String toField = "";
+        float[] initHitLocation = new float[3];
+        float initHitDistance = 0;
+        boolean run = false;
+
+        final void registerDrawFrameListerner(GVRPicker.GVRPickedObject gvrPickedObject, final InteractiveObject interactiveObjectFinal ) {
+            mSensorOnDrawFrame = new SensorActiveDrawFrame();
+            gvrContext.registerDrawFrameListener(mSensorOnDrawFrame);
+            run = true;
+            mGVRPickedObject = gvrPickedObject;
+            mInteractiveObjectFinal = interactiveObjectFinal;
+            if ( mInteractiveObjectFinal != null ) {
+                if (mInteractiveObjectFinal.getSensor() != null) {
+                    // initialize the 'from sensor information
+                    Sensor sensor = mInteractiveObjectFinal.getSensor();
+                    if (sensor.getSensorType() == Sensor.Type.PLANE) {
+                        mSensorType = Sensor.Type.PLANE;
+                        if (StringFieldMatch(mInteractiveObjectFinal.getSensorFromField(), "translation")) {
+                            fromField = "translation";
+                        } else if (StringFieldMatch(mInteractiveObjectFinal.getSensorFromField(), "trackPoint")) {
+                            fromField = "trackPoint";
+                        } else {
+                            Log.e(TAG, "Cylinder, Plane or Sphere Sensor: not supported 'from field': " + mInteractiveObjectFinal.getSensorFromField() );
+                            Log.e("X3DDBG", "Cylinder, Plane or Sphere Sensor: not supported 'from field': " + mInteractiveObjectFinal.getSensorFromField() );
+                        }
+                    } else if (sensor.getSensorType() == Sensor.Type.CYLINDER) {
+                        mSensorType = Sensor.Type.CYLINDER;
+                        Log.e(TAG, "CYLINDER Sensor not yet supported in GearVR.");
+                        Log.e("X3DDBG", "CYLINDER Sensor not yet supported in GearVR.");
+                    } else if (sensor.getSensorType() == Sensor.Type.SPHERE) {
+                        mSensorType = Sensor.Type.SPHERE;
+                        Log.e(TAG, "SPHERE Sensor not yet supported in GearVR.");
+                        Log.e("X3DDBG", "SPHERE Sensor not yet supported in GearVR.");
+                    } else {
+                        Log.e(TAG, "Unsupported or Undefined Sensor.");
+                        Log.e("X3DDBG", "Unsupported or Undefined Sensor.");
+                    }
+                } else {
+                    Log.e(TAG, "Cylinder, Plane or Sphere Sensor not set");
+                    Log.e("X3DDBG", "Cylinder, Plane or Sphere Sensor not set");
+                }
+
+                // initialize the 'to' object information
+                if (mInteractiveObjectFinal.getDefinedItem() != null) {
+                    mGVRSceneObject = mInteractiveObjectFinal.getDefinedItem().getGVRSceneObject();
+                    if ( mGVRSceneObject != null ) {
+                        if (StringFieldMatch(mInteractiveObjectFinal.getDefinedItemToField(), "translation")) {
+                            toField = "translation";
+                        } else {
+                            Log.e(TAG, "Cylinder, Plane or Sphere Sensor: not supported 'to field': " + mInteractiveObjectFinal.getDefinedItemToField());
+                            Log.e("X3DDBG", "Cylinder, Plane or Sphere Sensor: not supported 'to field': " + mInteractiveObjectFinal.getDefinedItemToField());
+                        }
+                    }
+                    else {
+                        Log.e(TAG, "Problem with Cylinder, Plane or Sphere Sensor: no receiving object.");
+                        Log.e("X3DDBG", "Problem with Cylinder, Plane or Sphere Sensor: no receiving object.");
+                    }
+                }
+            }
+            else {
+                Log.e(TAG, "Problem with Cylinder, Plane or Sphere Sensor");
+                Log.e("X3DDBG", "Problem with Cylinder, Plane or Sphere Sensor");
+            }
+            initHitLocation = mGVRPickedObject.getHitLocation();
+            initHitDistance = mGVRPickedObject.getHitDistance();
+            Log.e("X3DDBG", "Sensor registerDrawFrameListerner");
+        }
+
+        final void unregisterDrawFrameListerner() {
+            if (mSensorOnDrawFrame != null) gvrContext.unregisterDrawFrameListener(mSensorOnDrawFrame);
+            mSensorOnDrawFrame = null;
+            mInteractiveObjectFinal = null;
+            mGVRPickedObject = null;
+            mGVRSceneObject = null;
+            fromField = "";
+            toField = "";
+            run = false;
+            Log.e("X3DDBG", "Sensor unregisterDrawFrameListerner");
+        }
+
+        public boolean getRunState() {
+            return run;
+        }
+
+        final void onSensorActiveDrawFrame(float frameTime) {
+            float[] hitLocation;
+            if ( mSensorType == Sensor.Type.PLANE ) {
+                if ( mGVRSceneObject != null && mGVRPickedObject != null && (fromField.equals(toField)) ) {
+                    hitLocation = mGVRPickedObject.getHitLocation();
+                    Log.e("X3DDBG", "   onSensorActiveDrawFrame: " + hitLocation[0] + ", " + hitLocation[1] );
+
+                }
+            }
+        }
+    }  //  end class SensorImplementation
+
+    // Supports when TimeSensor per-frame calls invoke Script
     private class PerFrameScripting {
 
         InteractiveObject interactiveObjectFinal = null;

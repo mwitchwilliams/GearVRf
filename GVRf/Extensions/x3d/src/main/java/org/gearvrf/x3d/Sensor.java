@@ -34,7 +34,7 @@ public class Sensor extends GVRSensor
 
   public enum Type
   {
-    ANCHOR, PROXIMITY, TOUCH, VISIBILITY
+    ANCHOR, CYLINDER, PLANE, PROXIMITY, SPHERE, TOUCH, VISIBILITY
   };
 
   private static final String TAG = Sensor.class.getSimpleName();
