@@ -987,7 +987,12 @@ public class AnimationInteractivityManager {
         String toField = "";
         float[] initHitLocation = new float[3];
         float initHitDistance = 0;
+        Vector3f initCameraDir = null;
+        float[] initPlaneTranslation = new float[3];
+
         boolean run = false;
+        GVRCameraRig gvrCameraRig = null;
+
 
         final void registerDrawFrameListerner(GVRPicker.GVRPickedObject gvrPickedObject, final InteractiveObject interactiveObjectFinal ) {
             mSensorOnDrawFrame = new SensorActiveDrawFrame();
@@ -995,6 +1000,8 @@ public class AnimationInteractivityManager {
             run = true;
             mGVRPickedObject = gvrPickedObject;
             mInteractiveObjectFinal = interactiveObjectFinal;
+            gvrCameraRig = gvrContext.getMainScene().getMainCameraRig();
+
             if ( mInteractiveObjectFinal != null ) {
                 if (mInteractiveObjectFinal.getSensor() != null) {
                     // initialize the 'from sensor information
@@ -1032,6 +1039,9 @@ public class AnimationInteractivityManager {
                     if ( mGVRSceneObject != null ) {
                         if (StringFieldMatch(mInteractiveObjectFinal.getDefinedItemToField(), "translation")) {
                             toField = "translation";
+                            initPlaneTranslation[0] = mGVRSceneObject.getTransform().getPositionX();
+                            initPlaneTranslation[1] = mGVRSceneObject.getTransform().getPositionY();
+                            initPlaneTranslation[2] = mGVRSceneObject.getTransform().getPositionZ();
                         } else {
                             Log.e(TAG, "Cylinder, Plane or Sphere Sensor: not supported 'to field': " + mInteractiveObjectFinal.getDefinedItemToField());
                             Log.e("X3DDBG", "Cylinder, Plane or Sphere Sensor: not supported 'to field': " + mInteractiveObjectFinal.getDefinedItemToField());
@@ -1049,8 +1059,15 @@ public class AnimationInteractivityManager {
             }
             initHitLocation = mGVRPickedObject.getHitLocation();
             initHitDistance = mGVRPickedObject.getHitDistance();
+            float[] lookAt = gvrCameraRig.getLookAt();
+            initCameraDir = new Vector3f(lookAt[0], lookAt[1], lookAt[2]);
             Log.e("X3DDBG", "Sensor registerDrawFrameListerner");
-        }
+            Log.e("X3DDBG", "   cameraDir: " +
+                    initCameraDir.x + ", " + initCameraDir.y + ", " + initCameraDir.z );
+            Log.e("X3DDBG", "   initPlaneTranslation: " +
+                    initPlaneTranslation[0] + ", " + initPlaneTranslation[1] + ", " + initPlaneTranslation[2] );
+            Log.e("X3DDBG", "   initHitDistance: " + initHitDistance);
+        } //  end registerDrawFrameListerner
 
         final void unregisterDrawFrameListerner() {
             if (mSensorOnDrawFrame != null) gvrContext.unregisterDrawFrameListener(mSensorOnDrawFrame);
@@ -1060,6 +1077,7 @@ public class AnimationInteractivityManager {
             mGVRSceneObject = null;
             fromField = "";
             toField = "";
+            Vector3f initCameraDir = null;
             run = false;
             Log.e("X3DDBG", "Sensor unregisterDrawFrameListerner");
         }
@@ -1069,12 +1087,32 @@ public class AnimationInteractivityManager {
         }
 
         final void onSensorActiveDrawFrame(float frameTime) {
-            float[] hitLocation;
+            //float[] hitLocation;
             if ( mSensorType == Sensor.Type.PLANE ) {
-                if ( mGVRSceneObject != null && mGVRPickedObject != null && (fromField.equals(toField)) ) {
-                    hitLocation = mGVRPickedObject.getHitLocation();
-                    Log.e("X3DDBG", "   onSensorActiveDrawFrame: " + hitLocation[0] + ", " + hitLocation[1] );
-
+                if ( mGVRSceneObject != null && mGVRPickedObject != null ) {
+                    if (  (fromField.equalsIgnoreCase(toField)) ) {
+                        // translation to translation
+                        float[] lookAt = gvrCameraRig.getLookAt();
+                        Vector3f cameraDir = new Vector3f(lookAt[0], lookAt[1], lookAt[2]);
+                        cameraDir.sub( initCameraDir );
+                        //Log.e("X3DDBG", "   cameraDir diff: " +
+                        //        cameraDir.x + ", " + cameraDir.y + ", " + cameraDir.z );
+                        mGVRSceneObject.getTransform().setPositionX( initPlaneTranslation[0] + cameraDir.x * initHitDistance );
+                        mGVRSceneObject.getTransform().setPositionY( initPlaneTranslation[1] + cameraDir.y * initHitDistance );
+                    }
+                    else if (  fromField.equalsIgnoreCase("trackPoint") && toField.equalsIgnoreCase("translation")) {
+                        // trackPoint to translation
+                        Log.e("X3DDBG", "   trackPoint");
+                        float[] lookAt = gvrCameraRig.getLookAt();
+                        Vector3f cameraDir = new Vector3f(lookAt[0], lookAt[1], lookAt[2]);
+                        cameraDir.sub( initCameraDir );
+                        //Log.e("X3DDBG", "   cameraDir diff: " +
+                        //        cameraDir.x + ", " + cameraDir.y + ", " + cameraDir.z );
+                        mGVRSceneObject.getTransform().setPositionX( initPlaneTranslation[0] + cameraDir.x * initHitDistance );
+                        mGVRSceneObject.getTransform().setPositionY( initPlaneTranslation[1] + cameraDir.y * initHitDistance );
+                        //mGVRSceneObject.getTransform().setPositionZ( initPlaneTranslation[2] + cameraDir.z * initHitDistance );
+                        mGVRSceneObject.getTransform().setPositionZ( initHitDistance );
+                    }
                 }
             }
         }

@@ -3752,7 +3752,7 @@ public class X3Dobject {
 
                 /***** end of parsing the nodes currently parsed *****/
                 else {
-                    Log.e(TAG, "X3D node " + qName + " not implemented.");
+                    Log.e(TAG, "X3D node '" + qName + "' not implemented.");
                 }
             }  // end 'else { if stmt' at ROUTE, which should be deleted
         }  //  end startElement
