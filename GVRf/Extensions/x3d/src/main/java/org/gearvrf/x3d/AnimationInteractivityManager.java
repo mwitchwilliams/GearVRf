@@ -861,52 +861,54 @@ public class AnimationInteractivityManager {
                             });
                     interactiveObject.getSensor().addISensorEvents(new ISensorEvents() {
                         boolean isActive = false;
+
                         @Override
                         public void onSensorEvent(SensorEvent event) {
-                            //Setup SensorEvent callback here
-                            GVRSceneObject gvrSceneObject = root
-                                    .getSceneObjectByName(interactiveObjectFinal.getDefinedItem().getName());
+                            if ( interactiveObjectFinal.getSensor().getEnabled() ) {
+                                //Setup SensorEvent callback here
+                                GVRSceneObject gvrSceneObject = root
+                                        .getSceneObjectByName(interactiveObjectFinal.getDefinedItem().getName());
 
-                            if ( event.isActive() && !isActive ) {
-                                isActive = true;
-                                Log.e("X3DDBG", "PLANE Sensor isActive");
-                                GVRPicker.GVRPickedObject gvrPickedObject = event.getPickedObject();
-                                float[] hitLocation = gvrPickedObject.getHitLocation();
-                                float hitDistance = gvrPickedObject.getHitDistance();
-                                Log.e("X3DDBG", "   BGN HitDist: " + hitDistance + "; hitLocation: " +
-                                        hitLocation[0] + ", " + hitLocation[1] + ", " + hitLocation[2]);
+                                if (event.isActive() && !isActive) {
+                                    isActive = true;
+                                    Log.e("X3DDBG", "PLANE Sensor isActive");
+                                    GVRPicker.GVRPickedObject gvrPickedObject = event.getPickedObject();
+                                    float[] hitLocation = gvrPickedObject.getHitLocation();
+                                    float hitDistance = gvrPickedObject.getHitDistance();
+                                    Log.e("X3DDBG", "   BGN HitDist: " + hitDistance + "; hitLocation: " +
+                                            hitLocation[0] + ", " + hitLocation[1] + ", " + hitLocation[2]);
 
-                                sensorImplementation.registerDrawFrameListerner( gvrPickedObject, interactiveObjectFinal );
+                                    sensorImplementation.registerDrawFrameListerner(gvrPickedObject, interactiveObjectFinal);
 
-                                /*
-                                GVRCameraRig gvrCameraRig = gvrContext.getMainScene().getMainCameraRig();
-                                float[] lookAt = gvrCameraRig.getLookAt();
+                                    /*
+                                    GVRCameraRig gvrCameraRig = gvrContext.getMainScene().getMainCameraRig();
+                                    float[] lookAt = gvrCameraRig.getLookAt();
 
-                                //float[] lookAt = gvrContext.getMainScene().getMainCameraRig().getLookAt();
-                                Vector3f cameraDir = new Vector3f(lookAt[0], lookAt[1], lookAt[2]);
-                                Log.e("X3DDBG", "   cameraDir: " +
-                                        cameraDir.x + ", " + cameraDir.y + ", " + cameraDir.z );
-                                Quaternionf q = ConvertDirectionalVectorToQuaternion(cameraDir);
-                                AxisAngle4f cameraAxisAngle = new AxisAngle4f();
-                                q.get(cameraAxisAngle);
-                                Log.e("X3DDBG", "   camera-Axis-Angle: " +
-                                        cameraAxisAngle.x + ", " + cameraAxisAngle.y + ", " + cameraAxisAngle.z +
-                                        ", angle: " + cameraAxisAngle.angle);
-                                */
+                                    //float[] lookAt = gvrContext.getMainScene().getMainCameraRig().getLookAt();
+                                    Vector3f cameraDir = new Vector3f(lookAt[0], lookAt[1], lookAt[2]);
+                                    Log.e("X3DDBG", "   cameraDir: " +
+                                            cameraDir.x + ", " + cameraDir.y + ", " + cameraDir.z );
+                                    Quaternionf q = ConvertDirectionalVectorToQuaternion(cameraDir);
+                                    AxisAngle4f cameraAxisAngle = new AxisAngle4f();
+                                    q.get(cameraAxisAngle);
+                                    Log.e("X3DDBG", "   camera-Axis-Angle: " +
+                                            cameraAxisAngle.x + ", " + cameraAxisAngle.y + ", " + cameraAxisAngle.z +
+                                            ", angle: " + cameraAxisAngle.angle);
+                                    */
 
-                            }
-                            else if ( !event.isActive() && isActive ) {
-                                sensorImplementation.unregisterDrawFrameListerner();
-                                GVRPicker.GVRPickedObject gvrPickedObject = event.getPickedObject();
-                                float[] hitLocation = gvrPickedObject.getHitLocation();
-                                float hitDistance = gvrPickedObject.getHitDistance();
-                                Log.e("X3DDBG", "   END HitDist: " + hitDistance + "; hitLocation: " +
-                                        hitLocation[0] + ", " + hitLocation[1] + ", " + hitLocation[2]);
+                                } else if (!event.isActive() && isActive) {
+                                    sensorImplementation.unregisterDrawFrameListerner();
+                                    GVRPicker.GVRPickedObject gvrPickedObject = event.getPickedObject();
+                                    float[] hitLocation = gvrPickedObject.getHitLocation();
+                                    float hitDistance = gvrPickedObject.getHitDistance();
+                                    Log.e("X3DDBG", "   END HitDist: " + hitDistance + "; hitLocation: " +
+                                            hitLocation[0] + ", " + hitLocation[1] + ", " + hitLocation[2]);
 
-                                Log.e("X3DDBG", "PLANE Sensor isActive reset");
-                                isActive = false;
-                            }
-                        }
+                                    Log.e("X3DDBG", "PLANE Sensor isActive reset");
+                                    isActive = false;
+                                }
+                            }// if PlaneSensor is enabled
+                        }   // end onSensorEvent
                     });
                 }  // end if sensor == PLANESensor
 
@@ -989,6 +991,11 @@ public class AnimationInteractivityManager {
         float initHitDistance = 0;
         Vector3f initCameraDir = null;
         float[] initPlaneTranslation = new float[3];
+        // values and booleans for checking min and max distance of PlaneSensor
+        SFVec2f mMinPosition = new SFVec2f(0, 0);
+        SFVec2f mMaxPosition = new SFVec2f(-1, -1);
+        boolean mCheckXpos = false;
+        boolean mCheckYpos = false;
 
         boolean run = false;
         GVRCameraRig gvrCameraRig = null;
@@ -1008,6 +1015,10 @@ public class AnimationInteractivityManager {
                     Sensor sensor = mInteractiveObjectFinal.getSensor();
                     if (sensor.getSensorType() == Sensor.Type.PLANE) {
                         mSensorType = Sensor.Type.PLANE;
+                        mMinPosition = sensor.getMinValues();
+                        mMaxPosition = sensor.getMaxValues();
+                        if ( mMinPosition.getX() <= mMaxPosition.getX()) mCheckXpos = true;
+                        if ( mMinPosition.getY() <= mMaxPosition.getY()) mCheckYpos = true;
                         if (StringFieldMatch(mInteractiveObjectFinal.getSensorFromField(), "translation")) {
                             fromField = "translation";
                         } else if (StringFieldMatch(mInteractiveObjectFinal.getSensorFromField(), "trackPoint")) {
@@ -1090,28 +1101,49 @@ public class AnimationInteractivityManager {
             //float[] hitLocation;
             if ( mSensorType == Sensor.Type.PLANE ) {
                 if ( mGVRSceneObject != null && mGVRPickedObject != null ) {
+                    float[] lookAt = gvrCameraRig.getLookAt();
+                    Vector3f cameraDir = new Vector3f(lookAt[0], lookAt[1], lookAt[2]);
+                    cameraDir.sub( initCameraDir );
+                    float x = initPlaneTranslation[0] + cameraDir.x * initHitDistance;
+                    float y = initPlaneTranslation[1] + cameraDir.y * initHitDistance;
+                    if ( mCheckXpos ) {
+                        if ( (x >= mMinPosition.getX()) && (x <= mMaxPosition.getX()) ) {
+                            mGVRSceneObject.getTransform().setPositionX( x );
+                        }
+                    }
+                    else mGVRSceneObject.getTransform().setPositionX( x );
+                    if ( mCheckYpos ) {
+                        if ( (y >= mMinPosition.getY()) && (y <= mMaxPosition.getY()) ) {
+                            mGVRSceneObject.getTransform().setPositionY( y );
+                        }
+                    }
+                    else mGVRSceneObject.getTransform().setPositionY( y );
+
+                    /*
                     if (  (fromField.equalsIgnoreCase(toField)) ) {
                         // translation to translation
-                        float[] lookAt = gvrCameraRig.getLookAt();
-                        Vector3f cameraDir = new Vector3f(lookAt[0], lookAt[1], lookAt[2]);
-                        cameraDir.sub( initCameraDir );
+                        //float[] lookAt = gvrCameraRig.getLookAt();
+                        //Vector3f cameraDir = new Vector3f(lookAt[0], lookAt[1], lookAt[2]);
+                        //cameraDir.sub( initCameraDir );
                         //Log.e("X3DDBG", "   cameraDir diff: " +
                         //        cameraDir.x + ", " + cameraDir.y + ", " + cameraDir.z );
                         mGVRSceneObject.getTransform().setPositionX( initPlaneTranslation[0] + cameraDir.x * initHitDistance );
                         mGVRSceneObject.getTransform().setPositionY( initPlaneTranslation[1] + cameraDir.y * initHitDistance );
                     }
-                    else if (  fromField.equalsIgnoreCase("trackPoint") && toField.equalsIgnoreCase("translation")) {
+                    else */
+                    if (  fromField.equalsIgnoreCase("trackPoint") && toField.equalsIgnoreCase("translation")) {
                         // trackPoint to translation
-                        Log.e("X3DDBG", "   trackPoint");
-                        float[] lookAt = gvrCameraRig.getLookAt();
-                        Vector3f cameraDir = new Vector3f(lookAt[0], lookAt[1], lookAt[2]);
-                        cameraDir.sub( initCameraDir );
+                        //float[] lookAt = gvrCameraRig.getLookAt();
+                        //Vector3f cameraDir = new Vector3f(lookAt[0], lookAt[1], lookAt[2]);
+                        //cameraDir.sub( initCameraDir );
                         //Log.e("X3DDBG", "   cameraDir diff: " +
                         //        cameraDir.x + ", " + cameraDir.y + ", " + cameraDir.z );
-                        mGVRSceneObject.getTransform().setPositionX( initPlaneTranslation[0] + cameraDir.x * initHitDistance );
-                        mGVRSceneObject.getTransform().setPositionY( initPlaneTranslation[1] + cameraDir.y * initHitDistance );
+                       // mGVRSceneObject.getTransform().setPositionX( initPlaneTranslation[0] + cameraDir.x * initHitDistance );
+                        //mGVRSceneObject.getTransform().setPositionY( initPlaneTranslation[1] + cameraDir.y * initHitDistance );
                         //mGVRSceneObject.getTransform().setPositionZ( initPlaneTranslation[2] + cameraDir.z * initHitDistance );
-                        mGVRSceneObject.getTransform().setPositionZ( initHitDistance );
+                        mGVRSceneObject.getTransform().setPositionZ( initHitLocation[2] );
+                        //Log.e("X3DDBG", "   trackPoint: " +  mGVRSceneObject.getTransform().getPositionX() +
+                        //    ", " + mGVRSceneObject.getTransform().getPositionY() + ", " + mGVRSceneObject.getTransform().getPositionZ() );
                     }
                 }
             }

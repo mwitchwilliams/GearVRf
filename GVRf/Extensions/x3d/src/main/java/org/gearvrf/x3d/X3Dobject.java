@@ -3151,7 +3151,7 @@ public class X3Dobject {
                     currentSceneObject = AddGVRSceneObject();
                     currentSceneObject.setName(name);
                     Sensor sensor = new Sensor(name, Sensor.Type.ANCHOR,
-                            currentSceneObject);
+                            currentSceneObject, true);
                     sensor.setAnchorURL(url);
                     sensors.add(sensor);
                     animationInteractivityManager.BuildInteractiveObjectFromAnchor(sensor, url);
@@ -3176,7 +3176,7 @@ public class X3Dobject {
                         enabled = parseBooleanString(attributeValue);
                     }
 
-                    Sensor sensor = new Sensor(name, Sensor.Type.TOUCH, currentSceneObject);
+                    Sensor sensor = new Sensor(name, Sensor.Type.TOUCH, currentSceneObject, enabled);
                     sensors.add(sensor);
                     // add colliders to all objects under the touch sensor
                     currentSceneObject.attachCollider(new GVRMeshCollider(gvrContext, true));
@@ -3213,7 +3213,8 @@ public class X3Dobject {
                         minPosition.setValue(minValues[0], minValues[1]);
                     }
 
-                    Sensor sensor = new Sensor(name, Sensor.Type.PLANE, currentSceneObject);
+                    Sensor sensor = new Sensor(name, Sensor.Type.PLANE, currentSceneObject, enabled);
+                    sensor.setMinMaxValues(minPosition, maxPosition);
                     sensors.add(sensor);
                     // add colliders to all objects under the touch sensor
                     currentSceneObject.attachCollider(new GVRMeshCollider(gvrContext, true));
