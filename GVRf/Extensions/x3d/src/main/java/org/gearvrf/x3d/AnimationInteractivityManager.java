@@ -365,6 +365,14 @@ public class AnimationInteractivityManager {
                         interactiveObject.setSensor(routeFromSensor, fromField);
                         routeToScriptObjectFound = true;
                     }  //  end Sensor
+                    /*
+                    else if ( (interactiveObject.getSensor() == routeFromSensor)) {
+                        // two ROUTES from the same Sensor to the same Script node
+                        interactiveObject.setSensor(routeFromSensor, fromField);
+                        routeToScriptObjectFound = true;
+                        Log.e("X3DDBG", "two ROUTES from the same Sensor to the same Script node");
+                    }
+                    */
                     else if ((interactiveObject.getDefinedItem() == null) && (routeFromDefinedItem != null)) {
                         //This defined Item already exists as part of an interactive Object
                         for (ScriptObject.Field field : routeToScriptObject.getFieldsArrayList()) {
@@ -711,7 +719,43 @@ public class AnimationInteractivityManager {
                 final InteractiveObject interactiveObjectFinal = interactiveObject;
 
                 if (interactiveObject.getSensor() != null) {
-                    if (interactiveObject.getSensor().getSensorType() == Sensor.Type.TOUCH) {
+                    if (interactiveObject.getSensor().getSensorType() == Sensor.Type.PLANE) {
+                        Log.e("X3DDBG", "initAnimationsAndInteractivity PLANE");
+                        interactiveObject.getSensor().getOwnerObject().forAllDescendants(
+                                new GVRSceneObject.SceneVisitor()
+                                {
+                                    public boolean visit (GVRSceneObject obj)
+                                    {
+                                        obj.attachCollider(new GVRMeshCollider(gvrContext, true));
+                                        return true;
+                                    }
+                                });
+                        interactiveObject.getSensor().addISensorEvents(new ISensorEvents() {
+                            boolean stateChanged = false;
+                            boolean isActiveDone = false;
+
+                            @Override
+                            public void onSensorEvent(SensorEvent event) {
+                                //Log.e("X3DDBG", "onSensorEvent PLANE");
+                                if (event.isActive()) {
+                                    Log.e("X3DDBG", "onSensorEvent PLANE event.isActive()");
+
+                                    GVRPicker.GVRPickedObject gvrPickedObject = event.getPickedObject();
+                                    float[] hitLocation = gvrPickedObject.getHitLocation();
+
+                                    // need to get the hit location.
+                                    Object[] parameters = SetJavaScriptArguments(interactiveObjectFinal, hitLocation[0], hitLocation[1], true);
+                                    ScriptObject scriptObject = interactiveObjectFinal.getScriptObject();
+                                    ScriptObject.Field firstField = scriptObject.getField(0);
+                                    RunScript(interactiveObjectFinal, scriptObject.getFieldName(firstField), parameters);
+
+                                }
+
+                            }
+                        });
+
+                    }
+                    else if (interactiveObject.getSensor().getSensorType() == Sensor.Type.TOUCH) {
                         interactiveObject.getSensor().getOwnerObject().forAllDescendants(
                                 new GVRSceneObject.SceneVisitor()
                                 {
@@ -728,7 +772,7 @@ public class AnimationInteractivityManager {
                             @Override
                             public void onSensorEvent(SensorEvent event) {
 
-                                Object[] parameters = SetJavaScriptArguments(interactiveObjectFinal, event.isOver(), stateChanged);
+                                Object[] parameters = SetJavaScriptArguments(interactiveObjectFinal, event.isOver(), 0, stateChanged);
                                 ScriptObject scriptObject = interactiveObjectFinal.getScriptObject();
                                 ScriptObject.Field firstField = scriptObject.getField(0);
                                 String functionName = scriptObject.getFieldName(firstField);
@@ -1119,31 +1163,9 @@ public class AnimationInteractivityManager {
                     }
                     else mGVRSceneObject.getTransform().setPositionY( y );
 
-                    /*
-                    if (  (fromField.equalsIgnoreCase(toField)) ) {
-                        // translation to translation
-                        //float[] lookAt = gvrCameraRig.getLookAt();
-                        //Vector3f cameraDir = new Vector3f(lookAt[0], lookAt[1], lookAt[2]);
-                        //cameraDir.sub( initCameraDir );
-                        //Log.e("X3DDBG", "   cameraDir diff: " +
-                        //        cameraDir.x + ", " + cameraDir.y + ", " + cameraDir.z );
-                        mGVRSceneObject.getTransform().setPositionX( initPlaneTranslation[0] + cameraDir.x * initHitDistance );
-                        mGVRSceneObject.getTransform().setPositionY( initPlaneTranslation[1] + cameraDir.y * initHitDistance );
-                    }
-                    else */
                     if (  fromField.equalsIgnoreCase("trackPoint") && toField.equalsIgnoreCase("translation")) {
                         // trackPoint to translation
-                        //float[] lookAt = gvrCameraRig.getLookAt();
-                        //Vector3f cameraDir = new Vector3f(lookAt[0], lookAt[1], lookAt[2]);
-                        //cameraDir.sub( initCameraDir );
-                        //Log.e("X3DDBG", "   cameraDir diff: " +
-                        //        cameraDir.x + ", " + cameraDir.y + ", " + cameraDir.z );
-                       // mGVRSceneObject.getTransform().setPositionX( initPlaneTranslation[0] + cameraDir.x * initHitDistance );
-                        //mGVRSceneObject.getTransform().setPositionY( initPlaneTranslation[1] + cameraDir.y * initHitDistance );
-                        //mGVRSceneObject.getTransform().setPositionZ( initPlaneTranslation[2] + cameraDir.z * initHitDistance );
                         mGVRSceneObject.getTransform().setPositionZ( initHitLocation[2] );
-                        //Log.e("X3DDBG", "   trackPoint: " +  mGVRSceneObject.getTransform().getPositionX() +
-                        //    ", " + mGVRSceneObject.getTransform().getPositionY() + ", " + mGVRSceneObject.getTransform().getPositionZ() );
                     }
                 }
             }
@@ -1192,7 +1214,7 @@ public class AnimationInteractivityManager {
 
             BuildInitJavaScript(interactiveObjectFinal);
 
-            parameters = SetJavaScriptArguments(this.interactiveObjectFinal, 0, false); // false is just a place holder
+            parameters = SetJavaScriptArguments(this.interactiveObjectFinal, 0, 0, false); // false is just a place holder
             parameters[0] = 0;
             if (scriptObject.getTimeStampParameter()) parameters[1] = 0;
 
@@ -1226,7 +1248,7 @@ public class AnimationInteractivityManager {
                     });
                 }
                 // once we run through the initialization of this script, then we can Run the script
-                parameters = SetJavaScriptArguments(this.interactiveObjectFinal, 0, false); // false is just a place holder
+                parameters = SetJavaScriptArguments(this.interactiveObjectFinal, 0, 0, false); // false is just a place holder
                 accumulatedTime += frameTime;
                 parameters[0] = accumulatedTime % cycleInterval;
                 if (scriptObject.getTimeStampParameter()) parameters[1] = accumulatedTime;
@@ -1264,7 +1286,7 @@ public class AnimationInteractivityManager {
 
     // funtion called each event and sets the arguments (parameters)
     // from INPUT_ONLY and INPUT_OUTPUT to the function that 'compiles' and run JavaScript
-    private Object[] SetJavaScriptArguments(InteractiveObject interactiveObj, Object argument0, boolean stateChanged) {
+    private Object[] SetJavaScriptArguments(InteractiveObject interactiveObj, Object argument0, Object argument1, boolean stateChanged) {
         ArrayList<Object> scriptParameters = new ArrayList<Object>();
 
         ScriptObject scriptObject = interactiveObj.getScriptObject();
@@ -1277,6 +1299,7 @@ public class AnimationInteractivityManager {
                 DefinedItem definedItem = scriptObject.getFromDefinedItem(field);
                 EventUtility eventUtility = scriptObject.getFromEventUtility(field);
                 TimeSensor timeSensor = scriptObject.getFromTimeSensor(field);
+
 
                 if (fieldType.equalsIgnoreCase("SFBool")) {
                     if (definedItem != null) {
@@ -1303,12 +1326,26 @@ public class AnimationInteractivityManager {
                         scriptParameters.add( interactiveObj.getEventUtility().getToggle() );
                     }
                 }  // end if SFBool
+                else if ((fieldType.equalsIgnoreCase("SFVec2f")) && (definedItem == null)) {
+                    // data from a Plane Sensor
+                    if (interactiveObj.getSensorFromField() != null) {
+                        String sensorField = interactiveObj.getSensorFromField();
+                        //if (interactiveObj.getSensorFromField().equals(Sensor.IS_ACTIVE)) {
+                        //    scriptParameters.add(!stateChanged);
+                        //}
+                        if (interactiveObj.getSensor().getSensorType() == Sensor.Type.PLANE) {
+                            scriptParameters.add( argument0 );
+                            scriptParameters.add( argument1 );
+                        }
+                    }
+                }
                 else if ((fieldType.equalsIgnoreCase("SFFloat")) && (definedItem == null)) {
                     if (timeSensor != null) {
                         scriptParameters.add( timeSensor.getCycleInterval() );
                     }
                     else scriptParameters.add(argument0); // the time passed in from an SFTime node
-                } else if (scriptObject.getFromDefinedItem(field) != null) {
+                }
+                else if (scriptObject.getFromDefinedItem(field) != null) {
                     if (fieldType.equalsIgnoreCase("SFColor")) {
                         float[] color = {0, 0, 0};
                         if (definedItem.getGVRMaterial() != null) {
@@ -1655,7 +1692,7 @@ public class AnimationInteractivityManager {
             if (interactiveObject.getScriptObject() != null) {
 
                 BuildInitJavaScript(interactiveObject);
-                Object[] parameters = SetJavaScriptArguments(interactiveObject, 0, false);
+                Object[] parameters = SetJavaScriptArguments(interactiveObject, 0, 0,false);
                 parameters[0] = 0;
                 if (interactiveObject.getScriptObject().getTimeStampParameter()) parameters[1] = 0;
 
@@ -1731,6 +1768,11 @@ public class AnimationInteractivityManager {
         ScriptObject scriptObject = interactiveObject.getScriptObject();
         int argumentNum = 1;
         if (scriptObject.getTimeStampParameter()) argumentNum = 2;
+        if ( interactiveObject.getSensor() != null ) {
+            if ( interactiveObject.getSensor().getSensorType() == Sensor.Type.PLANE) {
+                argumentNum = 2;
+            }
+        }
 
         // Get the parameters on X3D data types that are included with this JavaScript
         if ( V8JavaScriptEngine ) {
