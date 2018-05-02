@@ -730,27 +730,77 @@ public class AnimationInteractivityManager {
                                         return true;
                                     }
                                 });
+                        //final InteractiveObject interactiveObjectFinal = interactiveObject;
                         interactiveObject.getSensor().addISensorEvents(new ISensorEvents() {
-                            boolean stateChanged = false;
-                            boolean isActiveDone = false;
+                            //boolean stateChanged = false;
+                            //boolean isActiveDone = false;
+                            boolean initialized = false;
+                            int cnt = 0;
+                            int cnt2 = 0;
+                            GVRCameraRig gvrCameraRig = gvrContext.getMainScene().getMainCameraRig();
+                            Vector3f initCameraDir = null;
+                            float[] initPlaneTranslation = new float[3];
+                            float[] initHitLocation = null;
+                            float[] planeTranslation = new float[3];
+                            GVRSceneObject gvrSceneObject = null;
+
 
                             @Override
                             public void onSensorEvent(SensorEvent event) {
                                 //Log.e("X3DDBG", "onSensorEvent PLANE");
                                 if (event.isActive()) {
-                                    Log.e("X3DDBG", "onSensorEvent PLANE event.isActive()");
-
                                     GVRPicker.GVRPickedObject gvrPickedObject = event.getPickedObject();
-                                    float[] hitLocation = gvrPickedObject.getHitLocation();
+                                    if ( !initialized ) {
+                                        Log.e("X3DDBG", "onSensorEvent PLANE event.isActive() INITIALIZED");
+                                        initialized = true;
+                                        float[] lookAt = gvrCameraRig.getLookAt();
+                                        initCameraDir = new Vector3f(lookAt[0], lookAt[1], lookAt[2]);
+                                        Log.e("X3DDBG", "   cameraDir: " +
+                                                initCameraDir.x + ", " + initCameraDir.y + ", " + initCameraDir.z );
+                                        initHitLocation = gvrPickedObject.getHitLocation();
+                                        Log.e("X3DDBG", "onSensorEvent PLANE event.isActive(): "
+                                                + initHitLocation[0] + ", " + initHitLocation[1] + ", " + initHitLocation[2] );
+                                        GVRSceneObject hitObjectSceneObject = gvrPickedObject.getHitObject();
+                                        // Primitives are a child of the GVRSceneObject with the name.
+                                        if ( hitObjectSceneObject.getName().isEmpty() ) {
+                                            hitObjectSceneObject = hitObjectSceneObject.getParent();
+                                        }
+                                        gvrSceneObject = root
+                                                .getSceneObjectByName((hitObjectSceneObject.getName() + x3dObject.TRANSFORM_TRANSLATION_));
 
+                                        //gvrSceneObject.
+                                        initPlaneTranslation[0] = gvrSceneObject.getTransform().getPositionX();
+                                        initPlaneTranslation[1] = gvrSceneObject.getTransform().getPositionY();
+                                        initPlaneTranslation[2] = gvrSceneObject.getTransform().getPositionZ();
+                                        Log.e("X3DDBG", "   initPlaneTranslation: " +
+                                                initPlaneTranslation[0] + ", " + initPlaneTranslation[1] + ", " + initPlaneTranslation[2] );
+                                    }
+
+                                    float[] hitLocation = gvrPickedObject.getHitLocation();
+                                    cnt++;
+                                    if ( (cnt %20) == 0) {
+                                        Log.e("X3DDBG", "onSensorEvent PLANE event.isActive(): " + hitLocation[0] + ", " + hitLocation[1]);
+                                        //Log.e("X3DDBG", "onSensorEvent PLANE event.isActive()" );
+                                        planeTranslation[0] = gvrSceneObject.getTransform().getPositionX();
+                                        planeTranslation[1] = gvrSceneObject.getTransform().getPositionY();
+                                        planeTranslation[2] = gvrSceneObject.getTransform().getPositionZ();
+                                        Log.e("X3DDBG", "   planeTranslation: " +
+                                                planeTranslation[0] + ", " + planeTranslation[1] + ", " + planeTranslation[2] );
+                                    }
                                     // need to get the hit location.
-                                    Object[] parameters = SetJavaScriptArguments(interactiveObjectFinal, hitLocation[0], hitLocation[1], true);
+                                    Object[] parameters = SetJavaScriptArguments(interactiveObjectFinal, planeTranslation[0], planeTranslation[1], true);
                                     ScriptObject scriptObject = interactiveObjectFinal.getScriptObject();
                                     ScriptObject.Field firstField = scriptObject.getField(0);
                                     RunScript(interactiveObjectFinal, scriptObject.getFieldName(firstField), parameters);
 
                                 }
-
+                                else {
+                                    initialized = false;
+                                    cnt2++;
+                                    if ( (cnt2 %50) == 0) {
+                                        Log.e("X3DDBG", "onSensorEvent PLANE event.isActive() FALSE");
+                                    }
+                                }
                             }
                         });
 
@@ -910,8 +960,8 @@ public class AnimationInteractivityManager {
                         public void onSensorEvent(SensorEvent event) {
                             if ( interactiveObjectFinal.getSensor().getEnabled() ) {
                                 //Setup SensorEvent callback here
-                                GVRSceneObject gvrSceneObject = root
-                                        .getSceneObjectByName(interactiveObjectFinal.getDefinedItem().getName());
+                                //GVRSceneObject gvrSceneObject = root
+                                //        .getSceneObjectByName(interactiveObjectFinal.getDefinedItem().getName());
 
                                 if (event.isActive() && !isActive) {
                                     isActive = true;
@@ -923,23 +973,6 @@ public class AnimationInteractivityManager {
                                             hitLocation[0] + ", " + hitLocation[1] + ", " + hitLocation[2]);
 
                                     sensorImplementation.registerDrawFrameListerner(gvrPickedObject, interactiveObjectFinal);
-
-                                    /*
-                                    GVRCameraRig gvrCameraRig = gvrContext.getMainScene().getMainCameraRig();
-                                    float[] lookAt = gvrCameraRig.getLookAt();
-
-                                    //float[] lookAt = gvrContext.getMainScene().getMainCameraRig().getLookAt();
-                                    Vector3f cameraDir = new Vector3f(lookAt[0], lookAt[1], lookAt[2]);
-                                    Log.e("X3DDBG", "   cameraDir: " +
-                                            cameraDir.x + ", " + cameraDir.y + ", " + cameraDir.z );
-                                    Quaternionf q = ConvertDirectionalVectorToQuaternion(cameraDir);
-                                    AxisAngle4f cameraAxisAngle = new AxisAngle4f();
-                                    q.get(cameraAxisAngle);
-                                    Log.e("X3DDBG", "   camera-Axis-Angle: " +
-                                            cameraAxisAngle.x + ", " + cameraAxisAngle.y + ", " + cameraAxisAngle.z +
-                                            ", angle: " + cameraAxisAngle.angle);
-                                    */
-
                                 } else if (!event.isActive() && isActive) {
                                     sensorImplementation.unregisterDrawFrameListerner();
                                     GVRPicker.GVRPickedObject gvrPickedObject = event.getPickedObject();
@@ -1091,6 +1124,17 @@ public class AnimationInteractivityManager {
                 // initialize the 'to' object information
                 if (mInteractiveObjectFinal.getDefinedItem() != null) {
                     mGVRSceneObject = mInteractiveObjectFinal.getDefinedItem().getGVRSceneObject();
+
+                    if ( mGVRSceneObject.getName().isEmpty() ) {
+                        mGVRSceneObject = mGVRSceneObject.getParent();
+                    }
+                    mGVRSceneObject = root
+                            .getSceneObjectByName((mGVRSceneObject.getName() + x3dObject.TRANSFORM_TRANSLATION_));
+
+                    Log.e("X3DDBG", "Sensor registerDrawFrameListerner (BGN): " +
+                            mGVRSceneObject.getTransform().getPositionX() + ", " + mGVRSceneObject.getTransform().getPositionY() + ", "
+                            + mGVRSceneObject.getTransform().getPositionZ() );
+
                     if ( mGVRSceneObject != null ) {
                         if (StringFieldMatch(mInteractiveObjectFinal.getDefinedItemToField(), "translation")) {
                             toField = "translation";
@@ -1129,6 +1173,10 @@ public class AnimationInteractivityManager {
             mSensorOnDrawFrame = null;
             mInteractiveObjectFinal = null;
             mGVRPickedObject = null;
+            Log.e("X3DDBG", "Sensor unregisterDrawFrameListerner (END): " +
+                    mGVRSceneObject.getTransform().getPositionX() + ", " + mGVRSceneObject.getTransform().getPositionY() + ", "
+                    + mGVRSceneObject.getTransform().getPositionZ() );
+
             mGVRSceneObject = null;
             fromField = "";
             toField = "";
@@ -1162,6 +1210,9 @@ public class AnimationInteractivityManager {
                         }
                     }
                     else mGVRSceneObject.getTransform().setPositionY( y );
+                    //Log.e("X3DDBG", "Sensor onSensorActiveDrawFrame (xyz): " +
+                    //        mGVRSceneObject.getTransform().getPositionX() + ", " + mGVRSceneObject.getTransform().getPositionY() + ", "
+                    //        + mGVRSceneObject.getTransform().getPositionZ() );
 
                     if (  fromField.equalsIgnoreCase("trackPoint") && toField.equalsIgnoreCase("translation")) {
                         // trackPoint to translation
