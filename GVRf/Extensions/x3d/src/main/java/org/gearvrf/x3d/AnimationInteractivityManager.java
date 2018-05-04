@@ -735,8 +735,8 @@ public class AnimationInteractivityManager {
                             //boolean stateChanged = false;
                             //boolean isActiveDone = false;
                             boolean initialized = false;
-                            int cnt = 0;
-                            int cnt2 = 0;
+                            //int cnt = 0;
+                            //int cnt2 = 0;
                             GVRCameraRig gvrCameraRig = gvrContext.getMainScene().getMainCameraRig();
                             Vector3f initCameraDir = null;
                             float[] initPlaneTranslation = new float[3];
@@ -776,6 +776,7 @@ public class AnimationInteractivityManager {
                                                 initPlaneTranslation[0] + ", " + initPlaneTranslation[1] + ", " + initPlaneTranslation[2] );
                                     }
 
+                                    /*
                                     float[] hitLocation = gvrPickedObject.getHitLocation();
                                     cnt++;
                                     if ( (cnt %20) == 0) {
@@ -787,7 +788,10 @@ public class AnimationInteractivityManager {
                                         Log.e("X3DDBG", "   planeTranslation: " +
                                                 planeTranslation[0] + ", " + planeTranslation[1] + ", " + planeTranslation[2] );
                                     }
+                                    */
                                     // need to get the hit location.
+                                    planeTranslation[0] = gvrSceneObject.getTransform().getPositionX();
+                                    planeTranslation[1] = gvrSceneObject.getTransform().getPositionY();
                                     Object[] parameters = SetJavaScriptArguments(interactiveObjectFinal, planeTranslation[0], planeTranslation[1], true);
                                     ScriptObject scriptObject = interactiveObjectFinal.getScriptObject();
                                     ScriptObject.Field firstField = scriptObject.getField(0);
@@ -796,10 +800,10 @@ public class AnimationInteractivityManager {
                                 }
                                 else {
                                     initialized = false;
-                                    cnt2++;
-                                    if ( (cnt2 %50) == 0) {
-                                        Log.e("X3DDBG", "onSensorEvent PLANE event.isActive() FALSE");
-                                    }
+                                    //cnt2++;
+                                    //if ( (cnt2 %50) == 0) {
+                                    //    Log.e("X3DDBG", "onSensorEvent PLANE event.isActive() FALSE");
+                                    //}
                                 }
                             }
                         });
@@ -973,14 +977,9 @@ public class AnimationInteractivityManager {
                                             hitLocation[0] + ", " + hitLocation[1] + ", " + hitLocation[2]);
 
                                     sensorImplementation.registerDrawFrameListerner(gvrPickedObject, interactiveObjectFinal);
-                                } else if (!event.isActive() && isActive) {
+                                } else if ( !event.isActive() || !event.isOver() ) {
                                     sensorImplementation.unregisterDrawFrameListerner();
-                                    GVRPicker.GVRPickedObject gvrPickedObject = event.getPickedObject();
-                                    float[] hitLocation = gvrPickedObject.getHitLocation();
-                                    float hitDistance = gvrPickedObject.getHitDistance();
-                                    Log.e("X3DDBG", "   END HitDist: " + hitDistance + "; hitLocation: " +
-                                            hitLocation[0] + ", " + hitLocation[1] + ", " + hitLocation[2]);
-
+                                    GVRPicker.GVRPickedObject gvrPickedObject = null;
                                     Log.e("X3DDBG", "PLANE Sensor isActive reset");
                                     isActive = false;
                                 }
@@ -1102,23 +1101,18 @@ public class AnimationInteractivityManager {
                             fromField = "trackPoint";
                         } else {
                             Log.e(TAG, "Cylinder, Plane or Sphere Sensor: not supported 'from field': " + mInteractiveObjectFinal.getSensorFromField() );
-                            Log.e("X3DDBG", "Cylinder, Plane or Sphere Sensor: not supported 'from field': " + mInteractiveObjectFinal.getSensorFromField() );
                         }
                     } else if (sensor.getSensorType() == Sensor.Type.CYLINDER) {
                         mSensorType = Sensor.Type.CYLINDER;
                         Log.e(TAG, "CYLINDER Sensor not yet supported in GearVR.");
-                        Log.e("X3DDBG", "CYLINDER Sensor not yet supported in GearVR.");
                     } else if (sensor.getSensorType() == Sensor.Type.SPHERE) {
                         mSensorType = Sensor.Type.SPHERE;
                         Log.e(TAG, "SPHERE Sensor not yet supported in GearVR.");
-                        Log.e("X3DDBG", "SPHERE Sensor not yet supported in GearVR.");
                     } else {
                         Log.e(TAG, "Unsupported or Undefined Sensor.");
-                        Log.e("X3DDBG", "Unsupported or Undefined Sensor.");
                     }
                 } else {
                     Log.e(TAG, "Cylinder, Plane or Sphere Sensor not set");
-                    Log.e("X3DDBG", "Cylinder, Plane or Sphere Sensor not set");
                 }
 
                 // initialize the 'to' object information
@@ -1143,18 +1137,15 @@ public class AnimationInteractivityManager {
                             initPlaneTranslation[2] = mGVRSceneObject.getTransform().getPositionZ();
                         } else {
                             Log.e(TAG, "Cylinder, Plane or Sphere Sensor: not supported 'to field': " + mInteractiveObjectFinal.getDefinedItemToField());
-                            Log.e("X3DDBG", "Cylinder, Plane or Sphere Sensor: not supported 'to field': " + mInteractiveObjectFinal.getDefinedItemToField());
                         }
                     }
                     else {
                         Log.e(TAG, "Problem with Cylinder, Plane or Sphere Sensor: no receiving object.");
-                        Log.e("X3DDBG", "Problem with Cylinder, Plane or Sphere Sensor: no receiving object.");
                     }
                 }
             }
             else {
                 Log.e(TAG, "Problem with Cylinder, Plane or Sphere Sensor");
-                Log.e("X3DDBG", "Problem with Cylinder, Plane or Sphere Sensor");
             }
             initHitLocation = mGVRPickedObject.getHitLocation();
             initHitDistance = mGVRPickedObject.getHitDistance();
@@ -1173,14 +1164,13 @@ public class AnimationInteractivityManager {
             mSensorOnDrawFrame = null;
             mInteractiveObjectFinal = null;
             mGVRPickedObject = null;
-            Log.e("X3DDBG", "Sensor unregisterDrawFrameListerner (END): " +
-                    mGVRSceneObject.getTransform().getPositionX() + ", " + mGVRSceneObject.getTransform().getPositionY() + ", "
-                    + mGVRSceneObject.getTransform().getPositionZ() );
+            //Log.e("X3DDBG", "Sensor unregisterDrawFrameListerner (END): " +
+            //        mGVRSceneObject.getTransform().getPositionX() + ", " + mGVRSceneObject.getTransform().getPositionY() + ", "
+            //        + mGVRSceneObject.getTransform().getPositionZ() );
 
             mGVRSceneObject = null;
             fromField = "";
             toField = "";
-            Vector3f initCameraDir = null;
             run = false;
             Log.e("X3DDBG", "Sensor unregisterDrawFrameListerner");
         }
