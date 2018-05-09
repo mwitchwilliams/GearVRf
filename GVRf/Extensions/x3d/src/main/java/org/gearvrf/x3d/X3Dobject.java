@@ -4059,6 +4059,8 @@ public class X3Dobject {
                 ;
             } else if (qName.equalsIgnoreCase("TouchSensor")) {
                 ;
+            } else if (qName.equalsIgnoreCase("PlaneSensor")) {
+                ;
             } else if (qName.equalsIgnoreCase("ProximitySensor")) {
                 ;
             } else if (qName.equalsIgnoreCase("Text")) {
@@ -4223,6 +4225,10 @@ public class X3Dobject {
             else if (qName.equalsIgnoreCase("x3d")) {
                 ;
             } // end </x3d>
+            else {
+                Log.e(TAG, "Not parsing ending '" + qName + "' tag.");
+                ;
+            } // end </x3d>
         }  // end endElement
 
 
@@ -4293,13 +4299,6 @@ public class X3Dobject {
                                 gvrExternalScene.load(gvrScene);
                                 GVRAnimator gvrAnimator = gvrExternalScene.getAnimator();
                             }
-/*
-                            gvrAndroidResource = new GVRAndroidResource(gvrContext, urls[j]);
-                            inputStream = gvrAndroidResource.getStream();
-
-                            currentSceneObject = inlineObject.getInlineGVRSceneObject();
-                            saxParser.parse(inputStream, userhandler);
-                            */
                         } catch (FileNotFoundException e) {
                             Log.e(TAG,
                                     "Inline file reading: File Not Found: url " + urls[j] + ", Exception "
