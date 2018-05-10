@@ -44,6 +44,8 @@ public class X3DShader extends GVRShaderTemplate
         setSegment("FragmentSurface", surfaceShader);
         setSegment("FragmentAddLight", addLight);
         setSegment("VertexShader", vtxShader);
+        setSegment("VertexNormalShader", "");
+        setSegment("VertexSkinShader", "");
 
         mHasVariants = true;
         mUsesLights = true;
