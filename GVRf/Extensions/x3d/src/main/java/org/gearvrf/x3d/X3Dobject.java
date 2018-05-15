@@ -3334,12 +3334,10 @@ public class X3Dobject {
 
                 /********** MultiTexture **********/
                 else if (qName.equalsIgnoreCase("MultiTexture")) {
-                    Log.e("X3DDBG", "MultiTexture");
                     String name = "";
                     float alpha = 1;
                     float[] color = { 1, 1, 1 };
                     String[] function = {""};
-                    //String[] mode = {"MODULATE"};
                     MFString mode = new MFString("MODULATE");
                     String[] source = {""};
 
@@ -3347,7 +3345,6 @@ public class X3Dobject {
 
                     attributeValue = attributes.getValue("DEF");
                     if (attributeValue != null) {
-                        //name = attributeValue;
                         shaderSettings.setMultiTextureName( attributeValue );
                     }
                     attributeValue = attributes.getValue("alpha");
@@ -3375,8 +3372,6 @@ public class X3Dobject {
                     }
 
                     shaderSettings.setMultiTextureMode( mode );
-
-                    Log.e("X3DDBG", "MultiTexture parsing done");
                 }  //  end <MultiTexture> node
 
 
@@ -3893,13 +3888,12 @@ public class X3Dobject {
                                     definedItem.setGVRMaterial(gvrMaterial);
                                     mDefinedItems.add(definedItem); // Add gvrMaterial to Array list
                                 }
-                                gvrMaterial.setTexture("diffuseTexture", shaderSettings.getMultiTextureGVRTexture(1) );
-                                gvrMaterial.setTexture("diffuseTexture1", shaderSettings.getMultiTextureGVRTexture(0) );
+                                gvrMaterial.setTexture("diffuseTexture", shaderSettings.getMultiTextureGVRTexture(0) );
+                                gvrMaterial.setTexture("diffuseTexture1", shaderSettings.getMultiTextureGVRTexture(1) );
                                 // 0:Mul; 1=for ADD; 2 for SUBTRACT; 3 for DIVIDE; 4=smooth add; 5=Signed add
                                 gvrMaterial.setInt("diffuseTexture1_blendop", shaderSettings.getMultiTextureMode().ordinal());
-                                gvrMaterial.setTexCoord("diffuseTexture", "a_texcoord", "diffuse_coord1");
-                                //gvrMaterial.setTexCoord("diffuseTexture1", "a_texcoord", "diffuse_coord1");
-                                gvrMaterial.setTexCoord("diffuseTexture1", "a_texcoord", "diffuse_coord");
+                                gvrMaterial.setTexCoord("diffuseTexture", "a_texcoord", "diffuse_coord");
+                                gvrMaterial.setTexCoord("diffuseTexture1", "a_texcoord", "diffuse_coord1");
 
                             }
                             else if (shaderSettings.texture != null) {
@@ -4193,7 +4187,7 @@ public class X3Dobject {
             } else if (qName.equalsIgnoreCase("field")) {
                 ; // embedded inside a <SCRIPT> node
             } else if (qName.equalsIgnoreCase("MultiTexture")) {
-                Log.e("X3DDBG", "MultiTexture end");
+                ;
             } else if (qName.equalsIgnoreCase("BooleanToggle")) {
                 ;
             } else if (qName.equalsIgnoreCase("NavigationInfo")) {

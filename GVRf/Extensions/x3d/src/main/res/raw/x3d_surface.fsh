@@ -92,7 +92,7 @@ vec4 BlendColors(vec4 color1, vec4 color2, int blendop)
     }
     if (blendop == BLEND_SUBTRACT)
     {
-        color = color1 - color2;
+        color = vec4((color1 - color2).rgb, 1.0);
         return clamp(color, 0.0, 1.0);
     }
     if (blendop == BLEND_DIVIDE)
