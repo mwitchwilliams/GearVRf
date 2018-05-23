@@ -3351,15 +3351,18 @@ public class X3Dobject {
                     if (attributeValue != null) {
                         alpha = parseSingleFloatString(attributeValue, true,
                                 true);
+                        Log.e(TAG, "MultiTexture alpha not implemented");
                     }
                     attributeValue = attributes.getValue("color");
                     if (attributeValue != null) {
                         color = parseFixedLengthFloatString(attributeValue, 3, true,
                                 false);
+                        Log.e(TAG, "MultiTexture color not implemented");
                     }
                     attributeValue = attributes.getValue("function");
                     if (attributeValue != null) {
                         function = parseMFString(attributeValue);
+                        Log.e(TAG, "MultiTexture function not implemented");
                     }
                     attributeValue = attributes.getValue("mode");
                     if (attributeValue != null) {
@@ -3369,6 +3372,7 @@ public class X3Dobject {
                     attributeValue = attributes.getValue("source");
                     if (attributeValue != null) {
                         source = parseMFString(attributeValue);
+                        Log.e(TAG, "MultiTexture source not implemented");
                     }
 
                     shaderSettings.setMultiTextureMode( mode );
