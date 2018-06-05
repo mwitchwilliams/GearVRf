@@ -45,6 +45,7 @@ import org.gearvrf.GVRSceneObject;
 import org.gearvrf.GVRSwitch;
 import org.gearvrf.GVRTexture;
 import org.gearvrf.GVRTextureParameters;
+import org.gearvrf.GVRTransform;
 import org.gearvrf.ISensorEvents;
 import org.gearvrf.SensorEvent;
 import org.gearvrf.animation.GVRAnimation;
@@ -829,6 +830,9 @@ public class AnimationInteractivityManager {
                             }
                         });
                     }  // end if sensor == TOUCH
+                    else if (interactiveObject.getSensor().getSensorType() == Sensor.Type.CYLINDER) {
+                        Log.e("X3DDBG", "Cylinder Sensor");
+                    }
                 }   // end if sensor != null
                 else if (interactiveObject.getTimeSensor() != null) {
                     // TimeSensor means this Script will be called per-frame
@@ -846,16 +850,15 @@ public class AnimationInteractivityManager {
                 final InteractiveObject interactiveObjectFinal = interactiveObject;
                 if (interactiveObject.getSensor().getSensorType() == Sensor.Type.TOUCH) {
                     interactiveObject.getSensor().getOwnerObject().forAllDescendants(
-                            new GVRSceneObject.SceneVisitor()
-                            {
-                                public boolean visit (GVRSceneObject obj)
-                                {
+                            new GVRSceneObject.SceneVisitor() {
+                                public boolean visit(GVRSceneObject obj) {
                                     obj.attachCollider(new GVRMeshCollider(gvrContext, true));
                                     return true;
                                 }
                             });
                     interactiveObject.getSensor().addISensorEvents(new ISensorEvents() {
                         boolean isMovieStateSet = false;
+
                         @Override
                         public void onSensorEvent(SensorEvent event) {
                             //Setup SensorEvent callback here
@@ -863,16 +866,15 @@ public class AnimationInteractivityManager {
                                     .getSceneObjectByName(interactiveObjectFinal.getDefinedItem().getName());
                             GVRComponent gvrComponent = gvrSceneObject.getComponent(GVRLight.getComponentType());
 
-                            if ( gvrComponent != null ) {
+                            if (gvrComponent != null) {
                                 if (event.isOver() && interactiveObjectFinal.getSensorFromField().equals(Sensor.IS_OVER)) {
                                     if (gvrComponent != null) gvrComponent.setEnable(true);
                                 } else {
                                     if (gvrComponent != null) gvrComponent.setEnable(false);
-                               }
-                            }
-                            else if ( gvrSceneObject instanceof GVRVideoSceneObject) {
+                                }
+                            } else if (gvrSceneObject instanceof GVRVideoSceneObject) {
                                 // isOver, but only go thru once per isOver.
-                                if ( event.isOver() && !isMovieStateSet) {
+                                if (event.isOver() && !isMovieStateSet) {
                                     GVRVideoSceneObject gvrVideoSceneObject = (GVRVideoSceneObject) gvrSceneObject;
                                     GVRVideoSceneObjectPlayer gvrVideoSceneObjectPlayer = gvrVideoSceneObject.getMediaPlayer();
                                     try {
@@ -900,7 +902,7 @@ public class AnimationInteractivityManager {
                                     }
                                     isMovieStateSet = true;
                                 } // end if event.isOver()
-                                else if ( !event.isOver() && isMovieStateSet){
+                                else if (!event.isOver() && isMovieStateSet) {
                                     // No longer over the TouchSensor
                                     isMovieStateSet = false;
                                 }
@@ -910,10 +912,8 @@ public class AnimationInteractivityManager {
                 }  // end if sensor == TOUCH
                 else if (interactiveObject.getSensor().getSensorType() == Sensor.Type.PLANE) {
                     interactiveObject.getSensor().getOwnerObject().forAllDescendants(
-                            new GVRSceneObject.SceneVisitor()
-                            {
-                                public boolean visit (GVRSceneObject obj)
-                                {
+                            new GVRSceneObject.SceneVisitor() {
+                                public boolean visit(GVRSceneObject obj) {
                                     obj.attachCollider(new GVRMeshCollider(gvrContext, true));
                                     return true;
                                 }
@@ -923,7 +923,7 @@ public class AnimationInteractivityManager {
 
                         @Override
                         public void onSensorEvent(SensorEvent event) {
-                            if ( interactiveObjectFinal.getSensor().getEnabled() ) {
+                            if (interactiveObjectFinal.getSensor().getEnabled()) {
                                 if (event.isActive() && !isActive) {
                                     isActive = true;
                                     //Log.e("X3DDBG", "PLANE Sensor isActive");
@@ -932,7 +932,7 @@ public class AnimationInteractivityManager {
                                     //float hitDistance = gvrPickedObject.getHitDistance();
 
                                     sensorImplementation.registerDrawFrameListerner(gvrPickedObject, interactiveObjectFinal);
-                                } else if ( !event.isActive() || !event.isOver() ) {
+                                } else if (!event.isActive() || !event.isOver()) {
                                     sensorImplementation.unregisterDrawFrameListerner();
                                     GVRPicker.GVRPickedObject gvrPickedObject = null;
                                     //Log.e("X3DDBG", "PLANE Sensor isActive reset");
@@ -942,6 +942,39 @@ public class AnimationInteractivityManager {
                         }   // end onSensorEvent
                     });
                 }  // end if sensor == PLANESensor
+                else if (interactiveObject.getSensor().getSensorType() == Sensor.Type.CYLINDER) {
+                    interactiveObject.getSensor().getOwnerObject().forAllDescendants(
+                            new GVRSceneObject.SceneVisitor()
+                            {
+                                public boolean visit (GVRSceneObject obj)
+                                {
+                                    obj.attachCollider(new GVRMeshCollider(gvrContext, true));
+                                    return true;
+                                }
+                            });
+                    Log.e("X3DDBG", "Cylinder Sensor set-up");
+                    interactiveObject.getSensor().addISensorEvents(new ISensorEvents() {
+                        boolean isActive = false;
+
+                        @Override
+                        public void onSensorEvent(SensorEvent event) {
+                            if (interactiveObjectFinal.getSensor().getEnabled()) {
+                                if (event.isActive() && !isActive) {
+                                    isActive = true;
+                                    Log.e("X3DDBG", "Cylinder Sensor isActive");
+                                    GVRPicker.GVRPickedObject gvrPickedObject = event.getPickedObject();
+                                    sensorImplementation.registerDrawFrameListerner(gvrPickedObject, interactiveObjectFinal);
+                                } else if (!event.isActive() || !event.isOver()) {
+                                //} else if ( !event.isActive() ) {
+                                //} else if (!event.isActive() && !event.isOver()) {
+                                    sensorImplementation.unregisterDrawFrameListerner();
+                                    //GVRPicker.GVRPickedObject gvrPickedObject = null;
+                                    isActive = false;
+                                }
+                            }// if CylinderSensor is enabled
+                        }   // end onSensorEvent
+                    });
+                }
 
             }  //  end sensor and definedItem != null
             // Sensor (such as TouchSensor) to an EventUnity (such as BoleanToggle)
@@ -1010,7 +1043,7 @@ public class AnimationInteractivityManager {
 
     // Supports PlaneSensor and eventually CylinderSensor, SphereSensor
     private class SensorImplementation {
-
+        
         GVRDrawFrameListener mSensorOnDrawFrame = null;
         InteractiveObject mInteractiveObjectFinal = null;
         GVRPicker.GVRPickedObject mGVRPickedObject = null;
@@ -1021,12 +1054,21 @@ public class AnimationInteractivityManager {
         float[] initHitLocation = new float[3];
         float initHitDistance = 0;
         Vector3f initCameraDir = null;
-        float[] initPlaneTranslation = new float[3];
         // values and booleans for checking min and max distance of PlaneSensor
+        float[] initPlaneTranslation = new float[3];
         SFVec2f mMinPosition = new SFVec2f(0, 0);
         SFVec2f mMaxPosition = new SFVec2f(-1, -1);
         boolean mCheckXpos = false;
         boolean mCheckYpos = false;
+        // values for CylinderSensor
+        float[] initCylinderRotation = new float[4];
+        SFFloat mMinAngle = new SFFloat(0);
+        SFFloat mMaxAngle = new SFFloat(-1);
+        boolean mClampAngle = false;
+        final int xAxis = 1;
+        final int yAxis = 2;
+        final int zAxis = 3;
+        int rotationAxis = yAxis;
 
         boolean run = false;
         GVRCameraRig gvrCameraRig = null;
@@ -1055,11 +1097,24 @@ public class AnimationInteractivityManager {
                         } else if (StringFieldMatch(mInteractiveObjectFinal.getSensorFromField(), "trackPoint")) {
                             fromField = "trackPoint";
                         } else {
-                            Log.e(TAG, "Cylinder, Plane or Sphere Sensor: not supported 'from field': " + mInteractiveObjectFinal.getSensorFromField() );
+                            Log.e(TAG, "Plane Sensor: not supported 'from field': " + mInteractiveObjectFinal.getSensorFromField() );
                         }
                     } else if (sensor.getSensorType() == Sensor.Type.CYLINDER) {
                         mSensorType = Sensor.Type.CYLINDER;
-                        Log.e(TAG, "CYLINDER Sensor not yet supported in GearVR.");
+                        mMinAngle = sensor.getMinAngle();
+                        mMaxAngle = sensor.getMaxAngle();
+                        //        int rotationAxis = yAxis;
+                        SFRotation axisRotation = sensor.getAxisRotation();
+                        if ( axisRotation.getX() == 1) rotationAxis = xAxis;
+                        else if ( axisRotation.getY() == 1) rotationAxis = yAxis;
+                        else if ( axisRotation.getZ() == 1) rotationAxis = zAxis;
+
+                        if ( mMinAngle.getValue() <= mMaxAngle.getValue()) mClampAngle = true;
+                        if (StringFieldMatch(mInteractiveObjectFinal.getSensorFromField(), "rotation")) {
+                            fromField = "rotation";
+                        } else {
+                            Log.e(TAG, "Cylinder Sensor: not supported 'from field': " + mInteractiveObjectFinal.getSensorFromField() );
+                        }
                     } else if (sensor.getSensorType() == Sensor.Type.SPHERE) {
                         mSensorType = Sensor.Type.SPHERE;
                         Log.e(TAG, "SPHERE Sensor not yet supported in GearVR.");
@@ -1077,21 +1132,58 @@ public class AnimationInteractivityManager {
                     if ( mGVRSceneObject.getName().isEmpty() ) {
                         mGVRSceneObject = mGVRSceneObject.getParent();
                     }
-                    mGVRSceneObject = root
-                            .getSceneObjectByName((mGVRSceneObject.getName() + x3dObject.TRANSFORM_TRANSLATION_));
+                    if (mSensorType == Sensor.Type.PLANE) {
 
-                    if ( mGVRSceneObject != null ) {
-                        if (StringFieldMatch(mInteractiveObjectFinal.getDefinedItemToField(), "translation")) {
-                            toField = "translation";
-                            initPlaneTranslation[0] = mGVRSceneObject.getTransform().getPositionX();
-                            initPlaneTranslation[1] = mGVRSceneObject.getTransform().getPositionY();
-                            initPlaneTranslation[2] = mGVRSceneObject.getTransform().getPositionZ();
+                        mGVRSceneObject = root
+                                .getSceneObjectByName((mGVRSceneObject.getName() + x3dObject.TRANSFORM_TRANSLATION_));
+
+                        if (mGVRSceneObject != null) {
+                            if (StringFieldMatch(mInteractiveObjectFinal.getDefinedItemToField(), "translation")) {
+                                toField = "translation";
+                                initPlaneTranslation[0] = mGVRSceneObject.getTransform().getPositionX();
+                                initPlaneTranslation[1] = mGVRSceneObject.getTransform().getPositionY();
+                                initPlaneTranslation[2] = mGVRSceneObject.getTransform().getPositionZ();
+                            } else {
+                                Log.e(TAG, "Plane Sensor: not supported 'to field': " + mInteractiveObjectFinal.getDefinedItemToField());
+                            }
                         } else {
-                            Log.e(TAG, "Cylinder, Plane or Sphere Sensor: not supported 'to field': " + mInteractiveObjectFinal.getDefinedItemToField());
+                            Log.e(TAG, "Problem with Plane Sensor: no receiving object.");
                         }
                     }
-                    else {
-                        Log.e(TAG, "Problem with Cylinder, Plane or Sphere Sensor: no receiving object.");
+                    else if (mSensorType == Sensor.Type.CYLINDER) {
+
+                        GVRSceneObject gvrSceneObjectTranslation = root
+                                .getSceneObjectByName((mGVRSceneObject.getName() + x3dObject.TRANSFORM_TRANSLATION_));
+                        initPlaneTranslation[0] = gvrSceneObjectTranslation.getTransform().getPositionX();
+                        initPlaneTranslation[1] = gvrSceneObjectTranslation.getTransform().getPositionY();
+                        initPlaneTranslation[2] = gvrSceneObjectTranslation.getTransform().getPositionZ();
+
+                        mGVRSceneObject = root
+                                .getSceneObjectByName((mGVRSceneObject.getName() + x3dObject.TRANSFORM_ROTATION_));
+
+                        if (mGVRSceneObject != null) {
+                            if (StringFieldMatch(mInteractiveObjectFinal.getDefinedItemToField(), "rotation")) {
+                                toField = "rotation";
+                                GVRTransform transform = mGVRSceneObject.getTransform();
+                                Quaternionf quat = new Quaternionf(transform.getRotationX(),
+                                        transform.getRotationY(), transform.getRotationZ(), transform.getRotationW() );
+                                AxisAngle4f axisAngle = new AxisAngle4f();
+                                quat.get( axisAngle );
+                                initCylinderRotation[0] = axisAngle.angle;
+                                initCylinderRotation[1] = axisAngle.x;
+                                initCylinderRotation[2] = axisAngle.y;
+                                initCylinderRotation[3] = axisAngle.z;
+                                // Could be a value like 4.75 radians so change it to -1.57 radians
+                                if ( initCylinderRotation[0] > Math.PI ) initCylinderRotation[0] -= 2 * (float) Math.PI;
+                                else if ( initCylinderRotation[0] < -Math.PI ) initCylinderRotation[0] += 2 * (float) Math.PI;
+                                Log.e("X3DDBG", "initCylinderRotation (wxyz): " +
+                                        initCylinderRotation[0] + ", " + initCylinderRotation[1] + ", " + initCylinderRotation[2] + ", " + initCylinderRotation[3] );
+                            } else {
+                                Log.e(TAG, "Cylinder Sensor: not supported 'to field': " + mInteractiveObjectFinal.getDefinedItemToField());
+                            }
+                        } else {
+                            Log.e(TAG, "Problem with Cylinder Sensor: no receiving object.");
+                        }
                     }
                 }
             }
@@ -1120,33 +1212,62 @@ public class AnimationInteractivityManager {
         }
 
         final void onSensorActiveDrawFrame(float frameTime) {
-            if ( mSensorType == Sensor.Type.PLANE ) {
-                if ( mGVRSceneObject != null && mGVRPickedObject != null ) {
+            if (mSensorType == Sensor.Type.PLANE) {
+                if (mGVRSceneObject != null && mGVRPickedObject != null) {
                     float[] lookAt = gvrCameraRig.getLookAt();
                     Vector3f cameraDir = new Vector3f(lookAt[0], lookAt[1], lookAt[2]);
-                    cameraDir.sub( initCameraDir );
+                    cameraDir.sub(initCameraDir);
                     float x = initPlaneTranslation[0] + cameraDir.x * initHitDistance;
                     float y = initPlaneTranslation[1] + cameraDir.y * initHitDistance;
-                    if ( mCheckXpos ) {
-                        if ( (x >= mMinPosition.getX()) && (x <= mMaxPosition.getX()) ) {
-                            mGVRSceneObject.getTransform().setPositionX( x );
+                    if (mCheckXpos) {
+                        if ((x >= mMinPosition.getX()) && (x <= mMaxPosition.getX())) {
+                            mGVRSceneObject.getTransform().setPositionX(x);
                         }
-                    }
-                    else mGVRSceneObject.getTransform().setPositionX( x );
-                    if ( mCheckYpos ) {
-                        if ( (y >= mMinPosition.getY()) && (y <= mMaxPosition.getY()) ) {
-                            mGVRSceneObject.getTransform().setPositionY( y );
+                    } else mGVRSceneObject.getTransform().setPositionX(x);
+                    if (mCheckYpos) {
+                        if ((y >= mMinPosition.getY()) && (y <= mMaxPosition.getY())) {
+                            mGVRSceneObject.getTransform().setPositionY(y);
                         }
-                    }
-                    else mGVRSceneObject.getTransform().setPositionY( y );
+                    } else mGVRSceneObject.getTransform().setPositionY(y);
 
-                    if (  fromField.equalsIgnoreCase("trackPoint") && toField.equalsIgnoreCase("translation")) {
+                    if (fromField.equalsIgnoreCase("trackPoint") && toField.equalsIgnoreCase("translation")) {
                         // trackPoint to translation
-                        mGVRSceneObject.getTransform().setPositionZ( initHitLocation[2] );
+                        mGVRSceneObject.getTransform().setPositionZ(initHitLocation[2]);
                     }
                 }
-            }
-        }
+            }  //  end if PlaneSensor
+            else if ( mSensorType == Sensor.Type.CYLINDER ) {
+                if (mGVRSceneObject != null && mGVRPickedObject != null) {
+                    float[] lookAt = gvrCameraRig.getLookAt();
+                    Vector3f cameraDir = new Vector3f(lookAt[0], lookAt[1], lookAt[2]);
+                    cameraDir.sub(initCameraDir);
+                    //float x = initPlaneTranslation[0] + cameraDir.x * initHitDistance;
+                    float rotation = initCylinderRotation[0] + (initPlaneTranslation[0] + cameraDir.x * initHitDistance) * (float)Math.PI/2;
+                    if ( mClampAngle ) {
+                        if (rotation < mMinAngle.getValue() ) rotation = mMinAngle.getValue();
+                        else if (rotation > mMaxAngle.getValue() ) rotation = mMaxAngle.getValue();
+                    }
+                    //initCylinderRotation[2] = mGVRSceneObject.getTransform().getRotationY();
+                    //mGVRSceneObject.getTransform().setRotation(1, 0, initCylinderRotation[2] + y, 0);
+                    //GVRTransform transform = mGVRSceneObject.getTransform();
+                    //AxisAngle4f axisAngle = new AxisAngle4f(initCylinderRotation[0] + yRot, 0, 1, 0);
+
+                    AxisAngle4f axisAngle = new AxisAngle4f(rotation, 0, 1, 0);
+                    Quaternionf quat = new Quaternionf();
+                    quat.set( axisAngle );
+
+                    //transform.setRotationByAxis(initCylinderRotation[0] + yRot, 0, 1, 0);
+                    //mGVRSceneObject.getTransform().setRotationByAxis(initCylinderRotation[0] + yRot, 0, 1, 0);
+
+                    mGVRSceneObject.getTransform().setRotation(quat.w, quat.x, quat.y, quat.z);
+                    Log.e("X3DDBG", "rotation: " + rotation);
+                    Log.e("X3DDBG", "getRotation (wxyz): " +
+                            mGVRSceneObject.getTransform().getRotationW() + ", " + mGVRSceneObject.getTransform().getRotationX() +
+                            ", " + mGVRSceneObject.getTransform().getRotationY() + ", " + mGVRSceneObject.getTransform().getRotationZ() );
+
+                }
+            } // end if CyinderSensor
+        }  //  end onSensorActiveDrawFrame
     }  //  end class SensorImplementation
 
     // Supports when TimeSensor per-frame calls invoke Script
