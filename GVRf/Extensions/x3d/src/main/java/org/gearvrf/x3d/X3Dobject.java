@@ -3256,12 +3256,8 @@ public class X3Dobject {
                     }
                     attributeValue = attributes.getValue("axisRotation");
                     if (attributeValue != null) {
-                        //float[] axisRot = parseFixedLengthFloatString(attributeValue, 4, true, true);
                         axisRotation.setValue( parseFixedLengthFloatString(attributeValue, 4, true, true) );
-                        //float maxValue = parseSingleFloatString(attributeValue, false, false);
-                        //if (maxValue > Math.PI*2) maxValue = (float)Math.PI*2;
-                        //else if (maxValue < -Math.PI*2) maxValue = -(float)Math.PI*2;
-                        //maxAngle.setValue(maxValue);
+                        Log.e(TAG, "CylinderSensor axisRotation not implemented");
                     }
 
                     attributeValue = attributes.getValue("enabled");
@@ -3294,6 +3290,31 @@ public class X3Dobject {
                     // add colliders to all objects under the touch sensor
                     currentSceneObject.attachCollider(new GVRMeshCollider(gvrContext, true));
                 } // end <CylinderSensor> node
+
+
+                /********** SphereSensor **********/
+                else if (qName.equalsIgnoreCase("SphereSensor")) {
+                    String name = "";
+                    String description = "";
+                    boolean enabled = true;
+                    attributeValue = attributes.getValue("DEF");
+                    if (attributeValue != null) {
+                        name = attributeValue;
+                    }
+                    attributeValue = attributes.getValue("description");
+                    if (attributeValue != null) {
+                        description = attributeValue;
+                    }
+                    attributeValue = attributes.getValue("enabled");
+                    if (attributeValue != null) {
+                        enabled = parseBooleanString(attributeValue);
+                    }
+
+                    Sensor sensor = new Sensor(name, Sensor.Type.SPHERE, currentSceneObject, enabled);
+                    sensors.add(sensor);
+                    // add colliders to all objects under the touch sensor
+                    currentSceneObject.attachCollider(new GVRMeshCollider(gvrContext, true));
+                } // end <SphereSensor> node
 
 
                 /********** ProximitySensor **********/
@@ -4207,6 +4228,8 @@ public class X3Dobject {
             } else if (qName.equalsIgnoreCase("PlaneSensor")) {
                 ;
             } else if (qName.equalsIgnoreCase("CylinderSensor")) {
+                ;
+            } else if (qName.equalsIgnoreCase("SphereSensor")) {
                 ;
             } else if (qName.equalsIgnoreCase("ProximitySensor")) {
                 ;
