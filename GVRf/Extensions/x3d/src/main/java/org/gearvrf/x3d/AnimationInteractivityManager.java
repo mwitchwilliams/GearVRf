@@ -712,7 +712,6 @@ public class AnimationInteractivityManager {
 
                 if (interactiveObject.getSensor() != null) {
                     if (interactiveObject.getSensor().getSensorType() == Sensor.Type.PLANE) {
-                        //Log.e("X3DDBG", "initAnimationsAndInteractivity PLANE");
                         // a Plane Sensor
                         interactiveObject.getSensor().getOwnerObject().forAllDescendants(
                                 new GVRSceneObject.SceneVisitor()
@@ -737,7 +736,6 @@ public class AnimationInteractivityManager {
                                 if (event.isActive()) {
                                     GVRPicker.GVRPickedObject gvrPickedObject = event.getPickedObject();
                                     if ( !initialized ) {
-                                        //Log.e("X3DDBG", "onSensorEvent PLANE event.isActive() INITIALIZED");
                                         initialized = true;
                                         float[] lookAt = gvrCameraRig.getLookAt();
                                         initCameraDir = new Vector3f(lookAt[0], lookAt[1], lookAt[2]);
@@ -831,7 +829,7 @@ public class AnimationInteractivityManager {
                         });
                     }  // end if sensor == TOUCH
                     else if (interactiveObject.getSensor().getSensorType() == Sensor.Type.CYLINDER) {
-                        Log.e("X3DDBG", "Cylinder Sensor");
+                        Log.e(TAG, "Cylinder Sensor with JavaScript not implemented");
                     }
                 }   // end if sensor != null
                 else if (interactiveObject.getTimeSensor() != null) {
@@ -948,7 +946,6 @@ public class AnimationInteractivityManager {
                                     return true;
                                 }
                             });
-                    Log.e("X3DDBG", "Cylinder Sensor set-up");
                     interactiveObject.getSensor().addISensorEvents(new ISensorEvents() {
                         boolean isActive = false;
 
@@ -957,14 +954,10 @@ public class AnimationInteractivityManager {
                             if (interactiveObjectFinal.getSensor().getEnabled()) {
                                 if (event.isActive() && !isActive) {
                                     isActive = true;
-                                    Log.e("X3DDBG", "Cylinder Sensor isActive");
                                     GVRPicker.GVRPickedObject gvrPickedObject = event.getPickedObject();
                                     sensorImplementation.registerDrawFrameListerner(gvrPickedObject, interactiveObjectFinal);
                                 } else if (!event.isActive() || !event.isOver()) {
-                                //} else if ( !event.isActive() ) {
-                                //} else if (!event.isActive() && !event.isOver()) {
                                     sensorImplementation.unregisterDrawFrameListerner();
-                                    //GVRPicker.GVRPickedObject gvrPickedObject = null;
                                     isActive = false;
                                 }
                             }// if CylinderSensor is enabled
@@ -981,7 +974,6 @@ public class AnimationInteractivityManager {
                                     return true;
                                 }
                             });
-                    Log.e("X3DDBG", "SPHERE Sensor set-up");
                     interactiveObject.getSensor().addISensorEvents(new ISensorEvents() {
                         boolean isActive = false;
 
@@ -990,16 +982,10 @@ public class AnimationInteractivityManager {
                             if (interactiveObjectFinal.getSensor().getEnabled()) {
                                 if (event.isActive() && !isActive) {
                                     isActive = true;
-                                    Log.e("X3DDBG", "Sphere Sensor isActive");
                                     GVRPicker.GVRPickedObject gvrPickedObject = event.getPickedObject();
-                                    float[] hitLoc = gvrPickedObject.getHitLocation();
-                                    Log.e("X3DDBG", "   hitLoc " + hitLoc[0] + ", "  + hitLoc[1] + ", " + hitLoc[2] );
                                     sensorImplementation.registerDrawFrameListerner(gvrPickedObject, interactiveObjectFinal);
                                 } else if (!event.isActive() || !event.isOver()) {
-                                //} else if ( !event.isActive() ) {
-                                //} else if (!event.isActive() && !event.isOver()) {
                                     sensorImplementation.unregisterDrawFrameListerner();
-                                    //GVRPicker.GVRPickedObject gvrPickedObject = null;
                                     isActive = false;
                                 }
                             }// if SphereSensor is enabled
@@ -1154,13 +1140,10 @@ public class AnimationInteractivityManager {
                         } else if (StringFieldMatch(mInteractiveObjectFinal.getSensorFromField(), "trackPoint")) {
                             fromField = "trackPoint";
                             initHitLocation = mGVRPickedObject.getHitLocation();
-                            //float[] hitLoc = mGVRPickedObject.getHitLocation();
-                            Log.e("X3DDBG", "Register SS trackPoint initHitLoc " + initHitLocation[0] + ", "  + initHitLocation[1] + ", " + initHitLocation[2] );
-                            Log.e(TAG, "Sphere Sensor trackPoint not implemented" );
+                            Log.e(TAG, "Sphere Sensor 'trackPoint' not implemented" );
                         } else {
                             Log.e(TAG, "Sphere Sensor: not supported 'from field': " + mInteractiveObjectFinal.getSensorFromField() );
                         }
-                        Log.e(TAG, "SPHERE Sensor registerDrawFrameListerner: fromField = " + fromField);
                     } else {
                         Log.e(TAG, "Unsupported or Undefined Sensor.");
                     }
@@ -1219,14 +1202,8 @@ public class AnimationInteractivityManager {
                                 initRotation[2] = axisAngle.y;
                                 initRotation[3] = axisAngle.z;
                                 // Could be a value like 4.75 radians so change it to -1.57 radians
-                                Log.e("X3DDBG", "initQuat (wxyz): " +
-                                        initQuat.w + ", " + initQuat.x + ", " + initQuat.y + ", " + initQuat.z );
-                                Log.e("X3DDBG", "   initRotation (angle,xyz): " +
-                                        initRotation[0] + ", " + initRotation[1] + ", " + initRotation[2] + ", " + initRotation[3] );
                                 if ( initRotation[0] > Math.PI ) initRotation[0] -= 2 * (float) Math.PI;
                                 else if ( initRotation[0] < -Math.PI ) initRotation[0] += 2 * (float) Math.PI;
-                                Log.e("X3DDBG", "   initRotation (angle,xyz): " +
-                                        initRotation[0] + ", " + initRotation[1] + ", " + initRotation[2] + ", " + initRotation[3] );
                             } else {
                                 Log.e(TAG, "Cylinder Sensor: not supported 'to field': " + mInteractiveObjectFinal.getDefinedItemToField());
                             }
@@ -1241,9 +1218,6 @@ public class AnimationInteractivityManager {
                         initPlaneTranslation[0] = gvrSceneObjectTranslation.getTransform().getPositionX();
                         initPlaneTranslation[1] = gvrSceneObjectTranslation.getTransform().getPositionY();
                         initPlaneTranslation[2] = gvrSceneObjectTranslation.getTransform().getPositionZ();
-                        Log.e("X3DDBG", "SphereSensor initPlaneTranslation: " +
-                                initPlaneTranslation[0] + ", " + initPlaneTranslation[1] + ", " + initPlaneTranslation[2]  );
-
 
                         mGVRSceneObject = root
                                 .getSceneObjectByName( mGVRSceneObject.getName() + x3dObject.TRANSFORM_ROTATION_ );
@@ -1254,26 +1228,9 @@ public class AnimationInteractivityManager {
                                 GVRTransform transform = mGVRSceneObject.getTransform();
                                 Quaternionf quat = new Quaternionf(transform.getRotationX(),
                                         transform.getRotationY(), transform.getRotationZ(), transform.getRotationW() );
-                                Log.e("X3DDBG", "SphereSensor quat (wxyz): " +
-                                        quat.w + ", " + quat.x + ", " + quat.y + ", " + quat.z );
                                 AxisAngle4f axisAngle = new AxisAngle4f();
                                 quat.get( axisAngle );
                                 initQuat.set( quat );
-                                /*
-                                initRotation[0] = axisAngle.angle;
-                                initRotation[1] = axisAngle.x;
-                                initRotation[2] = axisAngle.y;
-                                initRotation[3] = axisAngle.z;
-                                Log.e("X3DDBG", "SphereSensor initRotation (angle,xyz): " +
-                                        initRotation[0] + ", " + initRotation[1] + ", " + initRotation[2] + ", " + initRotation[3] );
-                                if ( initRotation[0] > Math.PI ) initRotation[0] -= 2 * (float) Math.PI;
-                                else if ( initRotation[0] < -Math.PI ) initRotation[0] += 2 * (float) Math.PI;
-                                 // Could be a value like 4.75 radians so change it to -1.57 radians
-                                Log.e("X3DDBG", "SphereSensor initRotation (angle,xyz): " +
-                                        initRotation[0] + ", " + initRotation[1] + ", " + initRotation[2] + ", " + initRotation[3] );
-                                        */
-                            //} else if (StringFieldMatch(mInteractiveObjectFinal.getSensorFromField(), "trackPoint")) {
-                            //    fromField = "trackPoint";
                             } else {
                                 Log.e(TAG, "Sphere Sensor: not supported 'to field': " + mInteractiveObjectFinal.getDefinedItemToField());
                             }
@@ -1294,49 +1251,9 @@ public class AnimationInteractivityManager {
 
         final void unregisterDrawFrameListerner() {
 
-
             if (mSensorOnDrawFrame != null) gvrContext.unregisterDrawFrameListener(mSensorOnDrawFrame);
             mSensorOnDrawFrame = null;
             mInteractiveObjectFinal = null;
-
-
-
-            /* SphereSensor debugging code */
-            /*
-            float[] lookAt = gvrCameraRig.getLookAt();
-            Vector3f cameraDir = new Vector3f(lookAt[0], lookAt[1], lookAt[2]);
-            cameraDir.sub(initCameraDir);
-            float xLoc = (cameraDir.x * initHitDistance) ;
-            float yLoc = (cameraDir.y * initHitDistance) ;
-            mGVRSceneObject.getTransform().setPositionX(xLoc);
-            mGVRSceneObject.getTransform().setPositionY(yLoc);
-            mGVRSceneObject.getTransform().setPositionZ(1.0f - (xLoc*xLoc + yLoc*yLoc));
-            */
-            Log.e("X3DDBG", "Unregisterered trackpoint (x, y, z) " + mGVRSceneObject.getName() + ": " + mGVRSceneObject.getTransform().getPositionX()
-                    + ", " + mGVRSceneObject.getTransform().getPositionY()
-            + ", " + mGVRSceneObject.getTransform().getPositionZ() );
-
-            float[] hitLocation = mGVRPickedObject.getHitLocation();
-            Log.e("X3DDBG", "Unregisterered hitLocation " + hitLocation[0] + ", " + hitLocation[1] + ", " + hitLocation[2]  );
-            Log.e("X3DDBG", "    initHitLocation " + initHitLocation[0] + ", "  + initHitLocation[1] + ", " + initHitLocation[2] );
-
-/*
-            if (mGVRSceneObject != null) {
-                GVRTransform transform = mGVRSceneObject.getTransform();
-                Quaternionf quat = new Quaternionf(transform.getRotationX(),
-                            transform.getRotationY(), transform.getRotationZ(), transform.getRotationW() );
-                AxisAngle4f axisAngle = new AxisAngle4f();
-                    quat.get( axisAngle );
-                Log.e("X3DDBG", "Unregister, quat (wxyz): " +
-                        quat.w + ", " + quat.x + ", " + quat.y + ", " + quat.z );
-                Log.e("X3DDBG", "Unregister, initQuat (wxyz): " +
-                        initQuat.w + ", " + initQuat.x + ", " + initQuat.y + ", " + initQuat.z );
-                Log.e("X3DDBG", "   Unregister getRotation quat (wxyz): " +
-                        mGVRSceneObject.getTransform().getRotationW() + ", " + mGVRSceneObject.getTransform().getRotationX() +
-                        ", " + mGVRSceneObject.getTransform().getRotationY() + ", " + mGVRSceneObject.getTransform().getRotationZ() );
-            }
-            */
-
             mGVRPickedObject = null;
             mGVRSceneObject = null;
             fromField = "";
@@ -1389,10 +1306,6 @@ public class AnimationInteractivityManager {
                     quat.set( axisAngle );
 
                     mGVRSceneObject.getTransform().setRotation(quat.w, quat.x, quat.y, quat.z);
-                    //Log.e("X3DDBG", "rotation: " + rotation);
-                    //Log.e("X3DDBG", "getRotation (wxyz): " +
-                    //        mGVRSceneObject.getTransform().getRotationW() + ", " + mGVRSceneObject.getTransform().getRotationX() +
-                    //        ", " + mGVRSceneObject.getTransform().getRotationY() + ", " + mGVRSceneObject.getTransform().getRotationZ() );
                 }
             } // end if CyinderSensor
             else if ( mSensorType == Sensor.Type.SPHERE ) {
@@ -1400,16 +1313,6 @@ public class AnimationInteractivityManager {
                     float[] lookAt = gvrCameraRig.getLookAt();
                     Vector3f cameraDir = new Vector3f(lookAt[0], lookAt[1], lookAt[2]);
                     cameraDir.sub(initCameraDir);
-                    /*
-                        if (StringFieldMatch(mInteractiveObjectFinal.getSensorFromField(), "rotation")) {
-                            fromField = "rotation";
-                        } else if (StringFieldMatch(mInteractiveObjectFinal.getSensorFromField(), "trackPoint")) {
-                            fromField = "trackPoint";
-                        } else {
-                            Log.e(TAG, "Sphere Sensor: not supported 'from field': " + mInteractiveObjectFinal.getSensorFromField() );
-                        }
-
-                     */
                     if (StringFieldMatch(mInteractiveObjectFinal.getSensorFromField(), "rotation")) {
                         float xRotation = (cameraDir.x * initHitDistance) * (float) Math.PI / 2;
                         float yRotation = (cameraDir.y * initHitDistance) * (float) Math.PI / 2;
@@ -1424,19 +1327,13 @@ public class AnimationInteractivityManager {
 
                         quatX.mul(quatY);
                         quatX.mul(initQuat);
-                        //quatX.mul( quatY ).mul( initQuat );
-
                         mGVRSceneObject.getTransform().setRotation(quatX.w, quatX.x, quatX.y, quatX.z);
                     } else if (StringFieldMatch(mInteractiveObjectFinal.getSensorFromField(), "trackPoint")) {
                         float xLoc = (cameraDir.x * initHitDistance) ;
                         float yLoc = (cameraDir.y * initHitDistance) ;
-                        //float xLoc = (cameraDir.x * initHitDistance) + initHitLocation[0];
-                        //float yLoc = (cameraDir.y * initHitDistance) + initHitLocation[1];
                         mGVRSceneObject.getTransform().setPositionX(xLoc);
                         mGVRSceneObject.getTransform().setPositionY(yLoc);
                         mGVRSceneObject.getTransform().setPositionZ(1.0f - (xLoc*xLoc + yLoc*yLoc));
-                        //initHitLocation
-                        //Log.e("X3DDBG", "trackpoint (x, y) " + mGVRSceneObject.getName() + ": " + xLoc + ", " + yLoc);
                     } else {
                         Log.e(TAG, "Sphere Sensor: not supported 'from field': " + mInteractiveObjectFinal.getSensorFromField() );
                     }
