@@ -16,7 +16,7 @@
 /***************************************************************************
  * A shader which an user can add in run-time.
  ***************************************************************************/
-#define TEXTURE_BIND_START 4
+#define TEXTURE_BIND_START 5
 #include "vulkan/vulkan_shader.h"
 #include "vulkan/vulkan_material.h"
 #include "engine/renderer/vulkan_renderer.h"
@@ -40,7 +40,7 @@ void VulkanShader::initialize()
 {
 }
 
-int VulkanShader::makeLayout(VulkanMaterial& vkMtl, std::vector<VkDescriptorSetLayoutBinding>& samplerBinding, int index, VulkanRenderData* vkdata)
+int VulkanShader::makeLayout(VulkanMaterial& vkMtl, std::vector<VkDescriptorSetLayoutBinding>& samplerBinding, int index, VulkanRenderData* vkdata, LightList& lights)
 {
     VkDescriptorSetLayoutBinding dummy_binding ={} ;
     if (usesMatrixUniforms()) {
@@ -52,9 +52,15 @@ int VulkanShader::makeLayout(VulkanMaterial& vkMtl, std::vector<VkDescriptorSetL
         samplerBinding.push_back(dummy_binding);
     }
 
-    // Dummy binding for Material UBO, since now a push Constant
-    dummy_binding.binding = MATERIAL_UBO_INDEX;
-    samplerBinding.push_back(dummy_binding);
+    if (getUniformDescriptor().getNumEntries()){
+        VkDescriptorSetLayoutBinding &material_uniformBinding = reinterpret_cast<VulkanUniformBlock&>(vkMtl.uniforms()).getVulkanDescriptor()->getLayoutBinding();
+        samplerBinding.push_back(material_uniformBinding);
+    }
+    else {
+        // Dummy binding for Material UBO, since now a push Constant
+        dummy_binding.binding = MATERIAL_UBO_INDEX;
+        samplerBinding.push_back(dummy_binding);
+    }
 
     if(vkdata->mesh()->hasBones() && hasBones()){
        VkDescriptorSetLayoutBinding &bones_uniformBinding = static_cast<VulkanUniformBlock*>(vkdata->getBonesUbo())->getVulkanDescriptor()->getLayoutBinding();
@@ -64,13 +70,25 @@ int VulkanShader::makeLayout(VulkanMaterial& vkMtl, std::vector<VkDescriptorSetL
         dummy_binding.binding = BONES_UBO_INDEX;
         samplerBinding.push_back(dummy_binding);
     }
-    // Right now, we dont' have support for shadow map, so add dummy binding for it
-    dummy_binding.binding = 3;
-    samplerBinding.push_back(dummy_binding);
 
-    /*
-     * TODO :: if has shadowmap, create binding for it
-     */
+    if(lights.getUBO() != nullptr){
+        VkDescriptorSetLayoutBinding &lights_uniformBinding = static_cast<VulkanUniformBlock*>(lights.getUBO())->getVulkanDescriptor()->getLayoutBinding();
+        samplerBinding.push_back(lights_uniformBinding);
+    }
+    else {
+        dummy_binding.binding = LIGHT_UBO_INDEX;
+        samplerBinding.push_back(dummy_binding);
+    }
+
+    // Dummy shadowmap binding
+    VkDescriptorSetLayoutBinding layoutBinding;
+    layoutBinding.binding = SHADOW_UBO_INDEX;
+    layoutBinding.descriptorCount = 1;
+    layoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    layoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+    layoutBinding.pImmutableSamplers = nullptr;
+    (samplerBinding).push_back(layoutBinding);
+
     index = TEXTURE_BIND_START;
     vkMtl.forEachTexture([this, &samplerBinding](const char* texname, Texture* t) mutable
     {
@@ -90,18 +108,21 @@ int VulkanShader::makeLayout(VulkanMaterial& vkMtl, std::vector<VkDescriptorSetL
 
     return index;
 }
-int VulkanShader::bindTextures(VulkanMaterial* material, std::vector<VkWriteDescriptorSet>& writes, VkDescriptorSet& descriptorSet)
+bool VulkanShader::bindTextures(VulkanMaterial* material, std::vector<VkWriteDescriptorSet>& writes, VkDescriptorSet& descriptorSet)
 {
-    int texIndex = 0;
-    bool fail = false;
-    material->forEachTexture([this, &writes, descriptorSet](const char* texname, Texture* t) mutable
+    bool success = true;
+    material->forEachTexture([this, &writes, descriptorSet, &success](const char* texname, Texture* t) mutable
     {
         VkTexture *tex = static_cast<VkTexture *>(t);
         const DataDescriptor::DataEntry* e = mTextureDesc.find(texname);
-        if ((e == NULL) || e->NotUsed)
-        {
+        if ((e == NULL) || e->NotUsed) {
             return;
         }
+        if(!t->isReady()) {
+            success = false;
+            return;
+        }
+
         VkWriteDescriptorSet write;
         memset(&write, 0, sizeof(write));
 
@@ -111,16 +132,13 @@ int VulkanShader::bindTextures(VulkanMaterial* material, std::vector<VkWriteDesc
         write.descriptorCount = 1;
         write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
         if(!t->getImage())
-            write.pImageInfo = &(static_cast<VkRenderTexture*>(t)->getDescriptorImage());
+            write.pImageInfo = &(static_cast<VkRenderTexture*>(t)->getDescriptorImage(COLOR_IMAGE));
         else
             write.pImageInfo = &(tex->getDescriptorImage());
         writes.push_back(write);
     });
-    if (!fail)
-    {
-        return texIndex;
-    }
-    return -1;
+
+    return success;
 }
 
 VulkanShader::~VulkanShader() { }
@@ -159,6 +177,7 @@ VulkanShader::~VulkanShader() { }
 
     std::string VulkanShader::makeLayout(const DataDescriptor& desc, const char* blockName, bool useGPUBuffer)
     {
+
         std::ostringstream stream;
         int bindingIndex =0;
 
@@ -210,4 +229,5 @@ VulkanShader::~VulkanShader() { }
         }
         return stream.str();
     }
+
 } /* namespace gvr */

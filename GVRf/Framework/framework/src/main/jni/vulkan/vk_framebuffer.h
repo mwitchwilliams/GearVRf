@@ -19,22 +19,30 @@
 
 namespace gvr {
 
-class VKFramebuffer final{
+class VKFramebuffer final : public VKDeviceComponent{
     vkImageBase *mAttachments[3];
 
     VkRenderPass mRenderpass;
     int mWidth;
     int mHeight;
     VkFramebuffer mFramebuffer;
+    std::vector<VkFramebuffer> mCascadeFramebuffer;
 public:
 
     ~VKFramebuffer();
+
+    vkImageBase ** getAttachments(){
+        return mAttachments;
+    }
+
+    void cleanup();
 
     void setImage(ImageType type, vkImageBase* image){
         mAttachments[type] = image;
     }
     VKFramebuffer(int width, int height) : mRenderpass(0), mWidth(width), mHeight(height), mAttachments{
-            nullptr, nullptr, nullptr} {}
+            nullptr, nullptr, nullptr} {
+    }
     int getWidth() {
         return mWidth;
     }
@@ -63,22 +71,20 @@ public:
         return mAttachments[type]->getImageLayout();
     }
 
-    VkDeviceMemory getDeviceMemory(ImageType type) {
-        return mAttachments[type]->getDeviceMemory();
-    }
-
-    const VkBuffer *getImageBuffer(ImageType type) {
-        return mAttachments[type]->getBuffer();
-    }
-
     VkDeviceSize getImageSize(ImageType type) {
         return mAttachments[type]->getSize();
     }
 
-    void createFrameBuffer(VkDevice &, int, int sample_count = 1, bool monoscopic = false);
+    void createFrameBuffer(VkDevice &, int, int layers = 1, int sample_count = 1);
     void createFramebuffer(VkDevice& device);
-    const VkFramebuffer &getFramebuffer() {
-        return mFramebuffer;
+    const VkFramebuffer &getFramebuffer(int layer) {
+        if(layer == -1) {
+            return mFramebuffer;
+        }
+        else{
+            return mCascadeFramebuffer[layer];
+        }
+
     }
 
 };

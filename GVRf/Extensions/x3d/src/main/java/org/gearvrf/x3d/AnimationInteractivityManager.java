@@ -16,12 +16,28 @@
 
 package org.gearvrf.x3d;
 
+import android.content.res.AssetFileDescriptor;
+import android.media.MediaPlayer;
+import android.net.Uri;
+
+import com.google.android.exoplayer2.ExoPlayer;
+import com.google.android.exoplayer2.PlaybackParameters;
+import com.google.android.exoplayer2.Player;
+import com.google.android.exoplayer2.SimpleExoPlayer;
+import com.google.android.exoplayer2.extractor.DefaultExtractorsFactory;
+import com.google.android.exoplayer2.source.ExtractorMediaSource;
+import com.google.android.exoplayer2.source.MediaSource;
+import com.google.android.exoplayer2.upstream.AssetDataSource;
+import com.google.android.exoplayer2.upstream.DataSource;
 import org.gearvrf.GVRAssetLoader;
+import org.gearvrf.GVRCameraRig;
 import org.gearvrf.GVRComponent;
 import org.gearvrf.GVRContext;
 import org.gearvrf.GVRImage;
 import org.gearvrf.GVRLight;
+import org.gearvrf.GVRMaterial;
 import org.gearvrf.GVRMeshCollider;
+import org.gearvrf.GVRPicker;
 import org.gearvrf.GVRPointLight;
 import org.gearvrf.GVRSpotLight;
 import org.gearvrf.GVRDirectLight;
@@ -39,6 +55,8 @@ import org.gearvrf.animation.keyframe.GVRAnimationBehavior;
 import org.gearvrf.animation.keyframe.GVRAnimationChannel;
 import org.gearvrf.animation.keyframe.GVRKeyFrameAnimation;
 
+import org.gearvrf.scene_objects.GVRVideoSceneObject;
+import org.gearvrf.scene_objects.GVRVideoSceneObjectPlayer;
 import org.gearvrf.scene_objects.GVRTextViewSceneObject;
 import org.gearvrf.script.GVRJavascriptScriptFile;
 
@@ -62,6 +80,7 @@ import org.joml.Quaternionf;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Vector;
 
@@ -118,6 +137,7 @@ public class AnimationInteractivityManager {
 
 
     private PerFrameScripting perFrameScripting = new PerFrameScripting();
+    private SensorImplementation sensorImplementation = new SensorImplementation();
 
     // Append this incremented value to GVRSceneObject names to insure unique
     // GVRSceneObjects when new GVRScene objects are generated to support animation
@@ -255,7 +275,6 @@ public class AnimationInteractivityManager {
                         //TODO: complete adding field to this Script Node when sent to TimeSensor
                         for (ScriptObject.Field field : routeFromScriptObject.getFieldsArrayList()) {
                             if (toField.equalsIgnoreCase(routeFromScriptObject.getFieldName(field))) {
-                                //routeFromScriptObject.setFromEventUtility(field, routeFromEventUtility, fromField);
                                 interactiveObject.getScriptObject().setToTimeSensor(field, routeToTimeSensor, toField);
                                 routeToTimeSensorFound = true;
                             }
@@ -684,14 +703,74 @@ public class AnimationInteractivityManager {
                 }  // end if sensor == TOUCH
             }  // end if at least sensor, eventUtility and defined object
 
-            // Sensor (such as TouchSensor) to a Script
-            //   to a DEFined Object
+            // Sensor (PlaneSensor, TouchSensor, etc) to a Script
+            //   that sets properties of a DEFined Object
             else if (interactiveObject.getScriptObject() != null) {
                 // A Sensor with a Script and defined object found
                 final InteractiveObject interactiveObjectFinal = interactiveObject;
 
                 if (interactiveObject.getSensor() != null) {
-                    if (interactiveObject.getSensor().getSensorType() == Sensor.Type.TOUCH) {
+                    if (interactiveObject.getSensor().getSensorType() == Sensor.Type.PLANE) {
+                        //Log.e("X3DDBG", "initAnimationsAndInteractivity PLANE");
+                        // a Plane Sensor
+                        interactiveObject.getSensor().getOwnerObject().forAllDescendants(
+                                new GVRSceneObject.SceneVisitor()
+                                {
+                                    public boolean visit (GVRSceneObject obj)
+                                    {
+                                        obj.attachCollider(new GVRMeshCollider(gvrContext, true));
+                                        return true;
+                                    }
+                                });
+                        interactiveObject.getSensor().addISensorEvents(new ISensorEvents() {
+                            boolean initialized = false;
+                            GVRCameraRig gvrCameraRig = gvrContext.getMainScene().getMainCameraRig();
+                            Vector3f initCameraDir = null;
+                            float[] initPlaneTranslation = new float[3];
+                            float[] initHitLocation = null;
+                            float[] planeTranslation = new float[3];
+                            GVRSceneObject gvrSceneObject = null;
+
+                            @Override
+                            public void onSensorEvent(SensorEvent event) {
+                                if (event.isActive()) {
+                                    GVRPicker.GVRPickedObject gvrPickedObject = event.getPickedObject();
+                                    if ( !initialized ) {
+                                        //Log.e("X3DDBG", "onSensorEvent PLANE event.isActive() INITIALIZED");
+                                        initialized = true;
+                                        float[] lookAt = gvrCameraRig.getLookAt();
+                                        initCameraDir = new Vector3f(lookAt[0], lookAt[1], lookAt[2]);
+                                        initHitLocation = gvrPickedObject.getHitLocation();
+                                        GVRSceneObject hitObjectSceneObject = gvrPickedObject.getHitObject();
+                                        // Primitives are a child of the GVRSceneObject with the name.
+                                        if ( hitObjectSceneObject.getName().isEmpty() ) {
+                                            hitObjectSceneObject = hitObjectSceneObject.getParent();
+                                        }
+                                        gvrSceneObject = root
+                                                .getSceneObjectByName((hitObjectSceneObject.getName() + x3dObject.TRANSFORM_TRANSLATION_));
+
+                                        initPlaneTranslation[0] = gvrSceneObject.getTransform().getPositionX();
+                                        initPlaneTranslation[1] = gvrSceneObject.getTransform().getPositionY();
+                                        initPlaneTranslation[2] = gvrSceneObject.getTransform().getPositionZ();
+                                    }
+                                    // initialize the input values for planeSensor and run the javaScript.
+                                    planeTranslation[0] = gvrSceneObject.getTransform().getPositionX();
+                                    planeTranslation[1] = gvrSceneObject.getTransform().getPositionY();
+                                    Object[] parameters = SetJavaScriptArguments(interactiveObjectFinal, planeTranslation[0], planeTranslation[1], true);
+                                    ScriptObject scriptObject = interactiveObjectFinal.getScriptObject();
+                                    ScriptObject.Field firstField = scriptObject.getField(0);
+                                    RunScript(interactiveObjectFinal, scriptObject.getFieldName(firstField), parameters);
+
+                                }
+                                else {
+                                    initialized = false;
+                                }
+                            }
+                        });
+
+                    }
+                    else if (interactiveObject.getSensor().getSensorType() == Sensor.Type.TOUCH) {
+                        // A Touch Sensor
                         interactiveObject.getSensor().getOwnerObject().forAllDescendants(
                                 new GVRSceneObject.SceneVisitor()
                                 {
@@ -708,7 +787,7 @@ public class AnimationInteractivityManager {
                             @Override
                             public void onSensorEvent(SensorEvent event) {
 
-                                Object[] parameters = SetJavaScriptArguments(interactiveObjectFinal, event.isOver(), stateChanged);
+                                Object[] parameters = SetJavaScriptArguments(interactiveObjectFinal, event.isOver(), 0, stateChanged);
                                 ScriptObject scriptObject = interactiveObjectFinal.getScriptObject();
                                 ScriptObject.Field firstField = scriptObject.getField(0);
                                 String functionName = scriptObject.getFieldName(firstField);
@@ -776,7 +855,7 @@ public class AnimationInteractivityManager {
                                 }
                             });
                     interactiveObject.getSensor().addISensorEvents(new ISensorEvents() {
-                        //boolean isRunning;
+                        boolean isMovieStateSet = false;
                         @Override
                         public void onSensorEvent(SensorEvent event) {
                             //Setup SensorEvent callback here
@@ -784,14 +863,86 @@ public class AnimationInteractivityManager {
                                     .getSceneObjectByName(interactiveObjectFinal.getDefinedItem().getName());
                             GVRComponent gvrComponent = gvrSceneObject.getComponent(GVRLight.getComponentType());
 
-                            if (event.isOver() && interactiveObjectFinal.getSensorFromField().equals(Sensor.IS_OVER)) {
-                                if (gvrComponent != null) gvrComponent.setEnable(true);
-                            } else {
-                                if (gvrComponent != null) gvrComponent.setEnable(false);
+                            if ( gvrComponent != null ) {
+                                if (event.isOver() && interactiveObjectFinal.getSensorFromField().equals(Sensor.IS_OVER)) {
+                                    if (gvrComponent != null) gvrComponent.setEnable(true);
+                                } else {
+                                    if (gvrComponent != null) gvrComponent.setEnable(false);
+                               }
                             }
+                            else if ( gvrSceneObject instanceof GVRVideoSceneObject) {
+                                // isOver, but only go thru once per isOver.
+                                if ( event.isOver() && !isMovieStateSet) {
+                                    GVRVideoSceneObject gvrVideoSceneObject = (GVRVideoSceneObject) gvrSceneObject;
+                                    GVRVideoSceneObjectPlayer gvrVideoSceneObjectPlayer = gvrVideoSceneObject.getMediaPlayer();
+                                    try {
+                                        if (interactiveObjectFinal.getSensorFromField().contains("touchTime")) {
+                                            if (interactiveObjectFinal.getDefinedItemToField().endsWith("stopTime")) {
+                                                gvrVideoSceneObjectPlayer.pause();
+                                                ExoPlayer exoPlayer = (ExoPlayer) gvrVideoSceneObjectPlayer.getPlayer();
+                                                exoPlayer.seekTo(0);
+                                            } else if (interactiveObjectFinal.getDefinedItemToField().endsWith("pauseTime")) {
+                                                gvrVideoSceneObjectPlayer.pause();
+                                            } else if (interactiveObjectFinal.getDefinedItemToField().endsWith("startTime")) {
+                                                gvrVideoSceneObjectPlayer.start();
+                                            } else {
+                                                Log.e(TAG, "Error: ROUTE to MovieTexture, " + interactiveObjectFinal.getDefinedItemToField() + " not implemented");
+                                            }
+                                        } else {
+                                            Log.e(TAG, "Error: ROUTE to MovieTexture, " + interactiveObjectFinal.getSensorFromField() + " not implemented");
+                                        }
+                                    } catch (IllegalStateException e) {
+                                        Log.e(TAG, "X3D Movie Texture: IllegalStateException: " + e);
+                                        e.printStackTrace();
+                                    } catch (Exception e) {
+                                        Log.e(TAG, "X3D Movie Texture Exception: " + e);
+                                        e.printStackTrace();
+                                    }
+                                    isMovieStateSet = true;
+                                } // end if event.isOver()
+                                else if ( !event.isOver() && isMovieStateSet){
+                                    // No longer over the TouchSensor
+                                    isMovieStateSet = false;
+                                }
+                            } // end if gvrSceneObject
                         }
                     });
                 }  // end if sensor == TOUCH
+                else if (interactiveObject.getSensor().getSensorType() == Sensor.Type.PLANE) {
+                    interactiveObject.getSensor().getOwnerObject().forAllDescendants(
+                            new GVRSceneObject.SceneVisitor()
+                            {
+                                public boolean visit (GVRSceneObject obj)
+                                {
+                                    obj.attachCollider(new GVRMeshCollider(gvrContext, true));
+                                    return true;
+                                }
+                            });
+                    interactiveObject.getSensor().addISensorEvents(new ISensorEvents() {
+                        boolean isActive = false;
+
+                        @Override
+                        public void onSensorEvent(SensorEvent event) {
+                            if ( interactiveObjectFinal.getSensor().getEnabled() ) {
+                                if (event.isActive() && !isActive) {
+                                    isActive = true;
+                                    //Log.e("X3DDBG", "PLANE Sensor isActive");
+                                    GVRPicker.GVRPickedObject gvrPickedObject = event.getPickedObject();
+                                    //float[] hitLocation = gvrPickedObject.getHitLocation();
+                                    //float hitDistance = gvrPickedObject.getHitDistance();
+
+                                    sensorImplementation.registerDrawFrameListerner(gvrPickedObject, interactiveObjectFinal);
+                                } else if ( !event.isActive() || !event.isOver() ) {
+                                    sensorImplementation.unregisterDrawFrameListerner();
+                                    GVRPicker.GVRPickedObject gvrPickedObject = null;
+                                    //Log.e("X3DDBG", "PLANE Sensor isActive reset");
+                                    isActive = false;
+                                }
+                            }// if PlaneSensor is enabled
+                        }   // end onSensorEvent
+                    });
+                }  // end if sensor == PLANESensor
+
             }  //  end sensor and definedItem != null
             // Sensor (such as TouchSensor) to an EventUnity (such as BoleanToggle)
             else if ((interactiveObject.getSensor() != null) &&
@@ -850,6 +1001,155 @@ public class AnimationInteractivityManager {
     }   //  end initAnimationsAndInteractivity.
 
 
+    private final class SensorActiveDrawFrame implements GVRDrawFrameListener {
+        @Override
+        public void onDrawFrame(float frameTime) {
+            sensorImplementation.onSensorActiveDrawFrame(frameTime);
+        }
+    }
+
+    // Supports PlaneSensor and eventually CylinderSensor, SphereSensor
+    private class SensorImplementation {
+
+        GVRDrawFrameListener mSensorOnDrawFrame = null;
+        InteractiveObject mInteractiveObjectFinal = null;
+        GVRPicker.GVRPickedObject mGVRPickedObject = null;
+        GVRSceneObject mGVRSceneObject = null;
+        Sensor.Type mSensorType;
+        String fromField = "";
+        String toField = "";
+        float[] initHitLocation = new float[3];
+        float initHitDistance = 0;
+        Vector3f initCameraDir = null;
+        float[] initPlaneTranslation = new float[3];
+        // values and booleans for checking min and max distance of PlaneSensor
+        SFVec2f mMinPosition = new SFVec2f(0, 0);
+        SFVec2f mMaxPosition = new SFVec2f(-1, -1);
+        boolean mCheckXpos = false;
+        boolean mCheckYpos = false;
+
+        boolean run = false;
+        GVRCameraRig gvrCameraRig = null;
+
+
+        final void registerDrawFrameListerner(GVRPicker.GVRPickedObject gvrPickedObject, final InteractiveObject interactiveObjectFinal ) {
+            mSensorOnDrawFrame = new SensorActiveDrawFrame();
+            gvrContext.registerDrawFrameListener(mSensorOnDrawFrame);
+            run = true;
+            mGVRPickedObject = gvrPickedObject;
+            mInteractiveObjectFinal = interactiveObjectFinal;
+            gvrCameraRig = gvrContext.getMainScene().getMainCameraRig();
+
+            if ( mInteractiveObjectFinal != null ) {
+                if (mInteractiveObjectFinal.getSensor() != null) {
+                    // initialize the 'from sensor information
+                    Sensor sensor = mInteractiveObjectFinal.getSensor();
+                    if (sensor.getSensorType() == Sensor.Type.PLANE) {
+                        mSensorType = Sensor.Type.PLANE;
+                        mMinPosition = sensor.getMinValues();
+                        mMaxPosition = sensor.getMaxValues();
+                        if ( mMinPosition.getX() <= mMaxPosition.getX()) mCheckXpos = true;
+                        if ( mMinPosition.getY() <= mMaxPosition.getY()) mCheckYpos = true;
+                        if (StringFieldMatch(mInteractiveObjectFinal.getSensorFromField(), "translation")) {
+                            fromField = "translation";
+                        } else if (StringFieldMatch(mInteractiveObjectFinal.getSensorFromField(), "trackPoint")) {
+                            fromField = "trackPoint";
+                        } else {
+                            Log.e(TAG, "Cylinder, Plane or Sphere Sensor: not supported 'from field': " + mInteractiveObjectFinal.getSensorFromField() );
+                        }
+                    } else if (sensor.getSensorType() == Sensor.Type.CYLINDER) {
+                        mSensorType = Sensor.Type.CYLINDER;
+                        Log.e(TAG, "CYLINDER Sensor not yet supported in GearVR.");
+                    } else if (sensor.getSensorType() == Sensor.Type.SPHERE) {
+                        mSensorType = Sensor.Type.SPHERE;
+                        Log.e(TAG, "SPHERE Sensor not yet supported in GearVR.");
+                    } else {
+                        Log.e(TAG, "Unsupported or Undefined Sensor.");
+                    }
+                } else {
+                    Log.e(TAG, "Cylinder, Plane or Sphere Sensor not set");
+                }
+
+                // initialize the 'to' object information
+                if (mInteractiveObjectFinal.getDefinedItem() != null) {
+                    mGVRSceneObject = mInteractiveObjectFinal.getDefinedItem().getGVRSceneObject();
+
+                    if ( mGVRSceneObject.getName().isEmpty() ) {
+                        mGVRSceneObject = mGVRSceneObject.getParent();
+                    }
+                    mGVRSceneObject = root
+                            .getSceneObjectByName((mGVRSceneObject.getName() + x3dObject.TRANSFORM_TRANSLATION_));
+
+                    if ( mGVRSceneObject != null ) {
+                        if (StringFieldMatch(mInteractiveObjectFinal.getDefinedItemToField(), "translation")) {
+                            toField = "translation";
+                            initPlaneTranslation[0] = mGVRSceneObject.getTransform().getPositionX();
+                            initPlaneTranslation[1] = mGVRSceneObject.getTransform().getPositionY();
+                            initPlaneTranslation[2] = mGVRSceneObject.getTransform().getPositionZ();
+                        } else {
+                            Log.e(TAG, "Cylinder, Plane or Sphere Sensor: not supported 'to field': " + mInteractiveObjectFinal.getDefinedItemToField());
+                        }
+                    }
+                    else {
+                        Log.e(TAG, "Problem with Cylinder, Plane or Sphere Sensor: no receiving object.");
+                    }
+                }
+            }
+            else {
+                Log.e(TAG, "Issue with Cylinder, Plane or Sphere Sensor");
+            }
+            initHitLocation = mGVRPickedObject.getHitLocation();
+            initHitDistance = mGVRPickedObject.getHitDistance();
+            float[] lookAt = gvrCameraRig.getLookAt();
+            initCameraDir = new Vector3f(lookAt[0], lookAt[1], lookAt[2]);
+        } //  end registerDrawFrameListerner
+
+        final void unregisterDrawFrameListerner() {
+            if (mSensorOnDrawFrame != null) gvrContext.unregisterDrawFrameListener(mSensorOnDrawFrame);
+            mSensorOnDrawFrame = null;
+            mInteractiveObjectFinal = null;
+            mGVRPickedObject = null;
+            mGVRSceneObject = null;
+            fromField = "";
+            toField = "";
+            run = false;
+        }
+
+        public boolean getRunState() {
+            return run;
+        }
+
+        final void onSensorActiveDrawFrame(float frameTime) {
+            if ( mSensorType == Sensor.Type.PLANE ) {
+                if ( mGVRSceneObject != null && mGVRPickedObject != null ) {
+                    float[] lookAt = gvrCameraRig.getLookAt();
+                    Vector3f cameraDir = new Vector3f(lookAt[0], lookAt[1], lookAt[2]);
+                    cameraDir.sub( initCameraDir );
+                    float x = initPlaneTranslation[0] + cameraDir.x * initHitDistance;
+                    float y = initPlaneTranslation[1] + cameraDir.y * initHitDistance;
+                    if ( mCheckXpos ) {
+                        if ( (x >= mMinPosition.getX()) && (x <= mMaxPosition.getX()) ) {
+                            mGVRSceneObject.getTransform().setPositionX( x );
+                        }
+                    }
+                    else mGVRSceneObject.getTransform().setPositionX( x );
+                    if ( mCheckYpos ) {
+                        if ( (y >= mMinPosition.getY()) && (y <= mMaxPosition.getY()) ) {
+                            mGVRSceneObject.getTransform().setPositionY( y );
+                        }
+                    }
+                    else mGVRSceneObject.getTransform().setPositionY( y );
+
+                    if (  fromField.equalsIgnoreCase("trackPoint") && toField.equalsIgnoreCase("translation")) {
+                        // trackPoint to translation
+                        mGVRSceneObject.getTransform().setPositionZ( initHitLocation[2] );
+                    }
+                }
+            }
+        }
+    }  //  end class SensorImplementation
+
+    // Supports when TimeSensor per-frame calls invoke Script
     private class PerFrameScripting {
 
         InteractiveObject interactiveObjectFinal = null;
@@ -891,7 +1191,7 @@ public class AnimationInteractivityManager {
 
             BuildInitJavaScript(interactiveObjectFinal);
 
-            parameters = SetJavaScriptArguments(this.interactiveObjectFinal, 0, false); // false is just a place holder
+            parameters = SetJavaScriptArguments(this.interactiveObjectFinal, 0, 0, false); // false is just a place holder
             parameters[0] = 0;
             if (scriptObject.getTimeStampParameter()) parameters[1] = 0;
 
@@ -925,7 +1225,7 @@ public class AnimationInteractivityManager {
                     });
                 }
                 // once we run through the initialization of this script, then we can Run the script
-                parameters = SetJavaScriptArguments(this.interactiveObjectFinal, 0, false); // false is just a place holder
+                parameters = SetJavaScriptArguments(this.interactiveObjectFinal, 0, 0, false); // false is just a place holder
                 accumulatedTime += frameTime;
                 parameters[0] = accumulatedTime % cycleInterval;
                 if (scriptObject.getTimeStampParameter()) parameters[1] = accumulatedTime;
@@ -963,7 +1263,7 @@ public class AnimationInteractivityManager {
 
     // funtion called each event and sets the arguments (parameters)
     // from INPUT_ONLY and INPUT_OUTPUT to the function that 'compiles' and run JavaScript
-    private Object[] SetJavaScriptArguments(InteractiveObject interactiveObj, Object argument0, boolean stateChanged) {
+    private Object[] SetJavaScriptArguments(InteractiveObject interactiveObj, Object argument0, Object argument1, boolean stateChanged) {
         ArrayList<Object> scriptParameters = new ArrayList<Object>();
 
         ScriptObject scriptObject = interactiveObj.getScriptObject();
@@ -976,6 +1276,7 @@ public class AnimationInteractivityManager {
                 DefinedItem definedItem = scriptObject.getFromDefinedItem(field);
                 EventUtility eventUtility = scriptObject.getFromEventUtility(field);
                 TimeSensor timeSensor = scriptObject.getFromTimeSensor(field);
+
 
                 if (fieldType.equalsIgnoreCase("SFBool")) {
                     if (definedItem != null) {
@@ -1002,12 +1303,22 @@ public class AnimationInteractivityManager {
                         scriptParameters.add( interactiveObj.getEventUtility().getToggle() );
                     }
                 }  // end if SFBool
+                else if ((fieldType.equalsIgnoreCase("SFVec2f")) && (definedItem == null)) {
+                    // data from a Plane Sensor
+                    if (interactiveObj.getSensorFromField() != null) {
+                        if (interactiveObj.getSensor().getSensorType() == Sensor.Type.PLANE) {
+                            scriptParameters.add( argument0 );
+                            scriptParameters.add( argument1 );
+                        }
+                    }
+                }
                 else if ((fieldType.equalsIgnoreCase("SFFloat")) && (definedItem == null)) {
                     if (timeSensor != null) {
                         scriptParameters.add( timeSensor.getCycleInterval() );
                     }
                     else scriptParameters.add(argument0); // the time passed in from an SFTime node
-                } else if (scriptObject.getFromDefinedItem(field) != null) {
+                }
+                else if (scriptObject.getFromDefinedItem(field) != null) {
                     if (fieldType.equalsIgnoreCase("SFColor")) {
                         float[] color = {0, 0, 0};
                         if (definedItem.getGVRMaterial() != null) {
@@ -1147,6 +1458,28 @@ public class AnimationInteractivityManager {
                         }  // end SFVec3f GVRSceneObject
                     }  // end if SFVec3f
 
+                    else if (fieldType.equalsIgnoreCase("SFVec2f")) {
+                        float[] parameter = {0, 0};
+                        if (definedItem.getGVRMaterial() != null) {
+                            if ( StringFieldMatch( scriptObject.getFromDefinedItemField(field), "translation") ) {
+                                parameter[0] = definedItem.getTextureTranslation().getX();
+                                parameter[1] = -definedItem.getTextureTranslation().getY();
+                            }
+                            else if ( StringFieldMatch( scriptObject.getFromDefinedItemField(field), "scale") ) {
+                                parameter[0] = definedItem.getTextureScale().getX();
+                                parameter[1] = definedItem.getTextureScale().getY();
+                            }
+                            else if ( StringFieldMatch( scriptObject.getFromDefinedItemField(field), "center") ) {
+                                parameter[0] = -definedItem.getTextureCenter().getX();
+                                parameter[1] = definedItem.getTextureCenter().getY();
+                            }
+                            // append the parameters of the lights passed to the SCRIPT's javascript code
+                            for (int i = 0; i < parameter.length; i++) {
+                                scriptParameters.add(parameter[i]);
+                            }
+                        }  // end SFVec3f GVRMaterial
+                    }  // end if SFVec2f
+
                     else if (fieldType.equalsIgnoreCase("SFFloat")) {
                         if (definedItem.getGVRMaterial() != null) {
                             if ( StringFieldMatch( scriptObject.getFromDefinedItemField(field), "shininess") ) {
@@ -1157,6 +1490,11 @@ public class AnimationInteractivityManager {
                             else if ( StringFieldMatch( scriptObject.getFromDefinedItemField(field), "transparency") ) {
                                 scriptParameters.add(definedItem.getGVRMaterial().getOpacity());
                             }
+
+                            else if ( StringFieldMatch( scriptObject.getFromDefinedItemField(field), "rotation") ) {
+                                scriptParameters.add(definedItem.getTextureRotation().getValue());
+                            }
+
                         } else if (definedItem.getGVRSceneObject() != null) {
                             // checking if it's a light
                             GVRComponent gvrComponent = definedItem.getGVRSceneObject().getComponent(
@@ -1180,7 +1518,57 @@ public class AnimationInteractivityManager {
                                 scriptParameters.add(parameter);
                             }
                         }
+                        else if (definedItem.getGVRVideoSceneObject() != null) {
+                            GVRVideoSceneObjectPlayer gvrVideoSceneObjectPlayer = definedItem.getGVRVideoSceneObject().getMediaPlayer();
+                            if ( StringFieldMatch( scriptObject.getFromDefinedItemField(field),"speed") ) {
+                                if ( gvrVideoSceneObjectPlayer == null) {
+                                    // special case upon initialization of the movie texture, so the speed is init to 1
+                                    scriptParameters.add( 1 );
+                                }
+                                else if ( gvrVideoSceneObjectPlayer.getPlayer() == null) {
+                                    ; // could occur prior to movie engine is setup
+                                }
+                                else {
+                                    ExoPlayer exoPlayer = (ExoPlayer) gvrVideoSceneObjectPlayer.getPlayer();
+                                    PlaybackParameters currPlaybackParamters = exoPlayer.getPlaybackParameters();
+                                    scriptParameters.add( currPlaybackParamters.speed );
+                                }
+                            } // end check for speed
+                        }  // end if SFFloat GVRVideoSceneObject
                     }  // end if SFFloat
+                    else if (fieldType.equalsIgnoreCase("SFTime")) {
+                        if (definedItem.getGVRVideoSceneObject() != null) {
+                            GVRVideoSceneObjectPlayer gvrVideoSceneObjectPlayer = definedItem.getGVRVideoSceneObject().getMediaPlayer();
+                            if ( StringFieldMatch( scriptObject.getFromDefinedItemField(field),"duration") ) {
+                                if ( gvrVideoSceneObjectPlayer == null) {
+                                    // special case upon initialization of the movie texture, so the speed is init to 1
+                                    scriptParameters.add( 1 );
+                                }
+                                else if ( gvrVideoSceneObjectPlayer.getPlayer() == null) {
+                                    ; // could occur prior to movie engine is setup
+                                }
+                                else {
+                                    ExoPlayer exoPlayer = (ExoPlayer) gvrVideoSceneObjectPlayer.getPlayer();
+                                    scriptParameters.add( exoPlayer.getDuration() );
+                                }
+                            } // end check for duration
+                            else if ( StringFieldMatch( scriptObject.getFromDefinedItemField(field),"elapsedTime") ) {
+                                if ( gvrVideoSceneObjectPlayer == null) {
+                                    // special case upon initialization of the movie texture, so the elapsedTime is init to 0
+                                    scriptParameters.add( 0 );
+                                }
+                                else if ( gvrVideoSceneObjectPlayer.getPlayer() == null) {
+                                    ; // could occur prior to movie engine is setup
+                                }
+                                else {
+                                    ExoPlayer exoPlayer = (ExoPlayer) gvrVideoSceneObjectPlayer.getPlayer();
+                                    // getContentPosition is for possible advertisements, and returns the same
+                                    // value as getCurrentPosition if no ads.
+                                    scriptParameters.add( exoPlayer.getContentPosition() );
+                                }
+                            } // end check for elapsedTime
+                        }  // end if SFTime GVRVideoSceneObject
+                    } // end if SFTime
                     else if (fieldType.equalsIgnoreCase("SFInt32")) {
                         int parameter = 0;
                         if (definedItem.getGVRSceneObject() != null) {
@@ -1277,7 +1665,7 @@ public class AnimationInteractivityManager {
             if (interactiveObject.getScriptObject() != null) {
 
                 BuildInitJavaScript(interactiveObject);
-                Object[] parameters = SetJavaScriptArguments(interactiveObject, 0, false);
+                Object[] parameters = SetJavaScriptArguments(interactiveObject, 0, 0,false);
                 parameters[0] = 0;
                 if (interactiveObject.getScriptObject().getTimeStampParameter()) parameters[1] = 0;
 
@@ -1353,6 +1741,11 @@ public class AnimationInteractivityManager {
         ScriptObject scriptObject = interactiveObject.getScriptObject();
         int argumentNum = 1;
         if (scriptObject.getTimeStampParameter()) argumentNum = 2;
+        if ( interactiveObject.getSensor() != null ) {
+            if ( interactiveObject.getSensor().getSensorType() == Sensor.Type.PLANE) {
+                argumentNum = 2;
+            }
+        }
 
         // Get the parameters on X3D data types that are included with this JavaScript
         if ( V8JavaScriptEngine ) {
@@ -1370,12 +1763,18 @@ public class AnimationInteractivityManager {
                                 + "], params[" + (argumentNum + 3) + "]);\n";
                         argumentNum += 4;
                     }  // end if SFRotation, a 4-value parameter
+                    else if (fieldType.equalsIgnoreCase("SFVec2f")) {
+                        gearVRinitJavaScript += scriptObject.getFieldName(field) + " = new " + scriptObject.getFieldType(field) +
+                                "( params[" + argumentNum + "], params[" + (argumentNum + 1) + "]);\n";
+                        argumentNum += 2;
+                    }  // end if SFVec2f, a 2-value parameter
 
-                    else if ((fieldType.equalsIgnoreCase("SFFloat")) || (fieldType.equalsIgnoreCase("SFBool")) || (fieldType.equalsIgnoreCase("SFInt32")) ) {
+                    else if ((fieldType.equalsIgnoreCase("SFFloat")) || (fieldType.equalsIgnoreCase("SFBool"))
+                            || (fieldType.equalsIgnoreCase("SFInt32")) || (fieldType.equalsIgnoreCase("SFTime")) ) {
                         gearVRinitJavaScript += scriptObject.getFieldName(field) + " = new " + scriptObject.getFieldType(field) +
                                 "( params[" + argumentNum + "]);\n";
                         argumentNum += 1;
-                    }  // end if SFFloat, SFBool or SFInt32 - a single parameter
+                    }  // end if SFFloat, SFBool, SFInt32 or SFTime - a single parameter
                     else if (fieldType.equalsIgnoreCase("SFString") ) {
                         gearVRinitJavaScript += scriptObject.getFieldName(field) + " = new " + scriptObject.getFieldType(field) +
                                 "( params[" + argumentNum + "]);\n";
@@ -1540,7 +1939,7 @@ public class AnimationInteractivityManager {
                     // However, not all JavaScript functions set returned-values, and thus left null.  For
                     // example the initialize() method may not set some Script field values, so don't
                     // process those and thus check if returnedJavaScriptValue != null
-                    if ((returnedJavaScriptValue != null) || ( !(returnedJavaScriptValue instanceof V8Object) )) {
+                    if ((returnedJavaScriptValue != null) && ( !(returnedJavaScriptValue instanceof V8Object) )) {
                         if (fieldType.equalsIgnoreCase("SFBool")) {
                             SFBool sfBool = (SFBool) returnedJavaScriptValue;
                             if ( scriptObjectToDefinedItem != null) {
@@ -1571,10 +1970,29 @@ public class AnimationInteractivityManager {
                         else if (fieldType.equalsIgnoreCase("SFFloat")) {
                             SFFloat sfFloat = (SFFloat) returnedJavaScriptValue;
                             if (scriptObjectToDefinedItem.getGVRMaterial() != null) {
+                                GVRMaterial gvrMaterial= scriptObjectToDefinedItem.getGVRMaterial();
+                                // shininess and transparency are part of X3D Material node
                                 if ( StringFieldMatch( scriptObject.getToDefinedItemField(fieldNode), "shininess") ) {
-                                    scriptObjectToDefinedItem.getGVRMaterial().setSpecularExponent(sfFloat.getValue());
+                                    gvrMaterial.setSpecularExponent(sfFloat.getValue());
                                 } else if ( StringFieldMatch( scriptObject.getToDefinedItemField(fieldNode), "transparency") ) {
-                                    scriptObjectToDefinedItem.getGVRMaterial().setOpacity(sfFloat.getValue());
+                                    gvrMaterial.setOpacity(sfFloat.getValue());
+                                }
+                                else if ( StringFieldMatch( scriptObject.getToDefinedItemField(fieldNode), "rotation")  ) {
+                                    // rotationn is part of TextureTransform node
+                                    scriptObjectToDefinedItem.setTextureRotation( sfFloat.getValue() );
+
+                                    Matrix3f textureTransform = SetTextureTransformMatrix(
+                                            scriptObjectToDefinedItem.getTextureTranslation(),
+                                            scriptObjectToDefinedItem.getTextureCenter(),
+                                            scriptObjectToDefinedItem.getTextureScale(),
+                                            scriptObjectToDefinedItem.getTextureRotation());
+
+                                    float[] texMtx = new float[9];
+                                    textureTransform.get(texMtx);
+                                    gvrMaterial.setFloatArray("texture_matrix", texMtx);
+                                }
+                                else {
+                                    Log.e(TAG, "Error: Not setting SFFloat to Material '" + scriptObject.getFieldName(fieldNode) + "' value from SCRIPT '" + scriptObject.getName() + "'." );
                                 }
                             } else if (scriptObjectToDefinedItem.getGVRSceneObject() != null) {
                                 GVRComponent gvrComponent = scriptObjectToDefinedItem.getGVRSceneObject().getComponent(
@@ -1606,8 +2024,19 @@ public class AnimationInteractivityManager {
                                     }
                                 }  //  end presumed to be a light
                             }  //  end GVRScriptObject ! null
+                            else if ( scriptObjectToDefinedItem.getGVRVideoSceneObject() != null) {
+                                if ( StringFieldMatch( scriptObject.getToDefinedItemField(fieldNode), "speed") ||
+                                        StringFieldMatch( scriptObject.getToDefinedItemField(fieldNode), "pitch") ) {
+                                    GVRVideoSceneObjectPlayer gvrVideoSceneObjectPlayer = scriptObjectToDefinedItem.getGVRVideoSceneObject().getMediaPlayer();
+                                    ExoPlayer exoPlayer = (ExoPlayer) gvrVideoSceneObjectPlayer.getPlayer();
+
+                                    PlaybackParameters currPlaybackParamters = exoPlayer.getPlaybackParameters();
+                                    PlaybackParameters playbackParamters = new PlaybackParameters(sfFloat.getValue(), sfFloat.getValue());
+                                    exoPlayer.setPlaybackParameters(playbackParamters);
+                                }
+                            }
                             else {
-                                Log.e(TAG, "Error: Not setting SFFloat '" + scriptObject.getFieldName(fieldNode) + "' value from SCRIPT '" + scriptObject.getName() + "'." );
+                                Log.e(TAG, "Error: Not setting SFFloat '" + scriptObject.getToDefinedItemField(fieldNode) + "' value from SCRIPT '" + scriptObject.getName() + "'." );
                             }
                         }  //  end SFFloat
                         else if (fieldType.equalsIgnoreCase("SFTime")) {
@@ -1623,8 +2052,25 @@ public class AnimationInteractivityManager {
                                 else if ( StringFieldMatch( scriptObject.getFieldName(fieldNode), "cycleInterval") ) {
                                     timeSensor.setCycleInterval( (float)sfTime.getValue() );
                                 }
-                                else Log.e(TAG, "Error: Not setting SFTime '" + scriptObject.getFieldName(fieldNode) + "' value from SCRIPT '" + scriptObject.getName() + "'." );
-                           }
+                                else Log.e(TAG, "Error: Not setting " + (float)sfTime.getValue() + " to SFTime '" +
+                                            scriptObject.getFieldName(fieldNode) + "' value from SCRIPT '" + scriptObject.getName() + "'." );
+                            }
+                            else if ( scriptObject.getToDefinedItemField( fieldNode ) != null) {
+                                DefinedItem definedItem = scriptObject.getToDefinedItem(fieldNode);
+                                if ( definedItem.getGVRVideoSceneObject() != null ) {
+                                    GVRVideoSceneObjectPlayer gvrVideoSceneObjectPlayer = scriptObjectToDefinedItem.getGVRVideoSceneObject().getMediaPlayer();
+                                    ExoPlayer exoPlayer = (ExoPlayer) gvrVideoSceneObjectPlayer.getPlayer();
+                                    if (StringFieldMatch(scriptObject.getToDefinedItemField(fieldNode), "startTime")) {
+                                        exoPlayer.seekTo( (long)sfTime.getValue() );
+                                    }
+                                    else Log.e(TAG, "Error: MovieTexture " + scriptObject.getToDefinedItemField(fieldNode) + " in " +
+                                            scriptObject.getName() + " script not supported." );
+                                }
+                                else Log.e(TAG, "Error: Not setting " + (float)sfTime.getValue() + " to SFTime. " +
+                                        "MovieTexture node may not be defined to connect from SCRIPT '" + scriptObject.getName() + "'." );
+
+                            }
+                            else Log.e(TAG, "Error: Not setting SFTime '" + scriptObject.getFieldName(fieldNode) + "' value from SCRIPT '" + scriptObject.getName() + "'." );
                         }  //  end SFTime
                         else if (fieldType.equalsIgnoreCase("SFColor")) {
                             SFColor sfColor = (SFColor) returnedJavaScriptValue;
@@ -1723,6 +2169,41 @@ public class AnimationInteractivityManager {
                                 Log.e(TAG, "Error: Not setting SFVec3f '" + scriptObject.getFieldName(fieldNode) + "' value from SCRIPT '" + scriptObject.getName() + "'." );
                             }
                         }  //  end SFVec3f
+                        else if (fieldType.equalsIgnoreCase("SFVec2f")) {
+                            SFVec2f sfVec2f = (SFVec2f) returnedJavaScriptValue;
+                            if (scriptObjectToDefinedItem.getGVRMaterial() != null) {
+                                //  SFVec2f change to a Texture Transform
+                                GVRMaterial gvrMaterial= scriptObjectToDefinedItem.getGVRMaterial();
+                                if ( StringFieldMatch( scriptObject.getToDefinedItemField(fieldNode), "translation")  ||
+                                        StringFieldMatch( scriptObject.getToDefinedItemField(fieldNode), "scale")  ||
+                                        StringFieldMatch( scriptObject.getToDefinedItemField(fieldNode), "center")  ) {
+
+                                    if ( StringFieldMatch( scriptObject.getToDefinedItemField(fieldNode), "translation")  )
+                                        scriptObjectToDefinedItem.setTextureTranslation(sfVec2f.getX(), -sfVec2f.getY());
+                                    else if ( StringFieldMatch( scriptObject.getToDefinedItemField(fieldNode), "scale")  )
+                                        scriptObjectToDefinedItem.setTextureScale( sfVec2f.getX(), sfVec2f.getY() );
+                                    else if ( StringFieldMatch( scriptObject.getToDefinedItemField(fieldNode), "center")  )
+                                        scriptObjectToDefinedItem.setTextureCenter( -sfVec2f.getX(), sfVec2f.getY());
+
+
+                                    Matrix3f textureTransform = SetTextureTransformMatrix(
+                                            scriptObjectToDefinedItem.getTextureTranslation(),
+                                            scriptObjectToDefinedItem.getTextureCenter(),
+                                            scriptObjectToDefinedItem.getTextureScale(),
+                                            scriptObjectToDefinedItem.getTextureRotation());
+                                    float[] texMtx = new float[9];
+                                    textureTransform.get(texMtx);
+                                    gvrMaterial.setFloatArray("texture_matrix", texMtx);
+                                }
+
+                                else {
+                                    Log.e(TAG, "Error: Not setting SFVec2f '" + scriptObject.getFieldName(fieldNode) + "' value from SCRIPT '" + scriptObject.getName() + "'." );
+                                }
+                            }
+                            else {
+                                Log.e(TAG, "Error: Not setting SFVec2f '" + scriptObject.getFieldName(fieldNode) + "' value from SCRIPT '" + scriptObject.getName() + "'." );
+                            }
+                        } // end SFVec2f
                         else if (fieldType.equalsIgnoreCase("SFRotation")) {
                             SFRotation sfRotation = (SFRotation) returnedJavaScriptValue;
                             if (scriptObjectToDefinedItem.getGVRSceneObject() != null) {
@@ -1824,16 +2305,43 @@ public class AnimationInteractivityManager {
                                 }
                             }  // end GVRTexture != null
 
+                            else if (scriptObjectToDefinedItem.getGVRVideoSceneObject() != null) {
+                                //  MFString change to a GVRVideoSceneObject object
+                                if (StringFieldMatch(scriptObject.getToDefinedItemField(fieldNode), "url")) {
+                                    try {
+                                        GVRVideoSceneObjectPlayer gvrVideoSceneObjectPlayer = scriptObjectToDefinedItem.getGVRVideoSceneObject().getMediaPlayer();
+                                        ExoPlayer exoPlayer = (ExoPlayer) gvrVideoSceneObjectPlayer.getPlayer();
+                                        exoPlayer.stop();
+
+                                        final DataSource.Factory dataSourceFactory = new DataSource.Factory() {
+                                            @Override
+                                            public DataSource createDataSource() {
+                                                return new AssetDataSource(gvrContext.getContext());
+                                            }
+                                        };
+                                        final MediaSource mediaSource = new ExtractorMediaSource(Uri.parse("asset:///" + mfString.get1Value(0)),
+                                                dataSourceFactory,
+                                                new DefaultExtractorsFactory(), null, null);
+                                        exoPlayer.prepare(mediaSource);
+                                        Log.e(TAG, "Load movie " + mfString.get1Value(0) + ".");
+                                        gvrVideoSceneObjectPlayer.start();
+                                    } catch (Exception e) {
+                                        Log.e(TAG, "X3D MovieTexture Asset " + mfString.get1Value(0) + " not loaded." + e);
+                                        e.printStackTrace();
+                                    }
+
+                                }  //  end definedItem != null, contains url
+                                else {
+                                    Log.e(TAG, "Error: No MovieTexure url associated with MFString '" + scriptObject.getFieldName(fieldNode) + "' value from SCRIPT '" + scriptObject.getName() + "'." );
+                                }
+                            }  // end GVRVideoSceneObject != null
+
                             if (scriptObjectToDefinedItem.getGVRTextViewSceneObject() != null) {
                                 GVRTextViewSceneObject gvrTextViewSceneObject = scriptObjectToDefinedItem.getGVRTextViewSceneObject();
                                 if (scriptObject.getToDefinedItemField(fieldNode).equalsIgnoreCase("string")) {
                                     gvrTextViewSceneObject.setText(mfString.get1Value(0));
                                 }
                                 else Log.e(TAG, "Error: Setting not MFString string '" + scriptObject.getFieldName(fieldNode) + "' value from SCRIPT '" + scriptObject.getName() + "'." );
-                            }
-
-                            else {
-                                Log.e(TAG, "Error: Not setting MFString '" + scriptObject.getFieldName(fieldNode) + "' value from SCRIPT '" + scriptObject.getName() + "'.");
                             }
                         }  //  end MFString
                         else {
@@ -1846,10 +2354,10 @@ public class AnimationInteractivityManager {
                 }  //  end OUTPUT-ONLY or INPUT_OUTPUT
             }  // end for-loop list of fields for a single script
         } catch (Exception e) {
+            Log.e(TAG, "Error setting values returned from JavaScript in SCRIPT '" +
+                            interactiveObjectFinal.getScriptObject().getName() +
+                    "'. Check JavaScript or ROUTE's.  Exception: " + e);
 
-            Log.e(TAG, "Error setting values returned from JavaScript in SCRIPT node " +
-                    interactiveObjectFinal.getScriptObject().getName() +
-                    ".  Check JavaScript or ROUTE's.  Exception: " + e);
         }
     }  //  end  SetResultsFromScript
 
@@ -1922,8 +2430,7 @@ public class AnimationInteractivityManager {
     }
 
 
-
-    }  //  end AnimationInteractivityManager class
+}  //  end AnimationInteractivityManager class
 
 
 

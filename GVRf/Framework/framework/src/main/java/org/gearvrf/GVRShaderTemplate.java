@@ -65,6 +65,8 @@ import org.gearvrf.utility.Log;
 public class GVRShaderTemplate extends GVRShader
 {
     private final static String TAG = "GVRShaderTemplate";
+    // Keeping the start of shadow attribute from 20 since locations less than it are used up by vertex descriptor and texture coords.
+    private final int shadowmapStartLocation = 20;
 
     protected class LightClass
     {
@@ -117,7 +119,7 @@ public class GVRShaderTemplate extends GVRShader
      */
     public GVRShaderTemplate(String uniformDescriptor, String textureDescriptor, String vertexDescriptor, GLSLESVersion glslVersion)
     {
-       super(uniformDescriptor, textureDescriptor, vertexDescriptor, glslVersion);
+        super(uniformDescriptor, textureDescriptor, vertexDescriptor, glslVersion);
         mHasVariants = true;
     }
 
@@ -137,6 +139,10 @@ public class GVRShaderTemplate extends GVRShader
     protected void setSegment(String segmentName, String shaderSource)
     {
         super.setSegment(segmentName, shaderSource);
+        if (shaderSource == null)
+        {
+            return;
+        }
         Pattern pattern = Pattern.compile("HAS_([a-zA-Z0-9_]+)");
         Matcher matcher = pattern.matcher(shaderSource);
         if (mShaderDefines == null) mShaderDefines = new HashSet<String>();
@@ -352,21 +358,18 @@ public class GVRShaderTemplate extends GVRShader
                 String segmentSource = entry.getValue();
                 if (segmentSource == null)
                     segmentSource = "";
-                if (!definedNames.containsKey(key) ||
-                    (definedNames.get(key) != 0)) {
+                else if (!definedNames.containsKey(key) ||
+                        (definedNames.get(key) != 0))
+                {
                     shaderSource.append("#define HAS_" + key + " 1;\n");
                 }
                 combinedSource = combinedSource.replace("@" + key, segmentSource);
             }
         }
+
         combinedSource = combinedSource.replace("@ShaderName", getClass().getSimpleName());
         combinedSource = combinedSource.replace("@LIGHTSOURCES", lightShaderSource);
         combinedSource = combinedSource.replace("@MATERIAL_UNIFORMS", material.makeShaderLayout());
-        if(material != null && combinedSource.contains("Material_ubo"))
-            material.useGpuBuffer(true);
-        else
-            material.useGpuBuffer(false);
-
         combinedSource = combinedSource.replace("@BONES_UNIFORMS", GVRShaderManager.makeLayout(sBonesDescriptor, "Bones_ubo", true));
         if (type.equals("Vertex"))
         {
@@ -422,6 +425,7 @@ public class GVRShaderTemplate extends GVRShader
      * @param scene
      *            scene being rendered
      */
+    @Override
     public int bindShader(GVRContext context, IRenderable rdata, GVRScene scene, boolean isMultiview)
     {
         GVRMesh mesh = rdata.getMesh();
@@ -464,7 +468,7 @@ public class GVRShaderTemplate extends GVRShader
                     writeShader(context, "V-" + signature + ".glsl", vertexShaderSource);
                     writeShader(context, "F-" + signature + ".glsl", fragmentShaderSource);
                 }
-                Log.e(TAG, "SHADER: generated shader #%d %s", nativeShader, signature);
+                Log.i(TAG, "SHADER: generated shader #%d %s", nativeShader, signature);
             }
             if (nativeShader > 0)
             {
@@ -515,7 +519,7 @@ public class GVRShaderTemplate extends GVRShader
                     writeShader(context, "V-" + signature + ".glsl", vertexShaderSource);
                     writeShader(context, "F-" + signature + ".glsl", fragmentShaderSource);
                 }
-                Log.e(TAG, "SHADER: generated shader #%d %s", nativeShader, signature);
+                Log.i(TAG, "SHADER: generated shader #%d %s", nativeShader, signature);
             }
             return nativeShader;
         }
@@ -578,6 +582,7 @@ public class GVRShaderTemplate extends GVRShader
      */
     private String generateLightFragmentShaderLoop(GVRScene scene, Map<String, LightClass> lightClasses)
     {
+        int shadowMapLocation = shadowmapStartLocation;
         String lightFunction = "\nvec4 LightPixel(Surface s)\n{\n"
                                + "    vec4 color = vec4(0.0, 0.0, 0.0, 0.0);\n"
                                + "    vec4 c;\n"
@@ -609,8 +614,8 @@ public class GVRShaderTemplate extends GVRShader
             }
             if (lclass.VertexDescriptor != null)
             {
-                String vertexOutputs = lclass.VertexOutputs.replace("$PREFIX", "in");
-
+                String vertexOutputs = lclass.VertexOutputs.replace("$PREFIX", "layout(location = " + shadowMapLocation + ") in");
+                shadowMapLocation += lclass.Count;
                 lightDefs += vertexOutputs.replace("$COUNT", lclass.Count.toString());
             }
             lightDefs += "\n" + lightShader + "\n";
@@ -639,6 +644,7 @@ public class GVRShaderTemplate extends GVRShader
      */
     private String generateLightVertexShaderLoop(GVRScene scene, Map<String, LightClass> lightClasses)
     {
+        int shadowMapLocation = shadowmapStartLocation;
         String lightSources = "";
         String lightDefs = "";
         String lightFunction = "\nvoid LightVertex(Vertex vertex)\n{\n";
@@ -663,7 +669,8 @@ public class GVRShaderTemplate extends GVRShader
             }
             if (vertexOutputs != null)
             {
-                vertexOutputs = vertexOutputs.replace("$PREFIX", "out");
+                vertexOutputs = vertexOutputs.replace("$PREFIX", "layout(location = " + shadowMapLocation + ") out");
+                shadowMapLocation += lclass.Count;
                 lightDefs += vertexOutputs.replace("$COUNT", lclass.Count.toString());
             }
             if (lclass.Count > 1)

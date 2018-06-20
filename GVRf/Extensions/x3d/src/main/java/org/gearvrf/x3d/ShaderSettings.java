@@ -15,12 +15,16 @@
 
 package org.gearvrf.x3d;
 
+import java.util.ArrayList;
 import java.util.concurrent.Future;
 
 import org.gearvrf.GVRMaterial;
 
 
 import org.gearvrf.GVRTexture;
+import org.gearvrf.utility.Log;
+
+import org.gearvrf.x3d.data_types.MFString;
 import org.gearvrf.x3d.data_types.SFFloat;
 import org.gearvrf.x3d.data_types.SFVec2f;
 import org.joml.Matrix3f;
@@ -38,11 +42,29 @@ import org.joml.Matrix3f;
 
 public class ShaderSettings
 {
+  private static final String TAG = "ShaderSetting";
+
   private String nameAppearance = ""; // set if there is a DEF in Appearance
                                       // node
   private String nameMaterial = ""; // set if there is a DEF in Material node
+
+    private String nameMovieTexture = ""; // set if there is a DEF in MovieTexture node
+    private boolean movieTextureLoop = false;
+
   private String nameTextureTransform = ""; // set if there is a DEF in
+
   // TextureTransform node
+
+  // Multi-Texture variables
+  //TODO: just an initial version of MultiTexture.
+  private boolean multiTexture = false; // set true if multi-texturing
+  private String nameMultiTexture = ""; // set if there is a DEF in
+  // MultiTexture node
+  private GVRTexture textureMap0 = null;
+  private GVRTexture textureMap1 = null;
+  private MFString multiTextureModeMFString = new MFString();
+  private X3Dobject.MultiTextureModes multiTextureMode = X3Dobject.MultiTextureModes.MULTIPLY;
+
 
   private SFVec2f textureCenter = new SFVec2f( 0, 0 );
   private SFVec2f textureScale =  new SFVec2f( 1, 1 );
@@ -70,6 +92,7 @@ public class ShaderSettings
 
 
   public GVRTexture texture = null;
+    public ArrayList<String> movieTextures = new ArrayList<String>();
 
   public String fragmentShaderLights = "";
   
@@ -80,6 +103,8 @@ public class ShaderSettings
 	material = m;
     nameAppearance = ""; // set if there is a DEF in Appearance node
     nameMaterial = ""; // set if there is a DEF in Material node
+      nameMovieTexture = "";
+        movieTextureLoop = false;
     nameTextureTransform = ""; // set if there is a DEF in TextureTransform
     // node
 
@@ -111,8 +136,21 @@ public class ShaderSettings
       }
     }
 
+    multiTexture = false; // set true if multi-texturing
+    nameMultiTexture = ""; // set if there is a DEF in
+    // MultiTexture node
+    textureMap0 = null;
+    textureMap1 = null;
+    multiTextureModeMFString.clear();
+    multiTextureMode = X3Dobject.MultiTextureModes.MULTIPLY;
+
+
     texture = null;
+
+      movieTextures.clear();
+
     textureMatrix = null;
+
   }
 
 
@@ -147,6 +185,26 @@ public class ShaderSettings
     return this.nameMaterial;
   }
 
+
+  public void setMovieTextureName(String name)
+  {
+    this.nameMovieTexture = name;
+  }
+
+  public String getMovieTextureName()
+  {
+    return this.nameMovieTexture;
+  }
+
+  public void setMovieTextureLoop(boolean movieTextureLoop)
+  {
+    this.movieTextureLoop = movieTextureLoop;
+  }
+
+  public boolean getMovieTextureLoop() {
+    return this.movieTextureLoop;
+  }
+
   public void setTextureTransformName(String name)
   {
     this.nameTextureTransform = name;
@@ -155,6 +213,7 @@ public class ShaderSettings
   public String getTextureTransformName()
   {
     return this.nameTextureTransform;
+
   }
 
   public void setDiffuseColor(float[] diffuseColor)
@@ -241,4 +300,82 @@ public class ShaderSettings
   {
       return this.textureTranslation;
   }
+
+  protected void setMultiTexture(boolean multiTextureBoolean)
+  {
+    this.multiTexture = multiTextureBoolean;
+  }
+  protected boolean getMultiTexture()
+  {
+    return this.multiTexture;
+  }
+  protected void setMultiTextureName(String multiTextureString)
+  {
+    this.nameMultiTexture = multiTextureString;
+  }
+  protected String getMultiTextureName()
+  {
+    return this.nameMultiTexture;
+  }
+  protected void setMultiTextureMode(MFString modeMFString)
+  {
+    multiTextureModeMFString = modeMFString;
+    boolean set = false;
+    int modeValueNumber = 0;
+    int checkingModeValueNumber = 0;
+    while ( !set && (modeValueNumber < multiTextureModeMFString.size() ) ) {
+        checkingModeValueNumber = modeValueNumber;
+      String modeString = multiTextureModeMFString.get1Value(modeValueNumber);
+      if (modeString.equalsIgnoreCase("MODULATE"))
+        multiTextureMode = X3Dobject.MultiTextureModes.MULTIPLY;
+      else if (modeString.equalsIgnoreCase("ADD"))
+        multiTextureMode = X3Dobject.MultiTextureModes.ADD;
+      else if (modeString.equalsIgnoreCase("SUBTRACT"))
+        multiTextureMode = X3Dobject.MultiTextureModes.SUBTRACT;
+      else if (modeString.equalsIgnoreCase("ADDSMOOTH"))
+        multiTextureMode = X3Dobject.MultiTextureModes.SMOOTH_ADD;
+      else if (modeString.equalsIgnoreCase("ADDSIGNED"))
+        multiTextureMode = X3Dobject.MultiTextureModes.SIGNED_ADD;
+      else {
+          modeValueNumber++;
+      }
+      if ( checkingModeValueNumber == modeValueNumber ) set = true;
+    }
+    if (!set) {
+        String[] modes = new String[multiTextureModeMFString.size()];
+        multiTextureModeMFString.getValue( modes );
+        String modeList = "";
+        for (int i = 0; i < modes.length; i++ ) {
+            modeList += modes[i] + " ";
+        }
+        Log.e(TAG, "MultiTexture modes '" + modeList + "' not implemented in GearVR.");
+        Log.e(TAG, "   Using MultiTexture 'MODULATE' mode default instead.");
+        multiTextureMode = X3Dobject.MultiTextureModes.MULTIPLY;
+    }
+  }
+  protected X3Dobject.MultiTextureModes getMultiTextureMode()
+  {
+    return this.multiTextureMode;
+  }
+  protected void setMultiTextureGVRTexture(GVRTexture textureMap)
+  {
+    if (this.textureMap0 != null) {
+      if (this.textureMap1 == null) this.textureMap1 = textureMap;
+      else Log.e(TAG, "X3D MultiTexture texture maps cannot exceed 2");
+    }
+    else this.textureMap0 = textureMap;
+  }
+  protected void setMultiTextureGVRTexture(GVRTexture textureMap, int number)
+  {
+    if ( (number >= 2) || (number < 0) ) Log.e(TAG, "Mutli-texture texture number must be 0 or 1");
+    else if (number == 1) this.textureMap1 = textureMap;
+    else this.textureMap0 = textureMap;
+  }
+  protected GVRTexture getMultiTextureGVRTexture(int number)
+  {
+    if ( (number >= 2) || (number < 0) ) Log.e(TAG, "Mutli-texture texture number must be 0 or 1");
+    else if (number == 1) return this.textureMap1;
+    return this.textureMap0;
+  }
+
 }

@@ -25,8 +25,7 @@
 #include "vk_texture.h"
 #include "vulkan_flags.h"
 
-
-#define GVR_VK_CHECK(X) if (!(X)) { LOGD("VK_CHECK Failure"); assert((X));}
+#define GVR_VK_CHECK(X) if (!(X)) { FAIL("VK_CHECK Failure"); }
 #define GVR_VK_VERTEX_BUFFER_BIND_ID 0
 #define GVR_VK_SAMPLE_NAME "GVR Vulkan"
 #define VK_KHR_ANDROID_SURFACE_EXTENSION_NAME "VK_KHR_android_surface"
@@ -80,6 +79,8 @@ class VkRenderTexture;
 class VulkanShader;
 class VkRenderTarget;
 class RenderTarget;
+class LightList;
+class VKDeviceComponent;
 
 class VulkanCore final {
 
@@ -96,20 +97,34 @@ public:
         return NULL;
     }
 
-    void releaseInstance(){
-        delete theInstance;
-        theInstance = nullptr;
+
+    //check if Vulkan has been initialised.
+    static bool isInstancePresent(){
+        if(theInstance == NULL || !theInstance->m_Vulkan_Initialised)
+            return false;
+        else
+            return true;
     }
+
+
+    void releaseInstance(){
+        if(theInstance) {
+            delete theInstance;
+            theInstance = nullptr;
+        }
+    }
+
+    void recreateSwapChain(ANativeWindow *);
 
     ~VulkanCore();
 
-    void InitLayoutRenderData(VulkanMaterial& vkMtl, VulkanRenderData* vkdata, Shader*);
+    void InitLayoutRenderData(VulkanMaterial * vkMtl, VulkanRenderData* vkdata, Shader*, LightList& lights);
 
     void initCmdBuffer(VkCommandBufferLevel level,VkCommandBuffer& cmdBuffer);
 
-    bool InitDescriptorSetForRenderData(VulkanRenderer* renderer, int pass, Shader*, VulkanRenderData* vkData);
+    bool InitDescriptorSetForRenderData(VulkanRenderer* renderer, int pass, Shader*, VulkanRenderData* vkData, LightList *lights, VulkanMaterial* vkmtl);
     void beginCmdBuffer(VkCommandBuffer cmdBuffer);
-    void BuildCmdBufferForRenderData(std::vector<RenderData *> &render_data_vector, Camera*, ShaderManager*,RenderTarget*,VkRenderTexture*, bool);
+    void BuildCmdBufferForRenderData(std::vector<RenderData *> &render_data_vector, Camera*, ShaderManager*,RenderTarget*,VkRenderTexture*, bool, bool);
     void BuildCmdBufferForRenderDataPE(VkCommandBuffer &cmdBuffer, ShaderManager*, Camera*, RenderData* rdata, VkRenderTexture*, int);
 
     int waitForFence(VkFence fence);
@@ -161,6 +176,7 @@ public:
     }
 
     void renderToOculus(RenderTarget* renderTarget);
+    void unmapRenderToOculus(RenderTarget* renderTarget);
     void InitSwapChain();
 
     VkImage getSwapChainImage(){
@@ -171,6 +187,11 @@ public:
         return mSwapchainBuffers[swapChainImageIndex++].view;
     }
 
+    bool isSwapChainCreationFinished()
+    {
+        return swapChainImageIndex == mSwapchainImageCount;
+    }
+
     bool isSwapChainPresent(){
         return swapChainFlag;
     }
@@ -179,6 +200,11 @@ public:
     }
     void SetNextBackBuffer();
     void PresentBackBuffer();
+
+    void addDeviceComponent(VKDeviceComponent*);
+    void removeDeviceComponent(VKDeviceComponent *);
+
+
 private:
 
     static VulkanCore *theInstance;
@@ -215,7 +241,6 @@ private:
     VkCullModeFlagBits getVulkanCullFace(int);
 
     ANativeWindow *m_androidWindow;
-
     VkInstance m_instance;
     VkPhysicalDevice *m_pPhysicalDevices;
     VkPhysicalDevice m_physicalDevice;
@@ -250,6 +275,8 @@ private:
 
     VkPipelineCache m_pipelineCache;
     std::unordered_map<int, VkRenderPass> mRenderPassMap;
+
+    std::vector<VKDeviceComponent * > mDeviceComponents;
 };
 }
 #endif //FRAMEWORK_VULKANCORE_H

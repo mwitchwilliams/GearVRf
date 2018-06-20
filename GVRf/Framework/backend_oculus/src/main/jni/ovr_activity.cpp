@@ -25,6 +25,7 @@
 #include <VrApi_Types.h>
 #include <engine/renderer/vulkan_renderer.h>
 #include <objects/textures/render_texture.h>
+
 static const char* activityClassName = "org/gearvrf/GVRActivity";
 static const char* viewManagerClassName = "org/gearvrf/OvrViewManager";
 
@@ -35,7 +36,7 @@ namespace gvr {
 //=============================================================================
 
     GVRActivity::GVRActivity(JNIEnv& env, jobject activity, jobject vrAppSettings,
-                             jobject callbacks) : envMainThread_(&env), configurationHelper_(env, vrAppSettings) //use_multiview(false)
+                             jobject) : envMainThread_(&env), configurationHelper_(env, vrAppSettings)
     {
         activity_ = env.NewGlobalRef(activity);
         activityClass_ = GetGlobalClassReference(env, activityClassName);
@@ -51,6 +52,7 @@ namespace gvr {
         LOGV("GVRActivity::~GVRActivity");
         envMainThread_->DeleteGlobalRef(activityClass_);
         envMainThread_->DeleteGlobalRef(activity_);
+        envMainThread_->DeleteGlobalRef(jsurface_);
     }
 
     int GVRActivity::initializeVrApi() {
@@ -112,46 +114,72 @@ namespace gvr {
                                                          mResolveDepthConfiguration, mDepthTextureFormatConfiguration);
     }
 
-    RenderTextureInfo*  GVRActivity::getRenderTextureInfo(int eye, int index){
+RenderTextureInfo *GVRActivity::getRenderTextureInfo(int eye, int index) {
     // for multiview, eye index would be 2
     eye = eye % 2;
     FrameBufferObject fbo = frameBuffer_[eye];
 
-    RenderTextureInfo* renderTextureInfo = new RenderTextureInfo();
+    RenderTextureInfo *renderTextureInfo = new RenderTextureInfo();
     renderTextureInfo->fboId = fbo.getRenderBufferFBOId(index);
     renderTextureInfo->fboHeight = fbo.getHeight();
-    renderTextureInfo->fdboWidth = fbo.getWidth();
+    renderTextureInfo->fboWidth = fbo.getWidth();
     renderTextureInfo->multisamples = mMultisamplesConfiguration;
     renderTextureInfo->useMultiview = use_multiview;
     renderTextureInfo->views = use_multiview ? 2 : 1;
     renderTextureInfo->texId = fbo.getColorTexId(index);
+    renderTextureInfo->viewport[0] = x;
+    renderTextureInfo->viewport[1] = y;
+    renderTextureInfo->viewport[2] = width;
+    renderTextureInfo->viewport[3] = height;
 
     return renderTextureInfo;
-
 }
 
-void GVRActivity::onSurfaceChanged(JNIEnv &env) {
+void GVRActivity::onSurfaceChanged(JNIEnv &env, jobject jsurface) {
     int maxSamples = MSAA::getMaxSampleCount();
-    LOGV("GVRActivityT::onSurfaceChanged");
+    LOGV("GVRActivity::onSurfaceChanged");
     initializeOculusJava(env, oculusJavaGlThread_);
+    jsurface_ = env.NewGlobalRef(jsurface);
 
     if (nullptr == oculusMobile_) {
         ovrModeParms parms = vrapi_DefaultModeParms(&oculusJavaGlThread_);
+        {
+            bool allowPowerSave, resetWindowFullscreen;
+            configurationHelper_.getModeConfiguration(env, allowPowerSave, resetWindowFullscreen);
+            if (allowPowerSave) {
+                parms.Flags |= VRAPI_MODE_FLAG_ALLOW_POWER_SAVE;
+            }
+            if (resetWindowFullscreen) {
+                parms.Flags |= VRAPI_MODE_FLAG_RESET_WINDOW_FULLSCREEN;
+            }
+            parms.Flags |= VRAPI_MODE_FLAG_NATIVE_WINDOW;
+            //@todo consider VRAPI_MODE_FLAG_CREATE_CONTEXT_NO_ERROR as a release-build optimization
 
-        bool allowPowerSave, resetWindowFullscreen;
-        configurationHelper_.getModeConfiguration(env, allowPowerSave, resetWindowFullscreen);
-        if (allowPowerSave) {
-            parms.Flags |= VRAPI_MODE_FLAG_ALLOW_POWER_SAVE;
-        }
-        if (resetWindowFullscreen) {
-            parms.Flags |= VRAPI_MODE_FLAG_RESET_WINDOW_FULLSCREEN;
+            ANativeWindow *nativeWindow = ANativeWindow_fromSurface(&env, jsurface_);
+            if (nullptr == nativeWindow) {
+                FAIL("No native window!");
+            }
+            parms.WindowSurface = reinterpret_cast<unsigned long long>(nativeWindow);
+            EGLDisplay display = eglGetCurrentDisplay();
+            if (EGL_NO_DISPLAY == display) {
+                FAIL("No egl display!");
+            }
+            parms.Display = reinterpret_cast<unsigned long long>(display);
+            EGLContext context = eglGetCurrentContext();
+            if (EGL_NO_CONTEXT == context) {
+                FAIL("No egl context!");
+            }
+            parms.ShareContext = reinterpret_cast<unsigned long long>(context);
         }
 
-        //@todo backend specific fix, generalize; ensures there is a renderer instance after pause/
-        //resume
+        //@todo backend specific fix, generalize; ensures there is a renderer instance after pause/resume
         gRenderer = Renderer::getInstance();
 
         oculusMobile_ = vrapi_EnterVrMode(&parms);
+        if (nullptr == oculusMobile_) {
+            FAIL("vrapi_EnterVrMode failed!");
+        }
+
         if (gearController != nullptr) {
             gearController->setOvrMobile(oculusMobile_);
         }
@@ -205,6 +233,7 @@ void GVRActivity::onSurfaceChanged(JNIEnv &env) {
         texCoordsTanAnglesMatrix_ = ovrMatrix4f_TanAngleMatrixFromProjection(&projectionMatrix_);
     }
 }
+
 void GVRActivity::copyVulkanTexture(int texSwapChainIndex, int eye){
     RenderTarget* renderTarget = gRenderer->getRenderTarget(texSwapChainIndex, use_multiview ? 2 : eye);
     reinterpret_cast<VulkanRenderer*>(gRenderer)->renderToOculus(renderTarget);
@@ -221,7 +250,7 @@ void GVRActivity::copyVulkanTexture(int texSwapChainIndex, int eye){
                        oculusTexData);
     glFlush();
     frameBuffer_[eye].advance();
-
+    reinterpret_cast<VulkanRenderer*>(gRenderer)->unmapRenderToOculus(renderTarget);
 }
 
 void GVRActivity::onDrawFrame(jobject jViewManager) {
@@ -257,18 +286,14 @@ void GVRActivity::onDrawFrame(jobject jViewManager) {
         parms.Layers[0].Flags |= VRAPI_FRAME_LAYER_FLAG_FIXED_TO_VIEW;
     }
 
-    if (docked_) {
-        const ovrQuatf &orientation = updatedTracking.HeadPose.Pose.Orientation;
-        const glm::quat tmp(orientation.w, orientation.x, orientation.y, orientation.z);
-        const glm::quat quat = glm::conjugate(glm::inverse(tmp));
+    const ovrQuatf &orientation = updatedTracking.HeadPose.Pose.Orientation;
+    const glm::quat tmp(orientation.w, orientation.x, orientation.y, orientation.z);
+    const glm::quat quat = glm::conjugate(glm::inverse(tmp));
 
-        cameraRig_->setRotationSensorData(0, quat.w, quat.x, quat.y, quat.z, 0, 0, 0);
-        cameraRig_->updateRotation();
-    } else if (nullptr != cameraRig_) {
-        cameraRig_->updateRotation();
-    }
+    cameraRig_->setRotationSensorData(0, quat.w, quat.x, quat.y, quat.z, 0, 0, 0);
+    cameraRig_->updateRotation();
 
-    if (!sensoredSceneUpdated_ && docked_) {
+    if (!sensoredSceneUpdated_) {
         sensoredSceneUpdated_ = updateSensoredScene();
     }
     oculusJavaGlThread_.Env->CallVoidMethod(jViewManager, onBeforeDrawEyesMethodId);
@@ -276,9 +301,6 @@ void GVRActivity::onDrawFrame(jobject jViewManager) {
     // Render the eye images.
     for (int eye = 0; eye < (use_multiview ? 1 : VRAPI_FRAME_LAYER_EYE_MAX); eye++) {
         int textureSwapChainIndex = frameBuffer_[eye].mTextureSwapChainIndex;
-        if (!gRenderer->isVulkanInstance()) {
-            beginRenderingEye(eye);
-        }
         oculusJavaGlThread_.Env->CallVoidMethod(jViewManager, onDrawEyeMethodId, eye,
                                                 textureSwapChainIndex, use_multiview);
 
@@ -299,23 +321,7 @@ void GVRActivity::onDrawFrame(jobject jViewManager) {
     vrapi_SubmitFrame(oculusMobile_, &parms);
 }
 
-    static const GLenum attachments[] = {GL_COLOR_ATTACHMENT0, GL_DEPTH_ATTACHMENT, GL_STENCIL_ATTACHMENT};
-
-    void GVRActivity::beginRenderingEye(const int eye) {
-
-       // no n
-        frameBuffer_[eye].bind();
-
-        GL(glViewport(x, y, width, height));
-        GL(glScissor(0, 0, frameBuffer_[eye].mWidth, frameBuffer_[eye].mHeight));
-
-        GL(glInvalidateFramebuffer(GL_FRAMEBUFFER, sizeof(attachments)/sizeof(GLenum), attachments));
-    }
-
     void GVRActivity::endRenderingEye(const int eye) {
-        GL(glDisable(GL_DEPTH_TEST));
-        GL(glDisable(GL_CULL_FACE));
-
         if (!clampToBorderSupported_) {
             // quote off VrApi_Types.h:
             // <quote>
@@ -341,7 +347,6 @@ void GVRActivity::onDrawFrame(jobject jViewManager) {
         }
 
         //per vrAppFw
-        GL(glFlush());
         frameBuffer_[eye].resolve();
         frameBuffer_[eye].advance();
     }

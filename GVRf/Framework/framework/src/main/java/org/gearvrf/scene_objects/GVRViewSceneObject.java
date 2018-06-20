@@ -45,7 +45,6 @@ import android.widget.TextView;
 import org.gearvrf.GVRActivity;
 import org.gearvrf.GVRCollider;
 import org.gearvrf.GVRContext;
-import org.gearvrf.GVRDrawFrameListener;
 import org.gearvrf.GVRExternalTexture;
 import org.gearvrf.GVRMaterial;
 import org.gearvrf.GVRMaterial.GVRShaderType;
@@ -525,11 +524,20 @@ public class GVRViewSceneObject extends GVRSceneObject {
 
         @Override
         public ViewParent invalidateChildInParent(int[] location, Rect dirty) {
-            // To fix the issue of not redrawing the children after its invalidation.
-            // FIXME: Improve this fix.
+            /* FIXME: This method was deprecated in API level 26
+              Use onDescendantInvalidated(View, View) instead.
+             */
             postInvalidate();
 
             return super.invalidateChildInParent(location, dirty);
+        }
+
+        @Override
+        public void onDescendantInvalidated(View child, View target) {
+            super.onDescendantInvalidated(child, target);
+            // To fix the issue of not redrawing the children after its invalidation.
+
+            postInvalidate();
         }
 
         public void dispatchPickerInputEvent(final MotionEvent e, final float x, final float y) {
@@ -682,20 +690,18 @@ public class GVRViewSceneObject extends GVRSceneObject {
             mSurfaceTexture.setDefaultBufferSize(getWidth(), getHeight());
 
             mSurfaceTexture.setOnFrameAvailableListener(new SurfaceTexture.OnFrameAvailableListener() {
-                GVRDrawFrameListener drawFrameListener = new GVRDrawFrameListener() {
+                Runnable onFrameAvailableGLCallback = new Runnable() {
                     @Override
-                    public void onDrawFrame(float frameTime) {
+                    public void run() {
                         mSurfaceTexture.updateTexImage();
-                        mGVRContext.unregisterDrawFrameListener(this);
                     }
                 };
 
                 @Override
                 public void onFrameAvailable(SurfaceTexture surfaceTexture) {
-                    mGVRContext.registerDrawFrameListener(drawFrameListener);
+                    mGVRContext.runOnGlThread(onFrameAvailableGLCallback);
                 }
             });
-
         }
 
         @Override
@@ -728,7 +734,10 @@ public class GVRViewSceneObject extends GVRSceneObject {
 
         @Override
         public void onInside(GVRSceneObject sceneObject, GVRPicker.GVRPickedObject pickInfo) {
-            if (sceneObject == mSelected) {
+            final MotionEvent event = pickInfo.motionEvent;
+
+            if (sceneObject == mSelected && event != null
+                    && event.getAction() == MotionEvent.ACTION_MOVE) {
                 onDrag(pickInfo);
             }
         }

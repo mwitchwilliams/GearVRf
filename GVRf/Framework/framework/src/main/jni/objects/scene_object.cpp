@@ -21,7 +21,6 @@
 
 #include "objects/components/camera.h"
 #include "objects/components/camera_rig.h"
-#include "objects/components/collider_group.h"
 #include "objects/components/render_data.h"
 #include "util/gvr_log.h"
 #include "mesh.h"
@@ -177,16 +176,17 @@ bool SceneObject::onAddChild(SceneObject* addme, SceneObject* root)
     {
         std::string error =  "SceneObject::addChildObject() : cycle of scene objects is not allowed.";
         LOGE("%s", error.c_str());
-        throw error;
+        return false;
     }
-    if (parent_ != NULL)
+    if (this == root)
     {
-        if (parent_->onAddChild(addme, root) || (parent_ == root))
-        {
-            return true;
-        }
+        return true;
     }
-    return false;
+    if (parent_ == NULL)
+    {
+        return false;
+    }
+    return parent_->onAddChild(addme, root);
 }
 
 
@@ -196,14 +196,15 @@ bool SceneObject::onAddChild(SceneObject* addme, SceneObject* root)
 bool SceneObject::onRemoveChild(SceneObject* removeme, SceneObject* root)
 {
     bounding_volume_dirty_ = true;
-    if (parent_ != NULL)
+    if (this == root)
     {
-        if (parent_->onRemoveChild(removeme, root) || (parent_ == root))
-        {
-            return true;
-        }
+        return true;
     }
-    return false;
+    if (parent_ == NULL)
+    {
+        return false;
+    }
+    return parent_->onRemoveChild(removeme, root);
 }
 
 /**
@@ -222,7 +223,8 @@ void SceneObject::onRemovedFromScene(Scene* scene)
     }
 }
 
-void SceneObject::removeChildObject(SceneObject* child) {
+void SceneObject::removeChildObject(SceneObject* child)
+{
     Scene* scene = Scene::main_scene();
 
     if (child->parent_ == this)
@@ -247,7 +249,8 @@ void SceneObject::removeChildObject(SceneObject* child) {
     }
 }
 
-void SceneObject::onTransformChanged() {
+void SceneObject::onTransformChanged()
+{
     Transform* t = transform();
     if (t)
     {
@@ -266,10 +269,12 @@ void SceneObject::onTransformChanged() {
     }
 }
 
-void SceneObject::clear() {
+void SceneObject::clear()
+{
     Scene* scene = Scene::main_scene();
     std::lock_guard < std::mutex > lock(children_mutex_);
-    for (auto it = children_.begin(); it != children_.end(); ++it) {
+    for (auto it = children_.begin(); it != children_.end(); ++it)
+    {
         SceneObject* child = *it;
         if (scene != NULL)
         {

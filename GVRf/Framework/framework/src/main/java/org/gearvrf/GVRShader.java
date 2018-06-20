@@ -272,10 +272,6 @@ public class GVRShader
             String mtlLayout = material.makeShaderLayout();
             vshader = vshader.replace("@MATERIAL_UNIFORMS", mtlLayout);
             fshader = fshader.replace("@MATERIAL_UNIFORMS", mtlLayout);
-            if(fshader.contains("Material_ubo") || vshader.contains("Material_ubo"))
-                material.useGpuBuffer(true);
-            else
-                material.useGpuBuffer(false);
         }
         vshader = vshader.replace("@BONES_UNIFORMS", GVRShaderManager.makeLayout(sBonesDescriptor, "Bones_ubo", true));
         vertexShaderSource.append(vshader);
@@ -402,8 +398,6 @@ public class GVRShader
     protected void setSegment(String segmentName, String shaderSource)
     {
         mShaderSegments.put(segmentName, shaderSource);
-        if (shaderSource == null)
-            throw new java.lang.IllegalArgumentException("Shader source is null for segment " + segmentName + " of shader");
     }
 
     private boolean isImplemented(String methodName, Class<?> ...paramTypes)

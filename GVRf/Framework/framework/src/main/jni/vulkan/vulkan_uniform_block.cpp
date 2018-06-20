@@ -50,6 +50,7 @@ namespace gvr {
 
     bool VulkanUniformBlock::updateGPU(Renderer* renderer, int start, int len)
     {
+
         VulkanRenderer* vkrender = static_cast<VulkanRenderer *>(renderer);
         VulkanCore* vk = vkrender->getCore();
         if (!mIsDirty)
@@ -155,8 +156,9 @@ namespace gvr {
     bool VulkanUniformBlock::setFloatVec(const char* name, const float *val, int n) {
         DataEntry *u = find(name);
 
-        if (u == NULL)
-            return NULL;
+        if (u == NULL) {
+            return false;
+        }
 
         int bytesize = n * sizeof(float);
         char *data = getData(name, bytesize);
@@ -189,8 +191,9 @@ namespace gvr {
     bool VulkanUniformBlock::setIntVec(const char* name, const int *val, int n) {
         DataEntry *u = find(name);
 
-        if (u == NULL)
-            return NULL;
+        if (u == NULL) {
+            return false;
+        }
 
         int bytesize = n * sizeof(float);
         char *data = getData(name, bytesize);

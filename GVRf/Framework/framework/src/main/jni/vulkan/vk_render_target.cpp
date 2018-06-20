@@ -24,20 +24,15 @@ VkCommandBuffer& VkRenderTarget::getCommandBuffer(){
     return static_cast<VkRenderTexture*>(mRenderTexture)->getCommandBuffer();
 }
  void VkRenderTarget::beginRendering(Renderer* renderer){
-     mRenderTexture->bind();
      RenderTarget::beginRendering(renderer);
-     mRenderTexture->beginRendering(renderer);
  }
 
 VkRenderTarget::VkRenderTarget(RenderTexture* renderTexture, bool is_multiview): RenderTarget(renderTexture, is_multiview){
-    static_cast<VkRenderTexture*>(mRenderTexture)->initVkData();
 }
 
 VkRenderTarget::VkRenderTarget(Scene* scene): RenderTarget(scene){
-    static_cast<VkRenderTexture*>(mRenderTexture)->initVkData();
 }
 VkRenderTarget::VkRenderTarget(RenderTexture* renderTexture, const RenderTarget* source): RenderTarget(renderTexture, source){
-    static_cast<VkRenderTexture*>(mRenderTexture)->initVkData();
 }
 
 
@@ -56,7 +51,7 @@ VkRenderTexture* VkRenderTarget :: getTexture() {
     /* Commenting out the code of sending an older image to oculus, if the current one is not yet complete.
      * Reason for commenting : 1. Even though the FPS is 60 the visuals lag.
      *                         2. FPS is not affected with or without this logic
-     * /
+     */
 /*
     bool found = false;
     VkResult status;
@@ -80,8 +75,11 @@ VkRenderTexture* VkRenderTarget :: getTexture() {
          }
     }
 */
-    while (err != VK_SUCCESS) {
-        err = vkWaitForFences(device, 1, &fence , VK_TRUE, 4294967295U);
+
+    err = vkWaitForFences(device, 1, &fence , VK_TRUE, 4294967295U);
+
+    if (err != VK_SUCCESS) {
+        return NULL;
     }
 
     return static_cast<VkRenderTexture*>(mRenderTexture);

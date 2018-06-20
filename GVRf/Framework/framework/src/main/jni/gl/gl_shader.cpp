@@ -95,7 +95,7 @@ void modifyShader(std::string& shader)
 
         if ((it = tokens.find("uniform")) != tokens.end() && checkSamplers(tokens)){
             int layout_pos = tokens["layout"];
-            mod_shader += ((layout_pos > 0) ? line.substr((0, layout_pos)) : "") + line.substr(it->second) + "\n";
+            mod_shader += ((layout_pos > 0) ? line.substr(0, layout_pos) : "") + line.substr(it->second) + "\n";
 
         }
         else if ((it = tokens.find("layout")) != tokens.end() && tokens.find("uniform")==tokens.end() && tokens.find("num_views") == tokens.end()) {
@@ -104,6 +104,7 @@ void modifyShader(std::string& shader)
                 it1 = tokens.find("out");
             int pos = it->second;
 
+            if(it1 != tokens.end())
             mod_shader += ((pos > 0) ? line.substr(0, pos) : "") + line.substr(it1->second) + "\n";
         }
         else

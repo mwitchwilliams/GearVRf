@@ -31,6 +31,8 @@ class BulletRigidBody : public PhysicsRigidBody,
  public:
     BulletRigidBody();
 
+    BulletRigidBody(btRigidBody *rigidBody);
+
     virtual ~BulletRigidBody();
 
     btRigidBody *getRigidBody() const {
@@ -139,7 +141,6 @@ class BulletRigidBody : public PhysicsRigidBody,
     void updateConstructionInfo();
 
 private:
-    void initialize();
 
     void finalize();
 
@@ -147,8 +148,8 @@ private:
 
 
 private:
-    btRigidBody *mRigidBody;
     btRigidBody::btRigidBodyConstructionInfo mConstructionInfo;
+    btRigidBody *mRigidBody;
     btTransform m_centerOfMassOffset;
     btTransform prevPos;
     btVector3 mScale;

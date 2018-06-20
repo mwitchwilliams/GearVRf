@@ -23,6 +23,7 @@ import org.gearvrf.animation.GVRAnimation;
 import org.gearvrf.animation.GVROnFinish;
 import org.gearvrf.animation.GVROpacityAnimation;
 import org.gearvrf.asynchronous.GVRAsynchronousResourceLoader;
+import org.gearvrf.io.GVRGearCursorController;
 import org.gearvrf.io.GVRInputManager;
 import org.gearvrf.script.GVRScriptManager;
 import org.gearvrf.utility.ImageUtils;
@@ -63,13 +64,21 @@ abstract class GVRViewManager extends GVRContext {
         VrAppSettings appSettings = activity.getAppSettings();
         mScriptManager = new GVRScriptManager(this);
         mEventManager = new GVREventManager(this);
-        mInputManager = new GVRInputManager(this, appSettings.getCursorControllerTypes());
+        mInputManager = new GVRInputManager(this, appSettings.getCursorControllerTypes(),appSettings.getNumControllers());
         mInputManager.scanDevices();
     }
 
-    void onPause() {}
+    void onPause() {
+        if (null != mControllerReader) {
+            mControllerReader.onPause();
+        }
+    }
 
-    void onResume() {}
+    void onResume() {
+        if (null != mControllerReader) {
+            mControllerReader.onResume();
+        }
+    }
 
     void onDestroy() {
         mInputManager.close();
@@ -499,6 +508,7 @@ abstract class GVRViewManager extends GVRContext {
     protected void beforeDrawEyes() {
         GVRNotifications.notifyBeforeStep();
         mFrameHandler.beforeDrawEyes();
+        getInputManager().updateGearControllers();
         makeShadowMaps(mMainScene.getNative(), getMainScene(), mRenderBundle.getShaderManager().getNative(),
                        mRenderBundle.getPostEffectRenderTextureA().getWidth(), mRenderBundle.getPostEffectRenderTextureA().getHeight());
     }
@@ -688,6 +698,7 @@ abstract class GVRViewManager extends GVRContext {
         // TODO: when we will use multithreading, create new camera using centercamera as we are adding posteffects into it
         final GVRCamera centerCamera = mMainScene.getMainCameraRig().getCenterCamera();
         final GVRMaterial postEffect = new GVRMaterial(this, GVRMaterial.GVRShaderType.VerticalFlip.ID);
+
         centerCamera.addPostEffect(postEffect);
 
         GVRRenderTexture posteffectRenderTextureB = null;
@@ -715,7 +726,6 @@ abstract class GVRViewManager extends GVRContext {
         final Bitmap bitmap = Bitmap.createBitmap(mReadbackBufferWidth, mReadbackBufferHeight, Bitmap.Config.ARGB_8888);
         mReadbackBuffer.rewind();
         bitmap.copyPixelsFromBuffer(mReadbackBuffer);
-
         final GVRScreenshotCallback callback = mScreenshotCenterCallback;
         Threads.spawn(new Runnable() {
             public void run() {
@@ -797,7 +807,7 @@ abstract class GVRViewManager extends GVRContext {
             mReadbackBuffer = null;
         }
     }
-
+    GVRGearCursorController.ControllerReader mControllerReader;
     private final GVRScriptManager mScriptManager;
     protected final GVRActivity mActivity;
     protected float mFrameTime;
@@ -830,4 +840,6 @@ abstract class GVRViewManager extends GVRContext {
     private native static void readRenderResultNative(Object readbackBuffer, long renderTarget, int eye, boolean useMultiview);
 
     private static final String TAG = "GVRViewManager";
+
 }
+

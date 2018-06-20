@@ -24,11 +24,12 @@
 #include "vulkan/vk_render_to_texture.h"
 #include "vk_imagebase.h"
 #include "vk_render_target.h"
-#include "vk_render_texture_offscreen.h"
+#include "vk_render_to_texture.h"
 #include "vulkanCore.h"
 #include <array>
+#include "vk_device_component.h"
 
-#define TEXTURE_BIND_START 4
+#define TEXTURE_BIND_START 5
 #define QUEUE_INDEX_MAX 99999
 #define VERTEX_BUFFER_BIND_ID 0
 namespace gvr {
@@ -53,7 +54,6 @@ namespace gvr {
                                             VkShaderStageFlagBits shaderStageFlagBits) {
         //createBuffer(device, vk, ubo, index);
         createLayoutBinding(index, shaderStageFlagBits);
-
     }
 
     void VulkanDescriptor::createLayoutBinding(int binding_index, int stageFlags, bool sampler) {
@@ -89,6 +89,12 @@ namespace gvr {
             case VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL:
                 imageMemoryBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
                 break;
+            case VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL:
+                imageMemoryBarrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+                break;
+            default:
+                //other source layouts not yet handled
+                break;
         }
 
         switch (newImageLayout) {
@@ -100,6 +106,9 @@ namespace gvr {
                 break;
             case VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL:
                 imageMemoryBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+                break;
+            default:
+                //other source layouts not yet handled
                 break;
         }
 
@@ -209,7 +218,7 @@ namespace gvr {
         }
 
         return true;
-    }
+}
 
     bool VulkanCore::GetPhysicalDevices() {
         VkResult ret = VK_SUCCESS;
@@ -268,7 +277,7 @@ namespace gvr {
         GVR_VK_CHECK(!ret);
 
         if (formatCount == 1 && surfFormats[0].format == VK_FORMAT_UNDEFINED) {
-            mSurfaceFormat.format = VK_FORMAT_B8G8R8A8_UNORM;
+            mSurfaceFormat.format = VK_FORMAT_R8G8B8A8_UNORM;
             mSurfaceFormat.colorSpace = surfFormats[0].colorSpace;
         }
         else {
@@ -564,7 +573,7 @@ void VulkanCore::InitCommandPools(){
         GVR_VK_CHECK(!ret);
     }
 
-    void VulkanCore::InitLayoutRenderData(VulkanMaterial &vkMtl, VulkanRenderData* vkdata, Shader *shader) {
+    void VulkanCore::InitLayoutRenderData(VulkanMaterial * vkMtl, VulkanRenderData* vkdata, Shader *shader, LightList& lights) {
 
         const DataDescriptor& textureDescriptor = shader->getTextureDescriptor();
         DataDescriptor &uniformDescriptor = shader->getUniformDescriptor();
@@ -582,7 +591,7 @@ void VulkanCore::InitCommandPools(){
         uint32_t index = 0;
         std::vector<VkDescriptorSetLayoutBinding> uniformAndSamplerBinding;
 
-        vk_shader->makeLayout(vkMtl, uniformAndSamplerBinding,  index, vkdata);
+        vk_shader->makeLayout(*vkMtl, uniformAndSamplerBinding,  index, vkdata, lights);
 
         VkDescriptorSetLayout &descriptorLayout = static_cast<VulkanShader *>(shader)->getDescriptorLayout();
 
@@ -593,77 +602,18 @@ void VulkanCore::InitCommandPools(){
                                           &descriptorLayout);
         GVR_VK_CHECK(!ret);
 
-
-        VkPushConstantRange pushConstantRange = {};
-        pushConstantRange.offset                        = 0;
-        pushConstantRange.size                          = (uint32_t) vkMtl.uniforms().getTotalSize();
-        pushConstantRange.stageFlags                    = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
-
         VkPipelineLayout &pipelineLayout = static_cast<VulkanShader *>(shader)->getPipelineLayout();
         ret = vkCreatePipelineLayout(m_device,
-                                     gvr::PipelineLayoutCreateInfo(0, 1, &descriptorLayout, 1, &pushConstantRange),
+                                     gvr::PipelineLayoutCreateInfo(0, 1, &descriptorLayout, 0, 0),
                                      nullptr, &pipelineLayout);
         GVR_VK_CHECK(!ret);
         shader->setShaderDirty(false);
-    }
-
-    VkRenderPass getShadowRenderPass(VkDevice device){
-
-        VkRenderPass renderPass;
-        VkAttachmentDescription attachmentDescription{};
-        attachmentDescription.format = VK_FORMAT_D32_SFLOAT;
-        attachmentDescription.samples = VK_SAMPLE_COUNT_1_BIT;
-        attachmentDescription.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;							// Clear depth at beginning of the render pass
-        attachmentDescription.storeOp = VK_ATTACHMENT_STORE_OP_STORE;						// We will read from depth, so it's important to store the depth attachment results
-        attachmentDescription.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-        attachmentDescription.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-        attachmentDescription.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;					// We don't care about initial layout of the attachment
-        attachmentDescription.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;// Attachment will be transitioned to shader read at render pass end
-
-        VkAttachmentReference depthReference = {};
-        depthReference.attachment = 0;
-        depthReference.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;			// Attachment will be used as depth/stencil during render pass
-
-        VkSubpassDescription subpass = {};
-        subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-        subpass.colorAttachmentCount = 0;													// No color attachments
-        subpass.pDepthStencilAttachment = &depthReference;									// Reference to our depth attachment
-
-        // Use subpass dependencies for layout transitions
-        std::array<VkSubpassDependency, 2> dependencies;
-
-        dependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
-        dependencies[0].dstSubpass = 0;
-        dependencies[0].srcStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
-        dependencies[0].dstStageMask = VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
-        dependencies[0].srcAccessMask = VK_ACCESS_MEMORY_READ_BIT;
-        dependencies[0].dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-        dependencies[0].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
-
-        dependencies[1].srcSubpass = 0;
-        dependencies[1].dstSubpass = VK_SUBPASS_EXTERNAL;
-        dependencies[1].srcStageMask = VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
-        dependencies[1].dstStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
-        dependencies[1].srcAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-        dependencies[1].dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
-        dependencies[1].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
-
-        vkCreateRenderPass(device, gvr::RenderPassCreateInfo(0, (uint32_t) 1, &attachmentDescription,
-                                                             1, &subpass, (uint32_t) dependencies.size(),
-                                                             dependencies.data()), nullptr, &renderPass);
-        return renderPass;
     }
 
     VkRenderPass VulkanCore::createVkRenderPass(RenderPassType render_pass_type, int sample_count){
 
         if(mRenderPassMap[render_pass_type + sample_count])
             return mRenderPassMap[render_pass_type + sample_count];
-
-        if(render_pass_type == SHADOW_RENDERPASS){
-            VkRenderPass render_pass = getShadowRenderPass(m_device);
-            mRenderPassMap.insert(std::make_pair(render_pass_type, render_pass));
-            return render_pass;
-        }
 
         VkRenderPass renderPass;
         std::vector<VkAttachmentDescription> attachmentDescriptions = {};
@@ -741,20 +691,19 @@ void VulkanCore::InitCommandPools(){
         subpassDescription.preserveAttachmentCount = 0;
         subpassDescription.pPreserveAttachments = nullptr;
 
-
         VkResult ret = vkCreateRenderPass(m_device,
-                           gvr::RenderPassCreateInfo(0, (uint32_t) attachmentDescriptions.size(), attachmentDescriptions.data(),
-                                                     1, &subpassDescription, (uint32_t) 0,
-                                                     nullptr), nullptr, &renderPass);
+                                          gvr::RenderPassCreateInfo(0, (uint32_t) attachmentDescriptions.size(), attachmentDescriptions.data(),
+                                                                    1, &subpassDescription, (uint32_t) 0,
+                                                                    nullptr), nullptr, &renderPass);
         GVR_VK_CHECK(!ret);
         mRenderPassMap.insert(std::make_pair(NORMAL_RENDERPASS + sample_count, renderPass));
         return renderPass;
     }
 /*
- * Compile Vulkan Shader
- * shaderTypeID 1 : Vertex Shader
- * shaderTypeID 2 : Fragment Shader
- */
+* Compile Vulkan Shader
+* shaderTypeID 1 : Vertex Shader
+* shaderTypeID 2 : Fragment Shader
+*/
 
     std::vector<uint32_t> VulkanCore::CompileShader(const std::string &shaderName,
                                                     ShaderType shaderTypeID,
@@ -796,7 +745,7 @@ void VulkanCore::InitCommandPools(){
         VkResult err;
 
         err = vkCreateShaderModule(m_device, gvr::ShaderModuleCreateInfo(result_vert.data(), result_vert.size() *
-                                                                                      sizeof(unsigned int)),
+                                                                                             sizeof(unsigned int)),
                                    nullptr, &module);
         GVR_VK_CHECK(!err);
         gvr::PipelineShaderStageCreateInfo shaderStageInfo = gvr::PipelineShaderStageCreateInfo(
@@ -804,14 +753,18 @@ void VulkanCore::InitCommandPools(){
                 module, "main");
         shaderStages[0] = *shaderStageInfo;
 
-        err = vkCreateShaderModule(m_device, gvr::ShaderModuleCreateInfo(result_frag.data(), result_frag.size() *
-                                                                                             sizeof(unsigned int)),
-                                   nullptr, &module);
-        GVR_VK_CHECK(!err);
-        shaderStageInfo = gvr::PipelineShaderStageCreateInfo(
-                VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO, VK_SHADER_STAGE_FRAGMENT_BIT,
-                module, "main");
-        shaderStages[1] = *shaderStageInfo;
+        if(result_frag.size()) {
+            err = vkCreateShaderModule(m_device, gvr::ShaderModuleCreateInfo(result_frag.data(),
+                                                                             result_frag.size() *
+                                                                             sizeof(unsigned int)),
+                                       nullptr, &module);
+            GVR_VK_CHECK(!err);
+            shaderStageInfo = gvr::PipelineShaderStageCreateInfo(
+                    VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+                    VK_SHADER_STAGE_FRAGMENT_BIT,
+                    module, "main");
+            shaderStages[1] = *shaderStageInfo;
+        }
 
     }
 
@@ -880,10 +833,9 @@ void VulkanCore::InitPipelineForRenderData(const GVR_VK_Vertices* m_vertices, Vu
     // For this example we do not do blending, so it is disabled.
     VkPipelineColorBlendAttachmentState att_state[1] = {};
     bool disable_color_depth_write = rdata->stencil_test() && (RenderData::Queue::Stencil == rdata->rendering_order());
-    att_state[0].colorWriteMask = disable_color_depth_write ? 0x0 : (VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT);
-    att_state[0].blendEnable = VK_FALSE;
+    att_state[0].colorWriteMask = disable_color_depth_write ? 0x0 : (VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT);    att_state[0].blendEnable = VK_FALSE;
 
-    if(rdata->alpha_blend()) {
+    if(rdata->alpha_blend()  && !shader->isDepthShader()) {
         att_state[0].blendEnable = VK_TRUE;
         att_state[0].srcColorBlendFactor = static_cast<VkBlendFactor>(vkflags::glToVulkan[rdata->source_alpha_blend_func()]);
         att_state[0].dstColorBlendFactor = static_cast<VkBlendFactor>(vkflags::glToVulkan[rdata->dest_alpha_blend_func()]);
@@ -894,11 +846,10 @@ void VulkanCore::InitPipelineForRenderData(const GVR_VK_Vertices* m_vertices, Vu
     }
     std::vector<uint32_t> result_vert = shader->getVkVertexShader();
     std::vector<uint32_t> result_frag = shader->getVkFragmentShader();
+
     // We define two shader stages: our vertex and fragment shader.
     // they are embedded as SPIR-V into a header file for ease of deployment.
     VkPipelineShaderStageCreateInfo shaderStages[2] = {};
-
-
 
     InitShaders(shaderStages,result_vert,result_frag);
     // Out graphics pipeline records all state information, including our renderpass
@@ -919,8 +870,9 @@ void VulkanCore::InitPipelineForRenderData(const GVR_VK_Vertices* m_vertices, Vu
                                                                                        VK_FALSE,
                                                                                        0, 0, 0,
                                                                                        1.0);
-    pipelineCreateInfo.pColorBlendState = gvr::PipelineColorBlendStateCreateInfo(1,
-                                                                                 &att_state[0]);
+
+    pipelineCreateInfo.pColorBlendState = gvr::PipelineColorBlendStateCreateInfo(1,&att_state[0]);
+
     pipelineCreateInfo.pMultisampleState = gvr::PipelineMultisampleStateCreateInfo(
             getVKSampleBit(sampleCount), VK_NULL_HANDLE, VK_NULL_HANDLE, VK_NULL_HANDLE,
             VK_NULL_HANDLE, VK_NULL_HANDLE);
@@ -930,23 +882,22 @@ void VulkanCore::InitPipelineForRenderData(const GVR_VK_Vertices* m_vertices, Vu
 
     pipelineCreateInfo.pDepthStencilState =
             gvr::PipelineDepthStencilStateCreateInfo(rdata->depth_test() ? VK_TRUE : VK_FALSE,
-                                     (rdata->depth_mask()  && depthWrite)? VK_TRUE : VK_FALSE,
-                                     VK_COMPARE_OP_LESS_OR_EQUAL,
-                                     VK_FALSE,
-                                     static_cast<VkStencilOp>(vkflags::glToVulkan[rdata->stencil_op_sfail()]),  //stencil pass
-                                     static_cast<VkStencilOp>(vkflags::glToVulkan[rdata->stencil_op_dppass()]), //depth pass, stencil pass
-                                     static_cast<VkStencilOp>(vkflags::glToVulkan[rdata->stencil_op_dpfail()]), //depth fail, stencil pass
-                                     static_cast<VkCompareOp>(vkflags::glToVulkan[rdata->stencil_func_func()]), //compare function
-                                     rdata->stencil_func_mask(), //compare mask
-                                     rdata->getStencilMask(), //stencil mask
-                                     rdata->stencil_func_ref(),  //reference value
-                                     rdata->stencil_test());
+                                                     (rdata->depth_mask()  && depthWrite)? VK_TRUE : VK_FALSE,
+                                                     VK_COMPARE_OP_LESS_OR_EQUAL,
+                                                     VK_FALSE,
+                                                     static_cast<VkStencilOp>(vkflags::glToVulkan[rdata->stencil_op_sfail()]),  //stencil pass
+                                                     static_cast<VkStencilOp>(vkflags::glToVulkan[rdata->stencil_op_dppass()]), //depth pass, stencil pass
+                                                     static_cast<VkStencilOp>(vkflags::glToVulkan[rdata->stencil_op_dpfail()]), //depth fail, stencil pass
+                                                     static_cast<VkCompareOp>(vkflags::glToVulkan[rdata->stencil_func_func()]), //compare function
+                                                     rdata->stencil_func_mask(), //compare mask
+                                                     rdata->getStencilMask(), //stencil mask
+                                                     rdata->stencil_func_ref(),  //reference value
+                                                     rdata->stencil_test());
 
 
     pipelineCreateInfo.pStages = &shaderStages[0];
 
     pipelineCreateInfo.renderPass = renderPass;
-
 
     pipelineCreateInfo.pDynamicState = nullptr;
     pipelineCreateInfo.stageCount = 2; //vertex and fragment
@@ -967,36 +918,21 @@ void VulkanCore::InitPipelineForRenderData(const GVR_VK_Vertices* m_vertices, Vu
     pipelineCreateInfo.pDynamicState = &dynamic_state_create_info;
     VkPipeline pipeline = 0;
     LOGI("Vulkan graphics call before");
-    err = vkCreateGraphicsPipelines(m_device, m_pipelineCache, 1, &pipelineCreateInfo, nullptr,
+    err = vkCreateGraphicsPipelines(m_device, 0, 1, &pipelineCreateInfo, nullptr,
                                     &pipeline);
     GVR_VK_CHECK(!err);
-    rdata->setPipeline(pipeline,pass);
+    VulkanRenderPass * rp ;
+    if(shader->isDepthShader()){
+        rp = rdata->getShadowRenderPass();
+        rp->m_pipeline = pipeline;
+    }else{
+        rdata->setPipeline(pipeline,pass);
+    }
+
     LOGI("Vulkan graphics call after");
 
 }
-    void VKFramebuffer::createFramebuffer(VkDevice& device){
 
-        std::vector<VkImageView> attachments;
-        VkResult ret;
-
-        if(mAttachments[COLOR_IMAGE]!= nullptr){
-            attachments.push_back(mAttachments[COLOR_IMAGE]->getVkImageView());
-        }
-
-        if(mAttachments[DEPTH_IMAGE]!= nullptr){
-            attachments.push_back(mAttachments[DEPTH_IMAGE]->getVkImageView());
-        }
-        if(mRenderpass == 0 ){
-            LOGE("renderpass  is not initialized");
-        }
-
-        ret = vkCreateFramebuffer(device,
-                                  gvr::FramebufferCreateInfo(0, mRenderpass, attachments.size(),
-                                                             attachments.data(), mWidth, mHeight,
-                                                             uint32_t(1)), nullptr,
-                                  &mFramebuffer);
-        GVR_VK_CHECK(!ret);
-    }
     VkSampler getSampler(uint64_t index){
 
         for(int i =0; i<samplers.size(); i = i+2){
@@ -1007,45 +943,49 @@ void VulkanCore::InitPipelineForRenderData(const GVR_VK_Vertices* m_vertices, Vu
         return  0;
     }
 
-    void VKFramebuffer::createFrameBuffer(VkDevice& device, int image_type, int sample_count, bool monoscopic){
+    void VKFramebuffer::createFrameBuffer(VkDevice& device, int image_type, int layers, int sample_count){
         VkResult ret;
         std::vector<VkImageView> attachments;
         VulkanRenderer* vk_renderer= static_cast<VulkanRenderer*>(Renderer::getInstance());
+        VkImageViewType imageViewType = (layers > 1) ? VK_IMAGE_VIEW_TYPE_2D_ARRAY : VK_IMAGE_VIEW_TYPE_2D;
 
         if(sample_count > 1){
-            vkImageBase *multisampledImage = new vkImageBase(VK_IMAGE_VIEW_TYPE_2D, VK_FORMAT_R8G8B8A8_UNORM, mWidth,
+            vkImageBase *multisampledImage = new vkImageBase(imageViewType, VK_FORMAT_R8G8B8A8_UNORM, mWidth,
                                                       mHeight, 1, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-                                                      VK_IMAGE_LAYOUT_UNDEFINED, sample_count);
-            multisampledImage->createImageView(false);
+                                                      VK_IMAGE_LAYOUT_UNDEFINED, layers, sample_count);
+            multisampledImage->createImage();
             mAttachments[MULTISAMPLED_IMAGE] = multisampledImage;
             attachments.push_back(multisampledImage->getVkImageView());
         }
 
         if(image_type & COLOR_IMAGE && mAttachments[COLOR_IMAGE]== nullptr) {
-            vkImageBase *colorImage = new vkImageBase(VK_IMAGE_VIEW_TYPE_2D, VK_FORMAT_R8G8B8A8_UNORM, mWidth,
+            vkImageBase *colorImage = new vkImageBase(imageViewType, VK_FORMAT_R8G8B8A8_UNORM, mWidth,
                                                       mHeight, 1, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT|
                                                                   VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                                                      VK_IMAGE_LAYOUT_UNDEFINED, 1);
+                                                      VK_IMAGE_LAYOUT_UNDEFINED, layers, 1);
 
             mAttachments[COLOR_IMAGE] = colorImage;
-            if(monoscopic) {
+            VulkanCore * core = vk_renderer->getCore();
+
+            //use system swapchain images and imageviews if we are rendering monoscopic and as long as
+            // swapchain images can be created. After that create fbos which render offscreen.
+            if(core->isSwapChainPresent() && !core->isSwapChainCreationFinished()) {
                 colorImage->setVkImage(vk_renderer->getCore()->getSwapChainImage());
                 colorImage->setVkImageView(vk_renderer->getCore()->getSwapChainView());
             }
             else{
-                colorImage->createImageView(true);
+                colorImage->createImage();
             }
 
             attachments.push_back(colorImage->getVkImageView());
         }
 
         if(image_type & DEPTH_IMAGE && mAttachments[DEPTH_IMAGE]== nullptr){
-
             VkFormat depthFormat =  Renderer::getInstance()->useStencilBuffer() ? VK_FORMAT_D24_UNORM_S8_UINT: VK_FORMAT_D16_UNORM;
-            vkImageBase *depthImage = new vkImageBase(VK_IMAGE_VIEW_TYPE_2D, depthFormat, mWidth,
+            vkImageBase *depthImage = new vkImageBase(imageViewType, depthFormat, mWidth,
                                                       mHeight, 1, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT ,
-                                                      VK_IMAGE_LAYOUT_UNDEFINED,sample_count);
-            depthImage->createImageView(false);
+                                                      VK_IMAGE_LAYOUT_UNDEFINED, layers, sample_count);
+            depthImage->createImage();
             mAttachments[DEPTH_IMAGE] = depthImage;
             attachments.push_back(depthImage->getVkImageView());
         }
@@ -1054,12 +994,36 @@ void VulkanCore::InitPipelineForRenderData(const GVR_VK_Vertices* m_vertices, Vu
             LOGE("renderpass  is not initialized");
         }
 
-        ret = vkCreateFramebuffer(device,
-                                  gvr::FramebufferCreateInfo(0, mRenderpass, attachments.size(),
-                                                             attachments.data(), mWidth, mHeight,
-                                                             uint32_t(1)), nullptr,
-                                  &mFramebuffer);
-        GVR_VK_CHECK(!ret);
+        if(layers == 1) {
+            ret = vkCreateFramebuffer(device,
+                                      gvr::FramebufferCreateInfo(0, mRenderpass, attachments.size(),
+                                                                 attachments.data(), mWidth,
+                                                                 mHeight,
+                                                                 uint32_t(1)), nullptr,
+                                      &mFramebuffer);
+            GVR_VK_CHECK(!ret);
+        }
+        // For multiple layers
+        else{
+            VkFramebuffer layerFramebuffer;
+            for(int i = 0; i < layers; i++) {
+                attachments.clear();
+                attachments.push_back(mAttachments[MULTISAMPLED_IMAGE]->getVkLayerImageView(i));
+                attachments.push_back(mAttachments[COLOR_IMAGE]->getVkLayerImageView(i));
+                attachments.push_back(mAttachments[DEPTH_IMAGE]->getVkLayerImageView(i));
+
+                ret = vkCreateFramebuffer(device,
+                                          gvr::FramebufferCreateInfo(0, mRenderpass,
+                                                                     attachments.size(),
+                                                                     attachments.data(), mWidth,
+                                                                     mHeight,
+                                                                     uint32_t(1)), nullptr,
+                                          &layerFramebuffer);
+                GVR_VK_CHECK(!ret);
+                mCascadeFramebuffer.push_back(layerFramebuffer);
+            }
+        }
+
     }
 
 
@@ -1092,7 +1056,7 @@ void VulkanCore::InitPipelineForRenderData(const GVR_VK_Vertices* m_vertices, Vu
     }
 
     void VulkanCore::BuildCmdBufferForRenderData(std::vector<RenderData *> &render_data_vector,
-                                                 Camera *camera, ShaderManager* shader_manager, RenderTarget* renderTarget, VkRenderTexture* postEffectRenderTexture, bool postEffectFlag) {
+                                                 Camera *camera, ShaderManager* shader_manager, RenderTarget* renderTarget, VkRenderTexture* postEffectRenderTexture, bool postEffectFlag, bool shadowmapFlag) {
 
         VkResult err;
         // For the triangle sample, we pre-record our command buffer, as it is static.
@@ -1117,18 +1081,26 @@ void VulkanCore::InitPipelineForRenderData(const GVR_VK_Vertices* m_vertices, Vu
             VulkanRenderData *rdata = static_cast<VulkanRenderData *>(render_data_vector[j]);
 
             for(int curr_pass = postEffectFlag ? (rdata->pass_count() - 1) : 0 ;curr_pass < rdata->pass_count(); curr_pass++) {
-                VulkanShader *shader = static_cast<VulkanShader *>(shader_manager->getShader(
-                        rdata->get_shader(false,curr_pass)));
-
+                VulkanShader *shader;
+                if(shadowmapFlag){
+                    const char *depthShaderName = rdata->mesh()->hasBones()
+                                                  ? "GVRDepthShader$a_bone_weights$a_bone_indices"
+                                                  : "GVRDepthShader";
+                    shader = static_cast<VulkanShader *>(shader_manager->findShader(depthShaderName));
+                }
+                else {
+                    shader = static_cast<VulkanShader *>(shader_manager->getShader(
+                            rdata->get_shader(false, curr_pass)));
+                }
                 float line_width;
                 ShaderData* material = rdata->pass(curr_pass)->material();
                 if(!material || !material->getFloat("line_width", line_width)){
                     line_width = 1.0;
                 }
                 vkCmdSetLineWidth(cmdBuffer, line_width);
-
+                vkCmdSetDepthBias(cmdBuffer, 1.25f, 0.0f, 1.75f);
                 rdata->render(shader,cmdBuffer,curr_pass);
-           }
+            }
         }
 
         if(renderTarget!= NULL)
@@ -1182,27 +1154,29 @@ void VulkanCore::InitPipelineForRenderData(const GVR_VK_Vertices* m_vertices, Vu
 
         err = vkQueueSubmit(m_queue, 1, &submitInfo, fence);
         GVR_VK_CHECK(!err);
-
-        if(swapChainFlag) {
-            int success = 0;
-            while(success != 1){
-                success = waitForFence(fence);
-            }
-            PresentBackBuffer();
-        }
     }
 
-     int VulkanCore::waitForFence(VkFence fence) {
+    int VulkanCore::waitForFence(VkFence fence) {
         if(VK_SUCCESS == vkWaitForFences(m_device, 1, &fence, VK_TRUE,
-                        4294967295U))
+                                         4294967295U))
             return 1;
 
         return 0;
 
     }
+
     void VulkanCore::renderToOculus(RenderTarget* renderTarget){
-        VkRenderTextureOffScreen* renderTexture = static_cast<VkRenderTextureOffScreen*>(static_cast<VkRenderTarget*>(renderTarget)->getTexture());
+        VkRenderTexture* renderTexture = static_cast<VkRenderTarget*>(renderTarget)->getTexture();
+
+        if(!renderTexture) {
+            LOGE("VulkanCore renderToOculus: rendertexture null");
+            return;
+        }
         renderTexture->accessRenderResult(&oculusTexData);
+    }
+
+    void VulkanCore::unmapRenderToOculus(RenderTarget* renderTarget){
+        VkRenderTexture* renderTexture = static_cast<VkRenderTarget*>(renderTarget)->getTexture();
         renderTexture->unmapDeviceMemory();
     }
 
@@ -1230,12 +1204,10 @@ void VulkanCore::InitPipelineForRenderData(const GVR_VK_Vertices* m_vertices, Vu
         GVR_VK_CHECK(!err);
     }
 
-    bool VulkanCore::InitDescriptorSetForRenderData(VulkanRenderer* renderer, int pass, Shader* shader, VulkanRenderData* vkData) {
-
+    bool VulkanCore::InitDescriptorSetForRenderData(VulkanRenderer* renderer, int pass, Shader* shader, VulkanRenderData* vkData, LightList* lights, VulkanMaterial* vkmtl) {
         const DataDescriptor& textureDescriptor = shader->getTextureDescriptor();
         DataDescriptor &uniformDescriptor = shader->getUniformDescriptor();
         bool transformUboPresent = shader->usesMatrixUniforms();
-        VulkanMaterial* vkmtl = static_cast<VulkanMaterial*>(vkData->material(pass));
 
         if ((textureDescriptor.getNumEntries() == 0) && uniformDescriptor.getNumEntries() == 0 && !transformUboPresent) {
         //    vkData->setDescriptorSetNull(true,pass);
@@ -1258,11 +1230,24 @@ void VulkanCore::InitPipelineForRenderData(const GVR_VK_Vertices* m_vertices, Vu
         VkDescriptorSet descriptorSet;
         VkResult err = vkAllocateDescriptorSets(m_device, &descriptorSetAllocateInfo, &descriptorSet);
         GVR_VK_CHECK(!err);
-        vkData->setDescriptorSet(descriptorSet,pass);
+
+        VulkanRenderPass * rp;
+        if(vkShader->isDepthShader()){
+            rp = vkData->getShadowRenderPass();
+        }
+        else {
+            rp = vkData->getRenderPass(pass);
+        }
+        rp->m_descriptorSet = descriptorSet;
 
         if (transformUboPresent) {
             vkData->getTransformUbo().setDescriptorSet(descriptorSet);
             writes.push_back(vkData->getTransformUbo().getDescriptorSet());
+        }
+
+        if (uniformDescriptor.getNumEntries()) {
+            static_cast<VulkanUniformBlock&>(vkmtl->uniforms()).setDescriptorSet(descriptorSet);
+            writes.push_back(static_cast<VulkanUniformBlock&>(vkmtl->uniforms()).getDescriptorSet());
         }
 
         if(vkData->mesh()->hasBones() && bones_present){
@@ -1270,11 +1255,40 @@ void VulkanCore::InitPipelineForRenderData(const GVR_VK_Vertices* m_vertices, Vu
             writes.push_back(static_cast<VulkanUniformBlock*>(vkData->getBonesUbo())->getDescriptorSet());
         }
 
-        // TODO: add shadowmap descriptor
+        if(lights != NULL && lights->getUBO() != nullptr){
+            static_cast<VulkanUniformBlock*>(lights->getUBO())->setDescriptorSet(descriptorSet);
+            writes.push_back(static_cast<VulkanUniformBlock*>(lights->getUBO())->getDescriptorSet());
+        }
 
-        vkShader->bindTextures(vkmtl, writes,  descriptorSet);
+        ShadowMap* shadowMap = NULL;
+        if(lights != NULL)
+        shadowMap= lights->scanLights();
+
+        if(shadowMap && !vkShader->isDepthShader()){
+
+            RenderTarget *rt = reinterpret_cast<RenderTarget*>(shadowMap);
+            VkRenderTexture* vkRenderTexture = static_cast<VkRenderTexture *>(rt->getTexture());
+
+            if(vkRenderTexture->getFBO() != nullptr) {
+                VkWriteDescriptorSet write;
+                memset(&write, 0, sizeof(write));
+
+                write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+                write.dstBinding = 4;
+                write.dstSet = descriptorSet;
+                write.descriptorCount = 1;
+                write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+                write.pImageInfo = &(static_cast<VkRenderTexture *>(rt->getTexture())->getDescriptorImage(
+                        COLOR_IMAGE));
+                writes.push_back(write);
+            }
+        }
+
+        if(vkShader->bindTextures(vkmtl, writes,  descriptorSet) == false)
+            return false;
+
         vkUpdateDescriptorSets(m_device, writes.size(), writes.data(), 0, nullptr);
-        vkData->setDescriptorSetNull(false,pass);
+        rp->descriptorSetNull = false;
         LOGI("Vulkan after update descriptor");
         return true;
     }
@@ -1282,7 +1296,7 @@ void VulkanCore::InitPipelineForRenderData(const GVR_VK_Vertices* m_vertices, Vu
         VkPipelineCacheCreateInfo pipelineCacheCreateInfo = {};
         pipelineCacheCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO;
         VkResult ret = vkCreatePipelineCache(m_device, &pipelineCacheCreateInfo, nullptr,
-                                           &m_pipelineCache);
+                                             &m_pipelineCache);
         GVR_VK_CHECK(!ret);
     }
 
@@ -1323,12 +1337,111 @@ void VulkanCore::InitPipelineForRenderData(const GVR_VK_Vertices* m_vertices, Vu
     }
 
     VulkanCore::~VulkanCore() {
-        vkDestroyDevice(getDevice(), nullptr);
+
+        //destroy all the resources associated with the current device.
+        for (VKDeviceComponent* component: mDeviceComponents)
+            component->cleanup();
+
+        mDeviceComponents.clear();
+        vkDestroyCommandPool(m_device, m_commandPool, nullptr);
+        for (auto entry : pipelineHashMap ) {
+            vkDestroyPipeline(getDevice(), entry.second, nullptr);
+        }
+        pipelineHashMap.clear();
+        vkDestroySwapchainKHR(getDevice(), mSwapchain, nullptr);
+
+        vkDestroySemaphore(getDevice(), mRenderCompleteSemaphore, nullptr);
+        vkDestroySemaphore(getDevice(), mBackBufferSemaphore, nullptr);
+        vkDestroyDevice(m_device, nullptr);
+        vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
         vkDestroyInstance(m_instance, nullptr);
     }
 
     void VulkanCore::initVulkanCore() {
         InitCommandPools();
-        LOGE("Vulkan after intialization");
+        LOGI("Vulkan after intialization");
     }
+
+    void VulkanCore::addDeviceComponent(VKDeviceComponent * component) {
+        mDeviceComponents.push_back(component);
+    }
+
+    void VulkanCore::removeDeviceComponent(VKDeviceComponent * component){
+
+        std::vector<VKDeviceComponent *>::iterator position =
+                std::find(mDeviceComponents.begin(), mDeviceComponents.end(), component);
+        if (position != mDeviceComponents.end())
+            mDeviceComponents.erase(position);
+    }
+
+
+    void VulkanCore::recreateSwapChain(ANativeWindow *newNativeWindow){
+
+        vkDeviceWaitIdle(getDevice());
+
+        if(m_surface) {
+            vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
+            m_surface = VK_NULL_HANDLE;
+        }
+
+        for (size_t i = 0; i < mSwapchainImageCount; i++) {
+            vkDestroyImageView(m_device, mSwapchainBuffers[i].view, nullptr);
+            mSwapchainBuffers[i].view = VK_NULL_HANDLE;
+
+            vkDestroyImage(m_device, mSwapchainBuffers[i].image, nullptr);
+            mSwapchainBuffers[i].image = VK_NULL_HANDLE;
+        }
+
+        delete mSwapchainBuffers;
+        mSwapchainBuffers = nullptr;
+
+        VulkanRenderer* vk_renderer= static_cast<VulkanRenderer*>(Renderer::getInstance());
+
+        //clear the handles to the swapChain images and imageviews. This is necessary because the driver
+        //tries to reuse these handles when a new surface is created. When the garbage collector eventually runs
+        //it might accidentally clear up the very same handles we are reusing.
+        std::vector<VkRenderTexture* > onScreenTextures;
+        for(int i = 0; i < 3; i ++ )
+            onScreenTextures.push_back(static_cast<VkRenderTarget*>(vk_renderer->getRenderTarget(i, LEFT))->getTexture());
+
+        for(auto tex: onScreenTextures)
+        {
+            vkImageBase ** attachments = tex->getFBO()->getAttachments();
+            delete attachments[COLOR_IMAGE];
+            delete attachments[DEPTH_IMAGE];
+            delete attachments[MULTISAMPLED_IMAGE];
+
+            attachments[COLOR_IMAGE] = 0;
+            attachments[DEPTH_IMAGE] = 0;
+            attachments[MULTISAMPLED_IMAGE] = 0;
+        }
+
+        //sufficient to clear up the vector so that there are no dangling pointers. The actual rendertextures
+        //haev references to it from java and will be cleared up by close() method in GVRReference.
+        onScreenTextures.clear();
+
+        for(int i = 0; i < 3; i ++ )
+            vk_renderer->addRenderTarget(nullptr, LEFT, i );
+
+        vkDestroySwapchainKHR(getDevice(), mSwapchain, nullptr);
+        mSwapchain = VK_NULL_HANDLE;
+        vkDestroySemaphore(getDevice(), mRenderCompleteSemaphore, nullptr);
+        mRenderCompleteSemaphore = VK_NULL_HANDLE;
+        vkDestroySemaphore(getDevice(), mBackBufferSemaphore, nullptr);
+        mBackBufferSemaphore = VK_NULL_HANDLE;
+
+        mSwapchainCurrentIdx = 0;
+        swapChainImageIndex = 0;
+
+        m_androidWindow = newNativeWindow;
+
+        if(m_androidWindow != NULL) {
+            InitSurface();
+            InitSwapChain();
+            InitSync();
+            SetNextBackBuffer();
+        }
+
+    }
+
 }
