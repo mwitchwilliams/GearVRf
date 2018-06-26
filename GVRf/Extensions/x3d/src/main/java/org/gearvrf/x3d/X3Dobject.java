@@ -3720,10 +3720,6 @@ public class X3Dobject {
                         headlightSceneObject.setName("HeadLight");
                         GVRSceneObject cameraHeadTransform = cameraRigAtRoot.getHeadTransformObject();
                         GVRPerspectiveCamera gvrCenterCamera = cameraRigAtRoot.getCenterCamera();
-                        //gvrCenterCamera.
-                        //cameraRigAtRoot.addChildObject(headlightSceneObject);
-                        //cameraHeadTransform.addChildObject(headlightSceneObject);
-                        //gvrCenterCamera.addChildObject(headlightSceneObject);
                         cameraHeadTransform.attachLight(headLight);
                     }
 
