@@ -767,7 +767,7 @@ public class AnimationInteractivityManager {
                             }
                         });
 
-                    }
+                    }  // end if sensor == PLANESensor
                     else if (interactiveObject.getSensor().getSensorType() == Sensor.Type.TOUCH) {
                         // A Touch Sensor
                         interactiveObject.getSensor().getOwnerObject().forAllDescendants(
@@ -829,8 +829,96 @@ public class AnimationInteractivityManager {
                         });
                     }  // end if sensor == TOUCH
                     else if (interactiveObject.getSensor().getSensorType() == Sensor.Type.CYLINDER) {
-                        Log.e(TAG, "Cylinder Sensor with JavaScript not implemented");
-                    }
+
+                        Log.e("X3DDBG", "Begin Cylinder Sensor with JavaScript");
+                        interactiveObject.getSensor().getOwnerObject().forAllDescendants(
+                                new GVRSceneObject.SceneVisitor()
+                                {
+                                    public boolean visit (GVRSceneObject obj)
+                                    {
+                                        obj.attachCollider(new GVRMeshCollider(gvrContext, true));
+                                        return true;
+                                    }
+                                });
+                        Sensor cylSensor = interactiveObject.getSensor();
+                        final float minAngleFinal = cylSensor.getMinAngle().getValue();
+                        final float maxAngleFinal = cylSensor.getMaxAngle().getValue();
+                        Log.e("X3DDBG", "CylSenor min, max: " + minAngleFinal + ", " + maxAngleFinal );
+
+                        interactiveObject.getSensor().addISensorEvents(new ISensorEvents() {
+                            boolean initialized = false;
+                            GVRCameraRig gvrCameraRig = gvrContext.getMainScene().getMainCameraRig();
+                            Vector3f initCameraDir = null;
+                            Quaternionf initCylinderRotation = new Quaternionf();
+                            //AxisAngle4f initCylRotAxisAngle = new AxisAngle4f();
+                            float[] initHitLocation = null;
+                            //float[] cylinderRotation = new float[4];
+                            Quaternionf cylinderRotation = new Quaternionf();
+                            AxisAngle4f cylRotAxisAngle = new AxisAngle4f();
+                            GVRSceneObject gvrSceneObject = null;
+
+
+
+                            @Override
+                            public void onSensorEvent(SensorEvent event) {
+                                if (event.isActive()) {
+                                    GVRPicker.GVRPickedObject gvrPickedObject = event.getPickedObject();
+                                    if ( !initialized ) {
+                                        //Log.e("X3DDBG", "Cylinder Sensor active, initialing");
+                                        initialized = true;
+                                        float[] lookAt = gvrCameraRig.getLookAt();
+                                        initCameraDir = new Vector3f(lookAt[0], lookAt[1], lookAt[2]);
+                                        initHitLocation = gvrPickedObject.getHitLocation();
+                                        GVRSceneObject hitObjectSceneObject = gvrPickedObject.getHitObject();
+                                        // Primitives are a child of the GVRSceneObject with the name.
+                                        //if ( hitObjectSceneObject.getName().isEmpty() ) {
+                                        while ( hitObjectSceneObject.getName().isEmpty() ) {
+                                            hitObjectSceneObject = hitObjectSceneObject.getParent();
+                                        }
+                                        gvrSceneObject = root
+                                                .getSceneObjectByName((hitObjectSceneObject.getName() + x3dObject.TRANSFORM_ROTATION_));
+
+                                        initCylinderRotation.w = gvrSceneObject.getTransform().getRotationW();
+                                        initCylinderRotation.x = gvrSceneObject.getTransform().getRotationX();
+                                        initCylinderRotation.y = gvrSceneObject.getTransform().getRotationY();
+                                        initCylinderRotation.z = gvrSceneObject.getTransform().getRotationZ();
+                                        //Log.e("X3DDBG", "   initCylinderRotation[wxyz]: " + initCylinderRotation.w + ", " + initCylinderRotation.x + ", "
+                                        //        + initCylinderRotation.y + ", " + initCylinderRotation.z);
+                                        //initCylinderRotation.get(initCylRotAxisAngle);
+                                    }  //  end initialization
+                                    // initialize the input values for planeSensor and run the javaScript.
+                                    cylinderRotation.w = gvrSceneObject.getTransform().getRotationW();
+                                    cylinderRotation.x = gvrSceneObject.getTransform().getRotationX();
+                                    cylinderRotation.y = gvrSceneObject.getTransform().getRotationY();
+                                    cylinderRotation.z = gvrSceneObject.getTransform().getRotationZ();
+                                    //cylinderRotation.mul( initCylinderRotation );
+                                    cylinderRotation.get( cylRotAxisAngle );
+
+                                    // Quaternion to Axis-Angle flips the sign on the rotation
+                                    if ( cylRotAxisAngle.angle > Math.PI) cylRotAxisAngle.angle = (float)(2*Math.PI - cylRotAxisAngle.angle);
+                                    else cylRotAxisAngle.angle = -cylRotAxisAngle.angle;
+                                    if (cylRotAxisAngle.angle < minAngleFinal ) cylRotAxisAngle.angle = minAngleFinal;
+                                    else if (cylRotAxisAngle.angle > maxAngleFinal ) cylRotAxisAngle.angle = maxAngleFinal;
+
+                                    // limited to just Y-axis for the moment, but SphereSensor will need all
+                                    Object[] parameters = SetJavaScriptArguments(interactiveObjectFinal, cylRotAxisAngle.angle, cylRotAxisAngle.y, true);
+                                    //Log.e("X3DDBG", "   cylinderRotation[wxyz]: " + cylinderRotation.w + ", " + cylinderRotation.x + ", "
+                                    //        + cylinderRotation.y + ", " + cylinderRotation.z);
+                                    //Log.e("X3DDBG", "   cylRotAxisAngle[angle,xyz]: " + cylRotAxisAngle.angle + ", " + cylRotAxisAngle.x + ", "
+                                    //        + cylRotAxisAngle.y + ", " + cylRotAxisAngle.z);
+                                    //Log.e("X3DDBG", "   cylRotAxisAngle[angle]: " + cylRotAxisAngle.angle );
+                                    ScriptObject scriptObject = interactiveObjectFinal.getScriptObject();
+                                    ScriptObject.Field firstField = scriptObject.getField(0);
+                                    RunScript(interactiveObjectFinal, scriptObject.getFieldName(firstField), parameters);
+
+                                }
+                                else {
+                                    initialized = false;
+                                }
+                            }
+                        });
+                        //Log.e(TAG, "Cylinder Sensor with JavaScript not implemented");
+                    }  //  end if Cylinder Sensor
                 }   // end if sensor != null
                 else if (interactiveObject.getTimeSensor() != null) {
                     // TimeSensor means this Script will be called per-frame
@@ -1513,6 +1601,16 @@ public class AnimationInteractivityManager {
                     }
                     else scriptParameters.add(argument0); // the time passed in from an SFTime node
                 }
+                else if ((fieldType.equalsIgnoreCase("SFRotation")) && (definedItem == null)) {
+                    // data from a Cylinder or Sphere Sensor
+                    if (interactiveObj.getSensorFromField() != null) {
+                        if (interactiveObj.getSensor().getSensorType() == Sensor.Type.CYLINDER) {
+                            //Log.e("X3DDBG", "SetJSarg arg0 " + argument0);
+                            scriptParameters.add(argument0);
+                            scriptParameters.add(argument1);
+                        }
+                    }
+                }
                 else if (scriptObject.getFromDefinedItem(field) != null) {
                     if (fieldType.equalsIgnoreCase("SFColor")) {
                         float[] color = {0, 0, 0};
@@ -1940,6 +2038,12 @@ public class AnimationInteractivityManager {
             if ( interactiveObject.getSensor().getSensorType() == Sensor.Type.PLANE) {
                 argumentNum = 2;
             }
+            else if ( interactiveObject.getSensor().getSensorType() == Sensor.Type.CYLINDER) {
+                argumentNum = 2;
+            }
+            else if ( interactiveObject.getSensor().getSensorType() == Sensor.Type.SPHERE) {
+                argumentNum = 4;
+            }
         }
 
         // Get the parameters on X3D data types that are included with this JavaScript
@@ -2054,6 +2158,7 @@ public class AnimationInteractivityManager {
             //set the bindings from X3D Script field with inputOnly / inputOutput
             gvrJavascriptV8FileFinal.setInputValues(gvrFunctionBindingValues);
             // Now run this Script's actual function
+            //Log.e("X3DDBG", "RunScriptThr paramStringFinal " + paramStringFinal);
             complete = gvrJavascriptV8FileFinal.invokeFunction(functionNameFinal, parametersFinal, paramStringFinal);
 
             if (complete) {
@@ -2405,6 +2510,7 @@ public class AnimationInteractivityManager {
                                 //  SFRotation change to a GVRSceneObject
                                 if ( StringFieldMatch( scriptObject.getToDefinedItemField(fieldNode), "rotation") ) {
                                     scriptObjectToDefinedItem.setAxisAngle(sfRotation.angle, sfRotation.x, sfRotation.y, sfRotation.z);
+                                    //Log.e("X3DDBG", "SetResults sfRotation.angle " + sfRotation.angle);
 
                                     GVRSceneObject gvrSceneObjectRotation = root
                                             .getSceneObjectByName((scriptObjectToDefinedItem.getGVRSceneObject().getName() + x3dObject.TRANSFORM_ROTATION_));
