@@ -56,6 +56,8 @@ import org.gearvrf.x3d.data_types.MFString;
 import org.gearvrf.x3d.data_types.SFBool;
 import org.gearvrf.x3d.data_types.SFFloat;
 import org.gearvrf.x3d.data_types.SFRotation;
+import org.gearvrf.x3d.node.Material;
+import org.gearvrf.x3d.node.Proto;
 import org.joml.Matrix3f;
 import org.joml.Vector2f;
 import org.xml.sax.Attributes;
@@ -870,6 +872,10 @@ public class X3Dobject {
 
     private String indexedSetDEFName = "";
     private String indexedSetUSEName = "";
+    //private enum proto_States {
+    //    None, ProtoDeclare, ProtoInterface, ProtoBody }
+    //private proto_States proto_State = proto_States.None;
+    private Proto proto = null;
 
     // Internal settings from AssetRequest
     private boolean blockLighting = false;
@@ -1617,6 +1623,15 @@ public class X3Dobject {
                         mDefinedItems.add(definedItem); // Array list of DEFined items
                         // Clones objects with USE
                     }
+                    if ( proto != null) {
+                        Log.e("X3DDBG", "Proto with Shape");
+                        if ( proto.isProtoStateProtoBody()) {
+                            GVRSceneObject gvrSceneObject = new GVRSceneObject(gvrContext);
+                            if (attributeValue != null) gvrSceneObject.setName( attributeValue );
+                            proto.setGVRSceneObject( gvrSceneObject );
+                            Log.e("X3DDBG", "   Proto - Shape, name " + attributeValue);
+                        }
+                    }
                 }
 
             } // end <Shape> node
@@ -1647,6 +1662,10 @@ public class X3Dobject {
                     attributeValue = attributes.getValue("DEF");
                     if (attributeValue != null) {
                         shaderSettings.setAppearanceName(attributeValue);
+                    }
+                    if ( proto != null ) {
+                        Log.e("X3DDBG", "Appearance proto != null");
+                        proto.createAppearance();
                     }
                 }
 
@@ -1717,6 +1736,16 @@ public class X3Dobject {
                         shaderSettings
                                 .setTransparency(parseSingleFloatString(transparencyAttribute,
                                         true, false));
+                    }
+                    if ( proto != null ) {
+                        Log.e("X3DDBG", "Material proto != null");
+                        if (proto.getAppearance() != null ) {
+                            Material material = new Material(shaderSettings.ambientIntensity,
+                                    shaderSettings.diffuseColor, shaderSettings.emissiveColor,
+                                    shaderSettings.shininess, shaderSettings.specularColor,
+                                    shaderSettings.getTransparency());
+                            proto.getAppearance().setMaterial( material );
+                        }
                     }
                 } // end ! USE attribute
 
@@ -3379,6 +3408,7 @@ public class X3Dobject {
                     String name = "";
                     ScriptObject.AccessType accessType = ScriptObject.AccessType.INPUT_OUTPUT;
                     String type = "";
+                    String value = "";
 
                     attributeValue = attributes.getValue("accessType");
                     if (attributeValue != null) {
@@ -3400,8 +3430,20 @@ public class X3Dobject {
                     if (attributeValue != null) {
                         type = attributeValue;
                     }
+                    attributeValue = attributes.getValue("value");
+                    if (attributeValue != null) {
+                        value = attributeValue;
+                    }
                     if (currentScriptObject != null) {
                         currentScriptObject.addField(name, accessType, type);
+                    }
+                    else if ( proto != null ) {
+                        if ( proto.isProtoStateProtoInterface() ) {
+                            // Add this field to the list of Proto field's
+                            Log.e("X3DDBG", "call proto.AddField(,,,'"+value+"')");
+                            proto.AddField(accessType, name, type, value);
+                            Log.e("X3DDBG", "return from proto.AddField()");
+                        }
                     }
                 }  //  end <field> node
 
@@ -3879,6 +3921,64 @@ public class X3Dobject {
 
                 } // end <Background> node
 
+                /********** PROTO Node: ProtoDeclare **********/
+                else if (qName.equalsIgnoreCase("ProtoDeclare")) {
+                    Log.e("X3DDBG", "PROTODelcare found.");
+                    proto = new Proto( X3Dobject.this );
+                    proto.setProtoStateProtoDeclare();
+                    attributeValue = attributes.getValue("name");
+                    if (attributeValue != null) {
+                        proto.setName( attributeValue );
+                    }
+                }
+                /********** PROTO Node: ProtoInterface **********/
+                else if (qName.equalsIgnoreCase("ProtoInterface")) {
+                    Log.e("X3DDBG", "ProtoInterface found.");
+                    if ( proto != null ) {
+                        if ( proto.isProtoStateProtoDeclare()) {
+                            proto.setProtoStateProtoInterface();
+                        }
+                    }
+                }
+                /********** PROTO Node: ProtoBody **********/
+                else if (qName.equalsIgnoreCase("ProtoBody")) {
+                    Log.e("X3DDBG", "ProtoBody found.");
+                    if ( proto != null ) {
+                        if ( proto.isProtoStateProtoDeclare()) {
+                            proto.setProtoStateProtoBody();
+                        }
+                    }
+                }
+                /********** PROTO Node: IS **********/
+                else if (qName.equalsIgnoreCase("IS")) {
+                    Log.e("X3DDBG", "IS found.");
+                    if ( proto != null ) {
+                        if ( proto.isProtoStateProtoBody()) {
+                            proto.setProtoStateProtoIS();
+                        }
+                    }
+                }
+                /********** PROTO Node: connect **********/
+                else if (qName.equalsIgnoreCase("connect")) {
+                    Log.e("X3DDBG", "connect found.");
+                    if ( proto != null ) {
+                        if ( proto.isProtoStateProtoIS()) {
+                            Log.e("X3DDBG", "   Inside Proto IS.");
+                            attributeValue = attributes.getValue("protoField");
+                            if (attributeValue != null) {
+                                // currently, we don't do anything with the version information
+                                Log.e("X3DDBG", "      Inside Proto IS protoField = " + attributeValue);
+                                Proto.Field field = proto.getField(attributeValue);
+                            }
+                            attributeValue = attributes.getValue("nodeField");
+                            if (attributeValue != null) {
+                                // currently, we don't do anything with the version information
+                                Log.e("X3DDBG", "      Inside Proto IS nodeField = " + attributeValue);
+                            }
+                        }
+                    }
+                }
+
                 // These next few nodes are used once per file and thus moved
                 //  to the end of the parsing's if-then-else statement
 
@@ -4336,6 +4436,38 @@ public class X3Dobject {
             } else if (qName.equalsIgnoreCase("ElevationGrid")) {
                 ;
             }
+            else if (qName.equalsIgnoreCase("ProtoDeclare")) {
+                if (proto != null) proto.setProtoStateNone();
+                else Log.e(TAG, "Error with </ProtoDeclare>");
+                proto = null;
+            }
+            else if (qName.equalsIgnoreCase("ProtoInterface")) {
+                if (proto != null) proto.setProtoStateProtoDeclare();
+                else Log.e(TAG, "Error with </ProtoInterface>");
+            }
+            else if (qName.equalsIgnoreCase("ProtoBody")) {
+                if (proto != null) proto.setProtoStateProtoDeclare();
+                else Log.e(TAG, "Error with </ProtoBody>");
+            }
+            else if (qName.equalsIgnoreCase("IS")) {
+                Log.e("X3DDBG", "Ending Proto </IS>");
+                if (proto != null) proto.setProtoStateProtoBody();
+                else {
+                    Log.e(TAG, "Error with Proto </IS>");
+                    Log.e("X3DDBG", "Error with Proto </IS>");
+                }
+            }
+            else if (qName.equalsIgnoreCase("connect")) {
+                Log.e("X3DDBG", "Ending Proto </connect>");
+                /*
+                if (proto != null) proto.setProtoStateProtoBody();
+                else {
+                    Log.e(TAG, "Error with Proto </IS>");
+                    Log.e("X3DDBG", "Error with Proto </IS>");
+                }
+                */
+            }
+
             /*********
              * These are once per file commands and thus moved to the end of the
              * if-then-else statement
