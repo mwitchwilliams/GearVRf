@@ -56,8 +56,12 @@ import org.gearvrf.x3d.data_types.MFString;
 import org.gearvrf.x3d.data_types.SFBool;
 import org.gearvrf.x3d.data_types.SFFloat;
 import org.gearvrf.x3d.data_types.SFRotation;
+import org.gearvrf.x3d.node.Appearance;
+import org.gearvrf.x3d.node.Cylinder;
+import org.gearvrf.x3d.node.Geometry;
 import org.gearvrf.x3d.node.Material;
 import org.gearvrf.x3d.node.Proto;
+import org.gearvrf.x3d.node.Shape;
 import org.joml.Matrix3f;
 import org.joml.Vector2f;
 import org.xml.sax.Attributes;
@@ -875,7 +879,9 @@ public class X3Dobject {
     //private enum proto_States {
     //    None, ProtoDeclare, ProtoInterface, ProtoBody }
     //private proto_States proto_State = proto_States.None;
+    private ArrayList<Proto> protos = new ArrayList<Proto>();
     private Proto proto = null;
+    private Proto protoInstance = null;
 
     // Internal settings from AssetRequest
     private boolean blockLighting = false;
@@ -916,6 +922,220 @@ public class X3Dobject {
         Text_FontParams.size = 10.0f;
         Text_FontParams.style = GVRTextViewSceneObject.fontStyleTypes.PLAIN;
     }
+    //Called after parsing </Shape>
+    private void ShapePostParsing() {
+        if (!gvrRenderingDataUSEd) {
+            // SHAPE node not being USEd (shared) elsewhere
+
+            // Shape containts Text
+            if (gvrTextViewSceneObject != null) {
+                gvrTextViewSceneObject.setTextColor((((0xFF << 8)
+                        + (int) (shaderSettings.diffuseColor[0] * 255) << 8)
+                        + (int) (shaderSettings.diffuseColor[1] * 255) << 8)
+                        + (int) (shaderSettings.diffuseColor[2] * 255));
+                gvrTextViewSceneObject = null;
+            }
+
+            {
+                // UNIVERSAL_LIGHTS
+
+                if (!gvrMaterialUSEd) { // if GVRMaterial is NOT set by a USE statement.
+
+                    if (meshAttachedSceneObject == null) {
+                        gvrMaterial = shaderSettings.material;
+                        gvrRenderData.setMaterial(gvrMaterial);
+                    } else {
+                        // This GVRSceneObject came with a GVRRenderData and GVRMaterial
+                        // already attached.  Examples of this are Text or primitives
+                        // such as the Box, Cone, Cylinder, Sphere
+
+                        DefinedItem definedGRRenderingData = null;
+                        if (gvrRenderData != null) {
+                            // <Shape> node created an unused gvrRenderData
+                            // Check if we had a DEF in Shape node so that we can point to
+                            // the new gvrRenderData
+                            for (DefinedItem definedItem : mDefinedItems) {
+                                if (definedItem.getGVRRenderData() == gvrRenderData) {
+                                    definedGRRenderingData = definedItem;
+                                    break;
+                                }
+                            }
+                        }
+                        gvrRenderData = meshAttachedSceneObject.getRenderData();
+                        // reset the DEF item to now point to the shader
+                        if (definedGRRenderingData != null)
+                            definedGRRenderingData.setGVRRenderData(gvrRenderData);
+                        gvrMaterial = gvrRenderData.getMaterial();
+                    }
+                    // X3D doesn't have an ambient color so need to do color
+                    // calibration tests on how to set this.
+                    gvrMaterial.setVec4("diffuse_color",
+                            shaderSettings.diffuseColor[0],
+                            shaderSettings.diffuseColor[1],
+                            shaderSettings.diffuseColor[2],
+                            (1.0f - shaderSettings.getTransparency()) );
+                    gvrMaterial.setVec4("specular_color",
+                            shaderSettings.specularColor[0],
+                            shaderSettings.specularColor[1],
+                            shaderSettings.specularColor[2], 1.0f);
+                    gvrMaterial.setVec4("emissive_color",
+                            shaderSettings.emissiveColor[0],
+                            shaderSettings.emissiveColor[1],
+                            shaderSettings.emissiveColor[2], 1.0f);
+                    gvrMaterial.setFloat("specular_exponent",
+                            128.0f * shaderSettings.shininess);
+
+                    if (!shaderSettings.getMaterialName().isEmpty()) {
+                        DefinedItem definedItem = new DefinedItem(
+                                shaderSettings.getMaterialName());
+                        definedItem.setGVRMaterial(gvrMaterial);
+                        mDefinedItems.add(definedItem); // Add gvrMaterial to Array list
+                        // of DEFined items Clones
+                        // objects with USE
+                    }
+
+                    if ( shaderSettings.getMultiTexture()) {
+                        if ( !shaderSettings.getMultiTextureName().isEmpty() ) {
+                            DefinedItem definedItem = new DefinedItem(
+                                    shaderSettings.getMultiTextureName() );
+                            definedItem.setGVRMaterial(gvrMaterial);
+                            mDefinedItems.add(definedItem); // Add gvrMaterial to Array list
+                        }
+                        gvrMaterial.setTexture("diffuseTexture", shaderSettings.getMultiTextureGVRTexture(0) );
+                        gvrMaterial.setTexture("diffuseTexture1", shaderSettings.getMultiTextureGVRTexture(1) );
+                        // 0:Mul; 1=for ADD; 2 for SUBTRACT; 3 for DIVIDE; 4=smooth add; 5=Signed add
+                        gvrMaterial.setInt("diffuseTexture1_blendop", shaderSettings.getMultiTextureMode().ordinal());
+                        gvrMaterial.setTexCoord("diffuseTexture", "a_texcoord", "diffuse_coord");
+                        gvrMaterial.setTexCoord("diffuseTexture1", "a_texcoord", "diffuse_coord1");
+
+                    }
+                    else if (shaderSettings.texture != null) {
+                        gvrMaterial.setTexture("diffuseTexture",
+                                shaderSettings.texture);
+                        // if the TextureMap is a DEFined item, then set the
+                        // GVRMaterial to it as well to help if we set the
+                        // in a SCRIPT node.
+                        for (DefinedItem definedItem: mDefinedItems) {
+                            if ( definedItem.getGVRTexture() == shaderSettings.texture) {
+                                definedItem.setGVRMaterial(gvrMaterial);
+                                break;
+                            }
+                        }
+                    }
+
+                    if ( !shaderSettings.movieTextures.isEmpty()) {
+                        try {
+                            GVRVideoSceneObjectPlayer<?> videoSceneObjectPlayer = null;
+                            try {
+                                videoSceneObjectPlayer = makeExoPlayer(shaderSettings.movieTextures.get(0));
+                            }
+                            catch (Exception e) {
+                                Log.e(TAG, "Exception getting videoSceneObjectPlayer: " + e);
+                            }
+                            videoSceneObjectPlayer.start();
+
+                            GVRVideoSceneObject gvrVideoSceneObject =
+                                    new GVRVideoSceneObject(gvrContext, gvrRenderData.getMesh(), videoSceneObjectPlayer,
+                                            GVRVideoSceneObject.GVRVideoType.MONO);
+                            currentSceneObject.addChildObject(gvrVideoSceneObject);
+                            // Primitives such as Box, Cone, etc come with their own mesh
+                            // so we need to remove these.
+                            if ( meshAttachedSceneObject != null) {
+                                GVRSceneObject primitiveParent = meshAttachedSceneObject.getParent();
+                                primitiveParent.removeChildObject(meshAttachedSceneObject);
+                            }
+                            meshAttachedSceneObject = gvrVideoSceneObject;
+
+                            if (shaderSettings.getMovieTextureName() != null) {
+                                gvrVideoSceneObject.setName(shaderSettings.getMovieTextureName());
+                                DefinedItem item = new DefinedItem(shaderSettings.getMovieTextureName());
+                                item.setGVRVideoSceneObject(gvrVideoSceneObject);
+                                mDefinedItems.add(item);
+                            }
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                            Log.e(TAG, "X3D MovieTexture Exception:\n" + e);
+                        }
+                    }  // end MovieTexture
+
+                    // Texture Transform
+                    // If DEFined iteam, add to the DeFinedItem list. Maay be interactive
+                    // GearVR may not be doing texture transforms on primitives or text
+                    // crash otherwise.
+
+                    if (meshAttachedSceneObject == null) {
+                        if (!shaderSettings.getTextureTransformName().isEmpty()) {
+                            DefinedItem definedItem = new DefinedItem(
+                                    shaderSettings.getTextureTransformName());
+                            definedItem.setGVRMaterial(gvrMaterial);
+                            definedItem.setTextureTranslation(shaderSettings.getTextureTranslation());
+                            definedItem.setTextureCenter(shaderSettings.getTextureCenter());
+                            definedItem.setTextureScale(shaderSettings.getTextureScale());
+                            definedItem.setTextureRotation(shaderSettings.getTextureRotation().getValue());
+                            definedItem.setName(shaderSettings.getTextureTransformName());
+                            mDefinedItems.add(definedItem); // Add gvrMaterial to Array list
+                        }
+                        // Texture Transform Matrix equation:
+                        // TC' = -C * S * R * C * T * TC
+                        //where TC' is the transformed texture coordinate
+                        //   TC is the original Texture Coordinate
+                        //   C = center, S = scale, R = rotation, T = translation
+                        Matrix3f textureTransform = animationInteractivityManager.SetTextureTransformMatrix(
+                                shaderSettings.getTextureTranslation(),
+                                shaderSettings.getTextureCenter(),
+                                shaderSettings.getTextureScale(),
+                                shaderSettings.getTextureRotation());
+
+                        shaderSettings.textureMatrix = textureTransform;
+                        float[] texMtx = new float[9];
+                        shaderSettings.textureMatrix.get(texMtx);
+                        gvrMaterial.setFloatArray("texture_matrix", texMtx);
+                    }
+
+                    // Appearance node thus far contains properties of GVRMaterial
+                    // node
+                    if (!shaderSettings.getAppearanceName().isEmpty()) {
+                        DefinedItem definedItem = new DefinedItem(
+                                shaderSettings.getAppearanceName());
+                        definedItem.setGVRMaterial(gvrMaterial);
+                        mDefinedItems.add(definedItem);
+                        // Add gvrMaterial to Array list
+                        // of DEFined items Clones
+                        // objects with USE
+                    }
+
+                    if ((shaderSettings.getTransparency() != 0) && (shaderSettings.getTransparency() != 1)) {
+                        gvrRenderData.setRenderingOrder(GVRRenderingOrder.TRANSPARENT);
+                    }
+
+                } // end ! gvrMaterialUSEd
+
+                gvrTexture = null;
+            }
+        } // end !gvrRenderingDataUSEd
+
+        if (meshAttachedSceneObject != null) {
+            // gvrRenderData already attached to a GVRSceneObject such as a
+            // Cone or Cylinder or a Movie Texture
+            meshAttachedSceneObject = null;
+        } else
+            currentSceneObject.attachRenderData(gvrRenderData);
+
+        if (lodManager.shapeLODSceneObject != null) {
+            // if this Shape node was a direct child of a
+            // Level-of-Detial (LOD),then restore the parent object
+            // since we had to add a GVRSceneObject to support
+            // the Shape node's attachement to LOD.
+            currentSceneObject = currentSceneObject.getParent();
+            lodManager.shapeLODSceneObject = null;
+        }
+
+        gvrMaterialUSEd = false; // for DEFine and USE, true if we encounter a
+        // USE
+        gvrRenderingDataUSEd = false; // for DEFine and USE gvrRenderingData for
+        // x3d SHAPE node
+        gvrRenderData = null;
+    }  //  end ShapePostParsing
 
     /**
      * X3DObject parses and X3D file using Java SAX parser.
@@ -1626,9 +1846,19 @@ public class X3Dobject {
                     if ( proto != null) {
                         Log.e("X3DDBG", "Proto with Shape");
                         if ( proto.isProtoStateProtoBody()) {
-                            GVRSceneObject gvrSceneObject = new GVRSceneObject(gvrContext);
-                            if (attributeValue != null) gvrSceneObject.setName( attributeValue );
-                            proto.setGVRSceneObject( gvrSceneObject );
+                            //GVRSceneObject gvrSceneObject = new GVRSceneObject(gvrContext);
+                            //if (attributeValue != null) gvrSceneObject.setName( attributeValue );
+                            //proto.setGVRSceneObject( gvrSceneObject );
+                            if ( proto.getShape() == null) {
+                                Log.e("X3DDBG", "   shape == null, attributeValue " + attributeValue);
+                                Shape shape = new Shape(proto, attributeValue);
+                                proto.setShape( shape );
+                                Log.e("X3DDBG", "   did proto.setShape()");
+                                //if (proto.getAppearance() != null ) {
+                                    //shape.setAppearance( proto.getAppearance() );
+                                    //Log.e("X3DDBG", "      did shape.setAppearance()");
+                                //}
+                            }
                             Log.e("X3DDBG", "   Proto - Shape, name " + attributeValue);
                         }
                     }
@@ -1664,8 +1894,15 @@ public class X3Dobject {
                         shaderSettings.setAppearanceName(attributeValue);
                     }
                     if ( proto != null ) {
-                        Log.e("X3DDBG", "Appearance proto != null");
-                        proto.createAppearance();
+                        Log.e("X3DDBG", "Appearance: proto != null");
+                        if ( proto.getAppearance() == null) {
+                            Appearance appearance = new Appearance(attributeValue);
+                            proto.setAppearance(appearance);
+                            Log.e("X3DDBG", "   was null; added proto.setAppearance(appearance)");
+                        }
+                    }
+                    else if ( protoInstance != null ) {
+                        Log.e("X3DDBG", "Appearance protoInstance != null");
                     }
                 }
 
@@ -1739,12 +1976,53 @@ public class X3Dobject {
                     }
                     if ( proto != null ) {
                         Log.e("X3DDBG", "Material proto != null");
-                        if (proto.getAppearance() != null ) {
-                            Material material = new Material(shaderSettings.ambientIntensity,
-                                    shaderSettings.diffuseColor, shaderSettings.emissiveColor,
-                                    shaderSettings.shininess, shaderSettings.specularColor,
-                                    shaderSettings.getTransparency());
-                            proto.getAppearance().setMaterial( material );
+                        //if (proto.getShape() != null ) {
+                            if ( proto.getAppearance() != null) {
+                                if ( proto.getAppearance().getMaterial() == null) {
+                                    Material material = new Material(shaderSettings.ambientIntensity,
+                                            shaderSettings.diffuseColor, shaderSettings.emissiveColor,
+                                            shaderSettings.shininess, shaderSettings.specularColor,
+                                            shaderSettings.getTransparency());
+                                    proto.getAppearance().setMaterial(material);
+                                }
+                                else {
+                                    Log.e("X3DDBG", "Proto error: Material not starting null inside Appearance node");
+                                    Log.e(TAG, "Proto error: Material not starting null inside Appearance node");
+                                }
+                            }
+                            else {
+                                Log.e("X3DDBG", "Proto error: Material set without Appearance");
+                                Log.e(TAG, "Proto error: Material set without Appearance");
+                            }
+                        //}
+                    }
+                    else if ( protoInstance != null ) {
+                        Log.e("X3DDBG", "Material protoInstance != null");
+                        if (protoInstance.getShape() != null ) {
+                            if (protoInstance.getShape().getAppearance() != null ) {
+                                Material material = protoInstance.getAppearance().getMaterial();
+                                if (material != null) {
+                                    Log.e("X3DDBG", "   Material protoInstance material != null");
+                                    shaderSettings.ambientIntensity = material.getAmbientIntensity();
+                                    shaderSettings.diffuseColor = material.getDiffuseColor();
+                                    shaderSettings.emissiveColor = material.getEmissiveColor();
+                                    shaderSettings.shininess = material.getShininess();
+                                    shaderSettings.specularColor = material.getSpecularColor();
+                                    shaderSettings.setTransparency(material.getTransparency());
+                                }
+                                else {
+                                    Log.e(TAG, "Material missing from ProtoInstance");
+                                    Log.e("X3DDBG", "Material missing from ProtoInstance");
+                                }
+                            }
+                            else {
+                                Log.e(TAG, "Appearance missing from ProtoInstance");
+                                Log.e("X3DDBG", "Appearance missing from ProtoInstance");
+                            }
+                        }
+                        else {
+                            Log.e(TAG, "Shape missing from ProtoInstance");
+                            Log.e("X3DDBG", "Shape missing from ProtoInstance");
                         }
                     }
                 } // end ! USE attribute
@@ -2789,7 +3067,21 @@ public class X3Dobject {
                     params.Material = new GVRMaterial(gvrContext, x3DShader);
                     GVRCylinderSceneObject gvrCylinderSceneObject = new GVRCylinderSceneObject(
                             gvrContext, params);
-                    currentSceneObject.addChildObject(gvrCylinderSceneObject);
+                    if ( proto != null ) {
+                        Log.e("X3DDBG", "proto != null; Got Cylinder");
+                        GVRSceneObject gvrSceneObject = new GVRSceneObject(gvrContext);
+                        proto.setGVRSceneObject(gvrSceneObject);
+                        proto.getGVRSceneObject().addChildObject(gvrCylinderSceneObject);
+                        Log.e("X3DDBG", "   Added Cylinder to Proto's mGVRSceneObject");
+
+                        if (proto.getGeometry() == null) {
+                            Geometry geometry = new Geometry();
+                            proto.setGeometry( geometry );
+                            Cylinder cylinder = new Cylinder();
+                            geometry.setCylinder( cylinder );
+                        }
+                    }
+                    else currentSceneObject.addChildObject(gvrCylinderSceneObject);
                     meshAttachedSceneObject = gvrCylinderSceneObject;
 
                 } // end <Cylinder> node
@@ -3442,7 +3734,7 @@ public class X3Dobject {
                             // Add this field to the list of Proto field's
                             Log.e("X3DDBG", "call proto.AddField(,,,'"+value+"')");
                             proto.AddField(accessType, name, type, value);
-                            Log.e("X3DDBG", "return from proto.AddField()");
+                            Log.e("X3DDBG", "   return from proto.AddField()");
                         }
                     }
                 }  //  end <field> node
@@ -3942,6 +4234,7 @@ public class X3Dobject {
                 }
                 /********** PROTO Node: ProtoBody **********/
                 else if (qName.equalsIgnoreCase("ProtoBody")) {
+                    Log.e("X3DDBG", "++++++++++++++++++++");
                     Log.e("X3DDBG", "ProtoBody found.");
                     if ( proto != null ) {
                         if ( proto.isProtoStateProtoDeclare()) {
@@ -3963,21 +4256,118 @@ public class X3Dobject {
                     Log.e("X3DDBG", "connect found.");
                     if ( proto != null ) {
                         if ( proto.isProtoStateProtoIS()) {
-                            Log.e("X3DDBG", "   Inside Proto IS.");
                             attributeValue = attributes.getValue("protoField");
                             if (attributeValue != null) {
-                                // currently, we don't do anything with the version information
-                                Log.e("X3DDBG", "      Inside Proto IS protoField = " + attributeValue);
+                                // relate the protoField variable name to the item's property.
+                                Log.e("X3DDBG", "   Inside Proto IS protoField = " + attributeValue);
                                 Proto.Field field = proto.getField(attributeValue);
-                            }
-                            attributeValue = attributes.getValue("nodeField");
-                            if (attributeValue != null) {
-                                // currently, we don't do anything with the version information
-                                Log.e("X3DDBG", "      Inside Proto IS nodeField = " + attributeValue);
+                                attributeValue = attributes.getValue("nodeField");
+                                if (attributeValue != null) {
+                                    Log.e("X3DDBG", "   Set Proto connect nodeField = " + attributeValue);
+                                    proto.setNodeField(field, attributeValue);
+                                }
+                                if ( proto.getGeometry() != null) {
+                                    Cylinder cylinder = proto.getGeometry().getCylinder();
+                                    if ( cylinder != null ) {
+                                        if (proto.getNodeField(field).equalsIgnoreCase("height")) {
+                                            float[] height = proto.getField_SFFloat(field);
+                                            cylinder.setHeight( height[0] );
+                                        }
+                                        else if (proto.getNodeField(field).equalsIgnoreCase("radius")) {
+                                            float[] radius = proto.getField_SFFloat(field);
+                                            cylinder.setRadius( radius[0] );
+                                        }
+                                    }
+                                }
+                                else if ( proto.getAppearance() != null ) {
+                                    Log.e("X3DDBG", "   Inside Proto IS got appearance");
+                                    if ( proto.getAppearance().getMaterial() != null) {
+                                        Log.e("X3DDBG", "      Inside Proto IS got material");
+
+                                    }
+                                }
                             }
                         }
                     }
-                }
+                }  // end else if Proto connect
+                /********** PROTO Node: ProtoInstance **********/
+                else if (qName.equalsIgnoreCase("ProtoInstance")) {
+                    Log.e("X3DDBG", "===========================");
+                    attributeValue = attributes.getValue("name");
+                    if (attributeValue != null) {
+                        Log.e("X3DDBG", "ProtoInstance: name = '" + attributeValue +"'");
+                        for (Proto _proto : protos) {
+                            if (_proto.getName().equalsIgnoreCase(attributeValue)) {
+                                Log.e("X3DDBG", "   ProtoInstance: Match found '" + attributeValue + "' in protos array");
+                                protoInstance = _proto;
+                                Geometry geometryInstance = new Geometry();
+                                Cylinder cylinder = _proto.getGeometry().getCylinder();
+                                if ( cylinder != null ) {
+                                    try {
+                                        Cylinder cloneCylinder = (Cylinder) cylinder.clone();
+                                        geometryInstance.setCylinder( cloneCylinder );
+                                        //geometryInstance.setCylinder( (Cylinder) cylinder.clone() );
+                                    }
+                                    catch (Exception CloneNotSupportedException) {
+                                        Log.e("X3DDBG", "Proto Cylinder exception error");
+                                        Log.e(TAG, "Proto Cylinder exception error");
+                                    }
+                                }
+                                protoInstance.setGeometryInstance( geometryInstance );
+                                Log.e("X3DDBG", "After clone");
+                            }
+                        }
+                        if ( protoInstance == null ) {
+                            Log.e("X3DDBG", "<ProtoInstance name='" + attributeValue + "'> not matched with a <ProtoDeclare> ");
+                            Log.e(TAG, "<ProtoInstance name='" + attributeValue + "'> not matched with a <ProtoDeclare> ");
+                        }
+                    }
+                    else {
+                        Log.e("X3DDBG", "<ProtoInstance> does not contain a name.");
+                        Log.e(TAG, "<ProtoInstance> does not contain a name.");
+                    }
+                }  // end if PROTO Node: ProtoInstance
+                /********** PROTO Node: fieldValue **********/
+                else if (qName.equalsIgnoreCase("fieldValue")) {
+                    attributeValue = attributes.getValue("name");
+                    if (attributeValue != null) {
+                        Log.e("X3DDBG", "fieldValue name " + attributeValue);
+                        Proto.Field field = protoInstance.getField( attributeValue );
+                        Log.e("X3DDBG", "   data_type: " + protoInstance.getData_type(field) );
+                        Log.e("X3DDBG", "   node field: " + protoInstance.getNodeField(field) );
+
+                        if ( protoInstance.getData_type(field) == Proto.data_types.SFNode) {
+                            Log.e("X3DDBG", "      Got SFNode.");
+                            if ( protoInstance.getAppearance() != null ) {
+                                if ( protoInstance.getAppearance().getMaterial() != null) {
+                                    Log.e("X3DDBG", "         Got an <Appearance><Material/>.");
+
+                                }
+                            }
+                        }
+                        attributeValue = attributes.getValue("value");
+                        if (attributeValue != null) {
+                            Log.e("X3DDBG", "   fieldValue value = " + attributeValue);
+                            if ( protoInstance.getGeometryInstance() != null) {
+                                Cylinder cylinder = protoInstance.getGeometryInstance().getCylinder();
+                                if ( cylinder != null ) {
+                                    if (protoInstance.getNodeField(field).equalsIgnoreCase("height")) {
+                                        //float[] height = proto.getField_SFFloat(field);
+                                        cylinder.setHeight(
+                                                parseSingleFloatString(attributeValue, false, true));
+                                        Log.e("X3DDBG", "         Cylinder height = " + cylinder.getHeight());
+                                    }
+                                    else if (protoInstance.getNodeField(field).equalsIgnoreCase("radius")) {
+                                        //float[] radius = proto.getField_SFFloat(field);
+                                        cylinder.setRadius(
+                                                parseSingleFloatString(attributeValue, false, true));
+                                        Log.e("X3DDBG", "         Cylinder radius = " + cylinder.getRadius() );
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }  //  end if PROTO Node: fieldValue
 
                 // These next few nodes are used once per file and thus moved
                 //  to the end of the parsing's if-then-else statement
@@ -4042,6 +4432,8 @@ public class X3Dobject {
                 else
                     currentSceneObject = currentSceneObject.getParent();
             } else if (qName.equalsIgnoreCase("Shape")) {
+                ShapePostParsing();
+                /*
                 if (!gvrRenderingDataUSEd) {
                     // SHAPE node not being USEd (shared) elsewhere
 
@@ -4257,6 +4649,7 @@ public class X3Dobject {
                 gvrRenderingDataUSEd = false; // for DEFine and USE gvrRenderingData for
                 // x3d SHAPE node
                 gvrRenderData = null;
+                */
             } // end of ending Shape node
             else if (qName.equalsIgnoreCase("Appearance")) {
                 ;
@@ -4437,7 +4830,10 @@ public class X3Dobject {
                 ;
             }
             else if (qName.equalsIgnoreCase("ProtoDeclare")) {
-                if (proto != null) proto.setProtoStateNone();
+                if (proto != null) {
+                    proto.setProtoStateNone();
+                    protos.add(proto);
+                }
                 else Log.e(TAG, "Error with </ProtoDeclare>");
                 proto = null;
             }
@@ -4466,6 +4862,35 @@ public class X3Dobject {
                     Log.e("X3DDBG", "Error with Proto </IS>");
                 }
                 */
+            }
+            else if (qName.equalsIgnoreCase("ProtoInstance")) {
+                Log.e("X3DDBG", "</ProtoInstance>" );
+                if ( protoInstance.getGeometryInstance() != null) {
+                    Cylinder cylinder = protoInstance.getGeometryInstance().getCylinder();
+                    if ( cylinder != null ) {
+                        GVRCylinderSceneObject.CylinderParams params = new GVRCylinderSceneObject.CylinderParams();
+                        params.BottomRadius = cylinder.getRadius();
+                        params.TopRadius = cylinder.getRadius();
+                        params.Height = cylinder.getHeight();
+                        params.HasBottomCap = cylinder.getBottom();
+                        params.HasTopCap = cylinder.getTop();
+                        params.FacingOut = cylinder.getSolid();
+
+                        params.Material = new GVRMaterial(gvrContext, x3DShader);
+                        GVRCylinderSceneObject gvrCylinderSceneObject = new GVRCylinderSceneObject(
+                                gvrContext, params);
+                        currentSceneObject.addChildObject(gvrCylinderSceneObject);
+                        meshAttachedSceneObject = gvrCylinderSceneObject;
+                    }
+                }
+
+                protoInstance = null;
+                Log.e("X3DDBG", "   </ProtoInstance> call ShapePostParsing()" );
+                ShapePostParsing();
+                Log.e("X3DDBG", "   </ProtoInstance> return from ShapePostParsing()" );
+            }
+            else if (qName.equalsIgnoreCase("fieldValue")) {
+                ;
             }
 
             /*********

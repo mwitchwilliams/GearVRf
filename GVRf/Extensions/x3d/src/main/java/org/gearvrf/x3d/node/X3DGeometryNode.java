@@ -17,13 +17,13 @@ package org.gearvrf.x3d.node;
 
 import org.gearvrf.x3d.data_types.SFString;
 
-public class X3DNode
+public class X3DGeometryNode extends X3DNode
 {
 
-    private static final String TAG = X3DNode.class.getSimpleName();
+    private static final String TAG = X3DGeometryNode.class.getSimpleName();
     private SFString name = new SFString();
 
-    public X3DNode()
+    public X3DGeometryNode()
     {
     }
 
@@ -31,23 +31,9 @@ public class X3DNode
      * Constructor
      * @param newValue
      */
-    public X3DNode( String newValue )
+    public X3DGeometryNode( String newValue )
     {
         name.setValue( newValue );
     }
 
-    /**
-     * Assign String value to inputOutput SFString field named DEF.
-     */
-    public void setDEF( String newValue ) {
-        if (newValue != null) name.setValue( newValue );
-    }
-
-    /**
-     * Assign String value to inputOutput SFString field named USE.
-     */
-    public void setUSE( String newValue ) {
-        //TODO make setUse work.
-    }
-
-} // end X3DNode
+} // end X3DGeometryNode

@@ -18,7 +18,7 @@ package org.gearvrf.x3d.node;
 import org.gearvrf.x3d.data_types.SFColor;
 import org.gearvrf.x3d.data_types.SFFloat;
 
-public class Material extends X3DNode
+public class Material extends X3DNode implements Cloneable
 {
 
     private static final String TAG = Material.class.getSimpleName();
@@ -59,6 +59,25 @@ public class Material extends X3DNode
         setSpecularColor( specularColor );
         setTransparency( transparency );
         setDEF( DEF );
+    }
+
+
+    public Material clone() throws
+            CloneNotSupportedException
+    {
+        try {
+            Material cloneObj = (Material) super.clone();
+            cloneObj.ambientIntensity = this.ambientIntensity.clone();
+            cloneObj.diffuseColor = this.diffuseColor.clone();
+            cloneObj.emissiveColor = this.emissiveColor.clone();
+            cloneObj.shininess = this.shininess.clone();
+            cloneObj.specularColor = this.specularColor.clone();
+            cloneObj.transparency = this.transparency.clone();
+            return cloneObj;
+        }
+        catch (CloneNotSupportedException e) {
+        }
+        return null;
     }
 
     /**

@@ -15,7 +15,7 @@
 
 package org.gearvrf.x3d.node;
 
-public class Appearance extends X3DNode
+public class Appearance extends X3DNode implements Cloneable
 {
 
     private static final String TAG = Appearance.class.getSimpleName();
@@ -29,6 +29,19 @@ public class Appearance extends X3DNode
 
     public Appearance(String _DEF) {
         setDEF(_DEF);
+    }
+
+    public Appearance clone() throws
+            CloneNotSupportedException
+    {
+        try {
+            Appearance cloneObj = (Appearance) super.clone();
+            cloneObj.material = this.material.clone();
+            return cloneObj;
+        }
+        catch (CloneNotSupportedException e) {
+        }
+        return null;
     }
 
     /**

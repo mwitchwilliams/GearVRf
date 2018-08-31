@@ -42,7 +42,7 @@ public class Proto
 
     private static final String TAG = Proto.class.getSimpleName();
 
-    private enum data_types {
+    public enum data_types {
         MFString, MFVec3f, SFBool, SFColor, SFFloat, SFInt32, SFRotation,
         SFString, SFTime, SFVec2f, SFVec3f, SFNode }
     private enum proto_States {
@@ -51,6 +51,7 @@ public class Proto
 
     public class Field {
         private String mName = "";
+        private String mNode = "";
         private ScriptObject.AccessType mAccessType = null;
         private data_types mType;
         private float[] mFloatValue;     // SFColor, SFFloat, SFRotation, SFvec2f, SFVec3f
@@ -73,7 +74,10 @@ public class Proto
     private ScriptObject mScriptObject;
     private ArrayList<Field> mFieldObjects = new ArrayList<Field>();
 
+    private Shape mShape = null;
     private Appearance mAppearance = null;
+    private Geometry mGeometry = null;
+    private Geometry mGeometryInstance = null;
 
 
     public Proto(X3Dobject x3dObject)
@@ -82,6 +86,7 @@ public class Proto
         mScriptObject = new ScriptObject();
         mUtility = new Utility();
         mAppearance = null;
+        mGeometry = null;
     }
 
     public Proto(X3Dobject x3dObject, GVRSceneObject gvrSceneObject)
@@ -91,6 +96,7 @@ public class Proto
         mScriptObject = new ScriptObject();
         mUtility = new Utility();
         mAppearance = null;
+        mGeometry = null;
     }
 
     public Proto(X3Dobject x3dObject, GVRSceneObject gvrSceneObject, String name)
@@ -101,9 +107,10 @@ public class Proto
         mScriptObject = new ScriptObject();
         mUtility = new Utility();
         mAppearance = null;
+        mGeometry = null;
     }
 
-    public GVRSceneObject getMainGVRSceneObject() {
+    public GVRSceneObject getGVRSceneObject() {
         return mGVRSceneObject;
     }
 
@@ -115,8 +122,37 @@ public class Proto
         return mAppearance;
     }
 
-    public void createAppearance() {
-        mAppearance = new Appearance();
+    /**
+     * Provide X3DGeometryNode instance (using a properly typed node) from inputOutput SFNode field material.
+     * @param newValue
+     */
+    public Geometry getGeometry() {
+        return mGeometry;
+    }
+    public Geometry getGeometryInstance() {
+        return mGeometryInstance;
+    }
+
+    public void setAppearance(Appearance appearance) {
+        mAppearance = appearance;
+    }
+
+    /**
+     * Assign X3DGeometryNode instance (using a properly typed node) to inputOutput SFNode field material.
+     */
+    public void setGeometry(Geometry newValue) {
+        mGeometry = newValue;
+    }
+    public void setGeometryInstance(Geometry newValue) {
+        mGeometryInstance = newValue;
+    }
+
+    public Shape getShape() {
+        return mShape;
+    }
+
+    public void setShape(Shape shape ) {
+        mShape = shape;
     }
 
     public boolean isProtoStateNone() {
@@ -277,6 +313,34 @@ public class Proto
 
         }
         return null;
+    }
+
+    public Field getField(int index) {
+        if (index < mFieldObjects.size()) {
+            Field field = mFieldObjects.get(index);
+            return field;
+        }
+        return null;
+    }
+
+    public int getFieldSize() {
+        return mFieldObjects.size();
+    }
+
+    public data_types getData_type(Field field) {
+        return field.mType;
+    }
+
+    public void setNodeField(Field field, String nodeField) {
+        field.mNode = nodeField;
+    }
+
+    public String getNodeField( Field field ) {
+        return field.mNode;
+    }
+
+    public float[] getField_SFFloat( Field field ) {
+        return field.mFloatValue;
     }
 
 } // end Proto
