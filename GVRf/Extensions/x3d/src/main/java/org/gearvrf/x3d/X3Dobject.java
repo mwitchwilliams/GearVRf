@@ -57,11 +57,14 @@ import org.gearvrf.x3d.data_types.SFBool;
 import org.gearvrf.x3d.data_types.SFFloat;
 import org.gearvrf.x3d.data_types.SFRotation;
 import org.gearvrf.x3d.node.Appearance;
+import org.gearvrf.x3d.node.Box;
+import org.gearvrf.x3d.node.Cone;
 import org.gearvrf.x3d.node.Cylinder;
 import org.gearvrf.x3d.node.Geometry;
 import org.gearvrf.x3d.node.Material;
 import org.gearvrf.x3d.node.Proto;
 import org.gearvrf.x3d.node.Shape;
+import org.gearvrf.x3d.node.Sphere;
 import org.joml.Matrix3f;
 import org.joml.Vector2f;
 import org.xml.sax.Attributes;
@@ -1996,35 +1999,6 @@ public class X3Dobject {
                             }
                         //}
                     }
-                    else if ( protoInstance != null ) {
-                        Log.e("X3DDBG", "Material protoInstance != null");
-                        if (protoInstance.getShape() != null ) {
-                            if (protoInstance.getShape().getAppearance() != null ) {
-                                Material material = protoInstance.getAppearance().getMaterial();
-                                if (material != null) {
-                                    Log.e("X3DDBG", "   Material protoInstance material != null");
-                                    shaderSettings.ambientIntensity = material.getAmbientIntensity();
-                                    shaderSettings.diffuseColor = material.getDiffuseColor();
-                                    shaderSettings.emissiveColor = material.getEmissiveColor();
-                                    shaderSettings.shininess = material.getShininess();
-                                    shaderSettings.specularColor = material.getSpecularColor();
-                                    shaderSettings.setTransparency(material.getTransparency());
-                                }
-                                else {
-                                    Log.e(TAG, "Material missing from ProtoInstance");
-                                    Log.e("X3DDBG", "Material missing from ProtoInstance");
-                                }
-                            }
-                            else {
-                                Log.e(TAG, "Appearance missing from ProtoInstance");
-                                Log.e("X3DDBG", "Appearance missing from ProtoInstance");
-                            }
-                        }
-                        else {
-                            Log.e(TAG, "Shape missing from ProtoInstance");
-                            Log.e("X3DDBG", "Shape missing from ProtoInstance");
-                        }
-                    }
                 } // end ! USE attribute
 
             } // end <Material> node
@@ -2972,10 +2946,25 @@ public class X3Dobject {
                     GVRCubeSceneObject gvrCubeSceneObject = new GVRCubeSceneObject(
                             gvrContext, solid, sizeVector);
                     gvrCubeSceneObject.getRenderData().setMaterial(new GVRMaterial(gvrContext, x3DShader));
-                    currentSceneObject.addChildObject(gvrCubeSceneObject);
+
+                    if ( proto != null ) {
+                        Log.e("X3DDBG", "proto != null; Got Box");
+                        //GVRSceneObject gvrSceneObject = new GVRSceneObject(gvrContext);
+                        //proto.setGVRSceneObject(gvrSceneObject);
+                        //proto.getGVRSceneObject().addChildObject(gvrConeSceneObject);
+                        //Log.e("X3DDBG", "   Added Cone to Proto's mGVRSceneObject");
+
+                        if (proto.getGeometry() == null) {
+                            Geometry geometry = new Geometry();
+                            proto.setGeometry( geometry );
+                            Box boxObj = new Box();
+                            geometry.setBox( boxObj );
+                        }
+                    }
+                    else currentSceneObject.addChildObject(gvrCubeSceneObject);
+                    //currentSceneObject.addChildObject(gvrCubeSceneObject);
+
                     meshAttachedSceneObject = gvrCubeSceneObject;
-
-
                 } // end <Box> node
 
 
@@ -3015,12 +3004,27 @@ public class X3Dobject {
                     params.HasTopCap = false;
                     params.HasBottomCap = bottom;
                     params.Material = new GVRMaterial(gvrContext, x3DShader);
-                    GVRCylinderSceneObject cone = new GVRCylinderSceneObject(gvrContext,
+                    GVRCylinderSceneObject gvrConeSceneObject = new GVRCylinderSceneObject(gvrContext,
                             params);
 
-                    currentSceneObject.addChildObject(cone);
-                    meshAttachedSceneObject = cone;
+                    if ( proto != null ) {
+                        Log.e("X3DDBG", "proto != null; Got Cone");
+                        //GVRSceneObject gvrSceneObject = new GVRSceneObject(gvrContext);
+                        //proto.setGVRSceneObject(gvrSceneObject);
+                        //proto.getGVRSceneObject().addChildObject(gvrConeSceneObject);
+                        //Log.e("X3DDBG", "   Added Cone to Proto's mGVRSceneObject");
 
+                        if (proto.getGeometry() == null) {
+                            Geometry geometry = new Geometry();
+                            proto.setGeometry( geometry );
+                            Cone coneObj = new Cone();
+                            geometry.setCone( coneObj );
+                        }
+                    }
+                    else currentSceneObject.addChildObject(gvrConeSceneObject);
+                    //currentSceneObject.addChildObject(cone);
+                    //meshAttachedSceneObject = cone;
+                    meshAttachedSceneObject = gvrConeSceneObject;
                 }  // end <Cone> node
 
 
@@ -3069,10 +3073,10 @@ public class X3Dobject {
                             gvrContext, params);
                     if ( proto != null ) {
                         Log.e("X3DDBG", "proto != null; Got Cylinder");
-                        GVRSceneObject gvrSceneObject = new GVRSceneObject(gvrContext);
-                        proto.setGVRSceneObject(gvrSceneObject);
-                        proto.getGVRSceneObject().addChildObject(gvrCylinderSceneObject);
-                        Log.e("X3DDBG", "   Added Cylinder to Proto's mGVRSceneObject");
+                        //GVRSceneObject gvrSceneObject = new GVRSceneObject(gvrContext);
+                        //proto.setGVRSceneObject(gvrSceneObject);
+                        //proto.getGVRSceneObject().addChildObject(gvrCylinderSceneObject);
+                        //Log.e("X3DDBG", "   Added Cylinder to Proto's mGVRSceneObject");
 
                         if (proto.getGeometry() == null) {
                             Geometry geometry = new Geometry();
@@ -3101,7 +3105,17 @@ public class X3Dobject {
                     }
                     GVRSphereSceneObject gvrSphereSceneObject = new GVRSphereSceneObject(
                             gvrContext, solid, new GVRMaterial(gvrContext, x3DShader), radius);
-                    currentSceneObject.addChildObject(gvrSphereSceneObject);
+                    //currentSceneObject.addChildObject(gvrSphereSceneObject);
+                    if ( proto != null ) {
+                        Log.e("X3DDBG", "proto != null; Got Sphere");
+                         if (proto.getGeometry() == null) {
+                            Geometry geometry = new Geometry();
+                            proto.setGeometry( geometry );
+                            Sphere sphere = new Sphere();
+                            geometry.setSphere( sphere );
+                        }
+                    }
+                    else currentSceneObject.addChildObject(gvrSphereSceneObject);
                     meshAttachedSceneObject = gvrSphereSceneObject;
 
                 } // end <Sphere> node
@@ -4267,25 +4281,66 @@ public class X3Dobject {
                                     proto.setNodeField(field, attributeValue);
                                 }
                                 if ( proto.getGeometry() != null) {
+                                    Box box = proto.getGeometry().getBox();
+                                    if ( box != null ) {
+                                        if (proto.getNodeField(field).equalsIgnoreCase("size")) {
+                                            box.setSize( proto.getField_SFVec3f(field) );
+                                        }
+                                        else if (proto.getNodeField(field).equalsIgnoreCase("solid")) {
+                                            box.setSolid( proto.getField_SFBool(field) );
+                                        }
+                                    } // end Box
+                                    Cone cone = proto.getGeometry().getCone();
+                                    if ( cone != null ) {
+                                        Log.e("X3DDBG", "      Proto connect: got a cone");
+                                        if (proto.getNodeField(field).equalsIgnoreCase("bottom")) {
+                                            cone.setBottom( proto.getField_SFBool(field) );
+                                        }
+                                        else if (proto.getNodeField(field).equalsIgnoreCase("bottomRadius")) {
+                                            cone.setBottomRadius( proto.getField_SFFloat(field)[0] );
+                                        }
+                                        else if (proto.getNodeField(field).equalsIgnoreCase("height")) {
+                                            cone.setHeight( proto.getField_SFFloat(field)[0] );
+                                        }
+                                        else if (proto.getNodeField(field).equalsIgnoreCase("side")) {
+                                            cone.setSide( proto.getField_SFBool(field) );
+                                        }
+                                        else if (proto.getNodeField(field).equalsIgnoreCase("solid")) {
+                                            cone.setSolid( proto.getField_SFBool(field) );
+                                        }
+                                    }  // end if cone != null
                                     Cylinder cylinder = proto.getGeometry().getCylinder();
                                     if ( cylinder != null ) {
-                                        if (proto.getNodeField(field).equalsIgnoreCase("height")) {
-                                            float[] height = proto.getField_SFFloat(field);
-                                            cylinder.setHeight( height[0] );
+                                        if (proto.getNodeField(field).equalsIgnoreCase("bottom")) {
+                                            cylinder.setBottom( proto.getField_SFBool(field) );
+                                        }
+                                        else if (proto.getNodeField(field).equalsIgnoreCase("height")) {
+                                            cylinder.setHeight( proto.getField_SFFloat(field)[0] );
                                         }
                                         else if (proto.getNodeField(field).equalsIgnoreCase("radius")) {
-                                            float[] radius = proto.getField_SFFloat(field);
-                                            cylinder.setRadius( radius[0] );
+                                            cylinder.setRadius( proto.getField_SFFloat(field)[0] );
                                         }
-                                    }
-                                }
-                                else if ( proto.getAppearance() != null ) {
-                                    Log.e("X3DDBG", "   Inside Proto IS got appearance");
-                                    if ( proto.getAppearance().getMaterial() != null) {
-                                        Log.e("X3DDBG", "      Inside Proto IS got material");
-
-                                    }
-                                }
+                                        else if (proto.getNodeField(field).equalsIgnoreCase("side")) {
+                                            cylinder.setSide( proto.getField_SFBool(field) );
+                                        }
+                                        else if (proto.getNodeField(field).equalsIgnoreCase("solid")) {
+                                            cylinder.setSolid( proto.getField_SFBool(field) );
+                                        }
+                                        else if (proto.getNodeField(field).equalsIgnoreCase("top")) {
+                                            cylinder.setTop( proto.getField_SFBool(field) );
+                                            Log.e("X3DDBG", "   cylinder top = " + cylinder.getTop());
+                                        }
+                                    } // end Cylinder
+                                    Sphere sphere = proto.getGeometry().getSphere();
+                                    if ( sphere != null ) {
+                                        if (proto.getNodeField(field).equalsIgnoreCase("radius")) {
+                                            sphere.setRadius( proto.getField_SFFloat(field)[0] );
+                                        }
+                                        else if (proto.getNodeField(field).equalsIgnoreCase("solid")) {
+                                            sphere.setSolid( proto.getField_SFBool(field) );
+                                        }
+                                    } // end Sphere
+                                }  // end proto.getGeometry() != null
                             }
                         }
                     }
@@ -4301,20 +4356,81 @@ public class X3Dobject {
                                 Log.e("X3DDBG", "   ProtoInstance: Match found '" + attributeValue + "' in protos array");
                                 protoInstance = _proto;
                                 Geometry geometryInstance = new Geometry();
+                                Box box = _proto.getGeometry().getBox();
+                                if ( box != null ) {
+                                    try {
+                                        Box cloneBox = (Box) box.clone();
+                                        geometryInstance.setBox( cloneBox );
+                                    }
+                                    catch (Exception CloneNotSupportedException) {
+                                        Log.e("X3DDBG", "Proto Box exception error");
+                                        Log.e(TAG, "Proto Box exception error");
+                                    }
+                                }
+                                Cone cone = _proto.getGeometry().getCone();
+                                if ( cone != null ) {
+                                    try {
+                                        Cone cloneCone = (Cone) cone.clone();
+                                        geometryInstance.setCone( cloneCone );
+                                    }
+                                    catch (Exception CloneNotSupportedException) {
+                                        Log.e("X3DDBG", "Proto Cone exception error");
+                                        Log.e(TAG, "Proto Cone exception error");
+                                    }
+                                }
                                 Cylinder cylinder = _proto.getGeometry().getCylinder();
                                 if ( cylinder != null ) {
                                     try {
                                         Cylinder cloneCylinder = (Cylinder) cylinder.clone();
                                         geometryInstance.setCylinder( cloneCylinder );
-                                        //geometryInstance.setCylinder( (Cylinder) cylinder.clone() );
                                     }
                                     catch (Exception CloneNotSupportedException) {
                                         Log.e("X3DDBG", "Proto Cylinder exception error");
                                         Log.e(TAG, "Proto Cylinder exception error");
                                     }
                                 }
+                                Sphere sphere = _proto.getGeometry().getSphere();
+                                if ( sphere != null ) {
+                                    try {
+                                        Sphere cloneSphere = (Sphere) sphere.clone();
+                                        geometryInstance.setSphere( cloneSphere );
+                                    }
+                                    catch (Exception CloneNotSupportedException) {
+                                        Log.e("X3DDBG", "Proto Sphere exception error");
+                                        Log.e(TAG, "Proto Sphere exception error");
+                                    }
+                                }
                                 protoInstance.setGeometryInstance( geometryInstance );
                                 Log.e("X3DDBG", "After clone");
+
+                                // Set the default material values
+                                if (protoInstance.getShape() != null ) {
+                                    if (protoInstance.getShape().getAppearance() != null ) {
+                                        Material material = protoInstance.getAppearance().getMaterial();
+                                        if (material != null) {
+                                            Log.e("X3DDBG", "   Material protoInstance material != null SETTING");
+                                            shaderSettings.ambientIntensity = material.getAmbientIntensity();
+                                            shaderSettings.diffuseColor = material.getDiffuseColor();
+                                            shaderSettings.emissiveColor = material.getEmissiveColor();
+                                            shaderSettings.shininess = material.getShininess();
+                                            shaderSettings.specularColor = material.getSpecularColor();
+                                            shaderSettings.setTransparency(material.getTransparency());
+                                        }
+                                        else {
+                                            Log.e(TAG, "Material missing from ProtoInstance");
+                                            Log.e("X3DDBG", "Material missing from ProtoInstance");
+                                        }
+                                    }
+                                    else {
+                                        Log.e(TAG, "Appearance missing from ProtoInstance");
+                                        Log.e("X3DDBG", "Appearance missing from ProtoInstance");
+                                    }
+                                }
+                                else {
+                                    Log.e(TAG, "Shape missing from ProtoInstance");
+                                    Log.e("X3DDBG", "Shape missing from ProtoInstance");
+                                }
+
                             }
                         }
                         if ( protoInstance == null ) {
@@ -4349,22 +4465,79 @@ public class X3Dobject {
                         if (attributeValue != null) {
                             Log.e("X3DDBG", "   fieldValue value = " + attributeValue);
                             if ( protoInstance.getGeometryInstance() != null) {
+                                Box box = protoInstance.getGeometryInstance().getBox();
+                                if ( box != null ) {
+                                    if (protoInstance.getNodeField(field).equalsIgnoreCase("size")) {
+                                        box.setSize(
+                                                parseFixedLengthFloatString(attributeValue, 3, false, false)
+                                        );
+                                    }
+                                    else if (protoInstance.getNodeField(field).equalsIgnoreCase("solid")) {
+                                        box.setSolid(
+                                                parseBooleanString( attributeValue ) );
+                                    }
+                                }  //  end Box
+                                Cone cone = protoInstance.getGeometryInstance().getCone();
+                                if ( cone != null ) {
+                                    if (protoInstance.getNodeField(field).equalsIgnoreCase("bottom")) {
+                                        cone.setBottom(
+                                                parseBooleanString( attributeValue ) );
+                                    }
+                                    else if (protoInstance.getNodeField(field).equalsIgnoreCase("bottomRadius")) {
+                                        cone.setBottomRadius(
+                                                parseSingleFloatString(attributeValue, false, true));
+                                    }
+                                    else if (protoInstance.getNodeField(field).equalsIgnoreCase("height")) {
+                                        cone.setHeight(
+                                                parseSingleFloatString(attributeValue, false, true));
+                                    }
+                                    else if (protoInstance.getNodeField(field).equalsIgnoreCase("side")) {
+                                        cone.setSide(
+                                                parseBooleanString( attributeValue ) );
+                                    }
+                                    else if (protoInstance.getNodeField(field).equalsIgnoreCase("solid")) {
+                                        cone.setSolid(
+                                                parseBooleanString( attributeValue ) );
+                                    }
+                                }  //  end Cone
                                 Cylinder cylinder = protoInstance.getGeometryInstance().getCylinder();
                                 if ( cylinder != null ) {
-                                    if (protoInstance.getNodeField(field).equalsIgnoreCase("height")) {
-                                        //float[] height = proto.getField_SFFloat(field);
+                                    if (protoInstance.getNodeField(field).equalsIgnoreCase("bottom")) {
+                                        cylinder.setBottom(
+                                                parseBooleanString( attributeValue ) );
+                                    }
+                                    else if (protoInstance.getNodeField(field).equalsIgnoreCase("height")) {
                                         cylinder.setHeight(
                                                 parseSingleFloatString(attributeValue, false, true));
-                                        Log.e("X3DDBG", "         Cylinder height = " + cylinder.getHeight());
                                     }
                                     else if (protoInstance.getNodeField(field).equalsIgnoreCase("radius")) {
-                                        //float[] radius = proto.getField_SFFloat(field);
                                         cylinder.setRadius(
                                                 parseSingleFloatString(attributeValue, false, true));
-                                        Log.e("X3DDBG", "         Cylinder radius = " + cylinder.getRadius() );
                                     }
-                                }
-                            }
+                                    else if (protoInstance.getNodeField(field).equalsIgnoreCase("side")) {
+                                        cylinder.setSide(
+                                                parseBooleanString( attributeValue ) );
+                                    }
+                                    else if (protoInstance.getNodeField(field).equalsIgnoreCase("solid")) {
+                                        cylinder.setSolid(
+                                                parseBooleanString( attributeValue ) );
+                                    }
+                                    else if (protoInstance.getNodeField(field).equalsIgnoreCase("top")) {
+                                        cylinder.setTop(
+                                                parseBooleanString( attributeValue ) );
+                                        Log.e("X3DDBG", "         Cylinder top = " + cylinder.getTop() );
+                                    }
+                                }  //  end Cylinder
+                                Sphere sphere = protoInstance.getGeometryInstance().getSphere();
+                                if ( sphere != null ) {
+                                    if (protoInstance.getNodeField(field).equalsIgnoreCase("radius")) {
+                                        sphere.setRadius(parseSingleFloatString(attributeValue, false, true));
+                                    }
+                                    else if (protoInstance.getNodeField(field).equalsIgnoreCase("solid")) {
+                                        sphere.setSolid( parseBooleanString( attributeValue ) );
+                                    }
+                                }  //  end Sphere
+                            } // geometry !null
                         }
                     }
                 }  //  end if PROTO Node: fieldValue
@@ -4866,6 +5039,16 @@ public class X3Dobject {
             else if (qName.equalsIgnoreCase("ProtoInstance")) {
                 Log.e("X3DDBG", "</ProtoInstance>" );
                 if ( protoInstance.getGeometryInstance() != null) {
+                    Box box = protoInstance.getGeometryInstance().getBox();
+                    if ( box != null ) {
+                        float[] size = box.getSize();
+                        Vector3f sizeVector = new Vector3f(size[0], size[1], size[2]);
+                        GVRCubeSceneObject gvrCubeSceneObject = new GVRCubeSceneObject(
+                                gvrContext, box.getSolid(), sizeVector);
+                        gvrCubeSceneObject.getRenderData().setMaterial(new GVRMaterial(gvrContext, x3DShader));
+                        currentSceneObject.addChildObject(gvrCubeSceneObject);
+                        meshAttachedSceneObject = gvrCubeSceneObject;
+                    }
                     Cylinder cylinder = protoInstance.getGeometryInstance().getCylinder();
                     if ( cylinder != null ) {
                         GVRCylinderSceneObject.CylinderParams params = new GVRCylinderSceneObject.CylinderParams();
@@ -4881,6 +5064,30 @@ public class X3Dobject {
                                 gvrContext, params);
                         currentSceneObject.addChildObject(gvrCylinderSceneObject);
                         meshAttachedSceneObject = gvrCylinderSceneObject;
+                    }
+                    Cone cone = protoInstance.getGeometryInstance().getCone();
+                    if ( cone != null ) {
+                        GVRCylinderSceneObject.CylinderParams params = new GVRCylinderSceneObject.CylinderParams();
+                        params.BottomRadius = cone.getBottomRadius();
+                        params.TopRadius = 0;
+                        params.Height = cone.getHeight();
+                        params.HasBottomCap = cone.getBottom();
+                        params.HasTopCap = false;
+                        params.FacingOut = cone.getSolid();
+
+                        params.Material = new GVRMaterial(gvrContext, x3DShader);
+                        GVRCylinderSceneObject gvrCylinderSceneObject = new GVRCylinderSceneObject(
+                                gvrContext, params);
+                        currentSceneObject.addChildObject(gvrCylinderSceneObject);
+                        meshAttachedSceneObject = gvrCylinderSceneObject;
+                    }
+                    Sphere sphere = protoInstance.getGeometryInstance().getSphere();
+                    if ( sphere != null ) {
+                        GVRSphereSceneObject gvrSphereSceneObject = new GVRSphereSceneObject(
+                                gvrContext, sphere.getSolid(),
+                                new GVRMaterial(gvrContext, x3DShader), sphere.getRadius());
+                        currentSceneObject.addChildObject(gvrSphereSceneObject);
+                        meshAttachedSceneObject = gvrSphereSceneObject;
                     }
                 }
 

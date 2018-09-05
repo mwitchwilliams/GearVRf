@@ -17,7 +17,7 @@ package org.gearvrf.x3d.node;
 
 import org.gearvrf.x3d.data_types.SFString;
 
-public class X3DNode
+public class X3DNode implements Cloneable
 {
 
     private static final String TAG = X3DNode.class.getSimpleName();
@@ -34,6 +34,18 @@ public class X3DNode
     public X3DNode( String newValue )
     {
         name.setValue( newValue );
+    }
+
+    public X3DNode clone() throws
+            CloneNotSupportedException
+    {
+        try {
+            X3DNode cloneObj = (X3DNode) super.clone();
+            return cloneObj;
+        }
+        catch (CloneNotSupportedException e) {
+        }
+        return null;
     }
 
     /**

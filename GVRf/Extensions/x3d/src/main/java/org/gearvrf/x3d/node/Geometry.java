@@ -22,10 +22,10 @@ public class Geometry extends X3DGeometryNode
 
     private static final String TAG = Geometry.class.getSimpleName();
 
-    //private Box box = null;
-    //private Cone cone = null;
+    private Box box = null;
+    private Cone cone = null;
     private Cylinder cylinder = null;
-    //private Sphere sphere = null;
+    private Sphere sphere = null;
 
     //private IndexedFaceSet indexedFaceSet = null;
     //private Text text = null;
@@ -38,11 +38,35 @@ public class Geometry extends X3DGeometryNode
     }
 
     /**
+     * Provide Box.
+     * @param newValue
+     */
+    public Box getBox() {
+        return box;
+    }
+
+    /**
+     * Provide Cone.
+     * @param newValue
+     */
+    public Cone getCone() {
+        return cone;
+    }
+
+    /**
      * Provide Cylinder.
      * @param newValue
      */
     public Cylinder getCylinder() {
         return cylinder;
+    }
+
+    /**
+     * Provide Sphere.
+     * @param newValue
+     */
+    public Sphere getSphere() {
+        return sphere;
     }
 
     /**
@@ -62,9 +86,31 @@ public class Geometry extends X3DGeometryNode
     }
 
     /**
-     * Assign X3DMaterialNode instance (using a properly typed node) to inputOutput SFNode field material.
+     * Assign X3DBoxNode instance (using a properly typed node) to inputOutput SFNode field material.
+     */
+    public void setBox(Box newValue) {
+        box = newValue;
+    }
+
+    /**
+     * Assign X3DConeNode instance (using a properly typed node) to inputOutput SFNode field material.
+     */
+    public void setCone(Cone newValue) {
+        cone = newValue;
+    }
+
+    /**
+     * Assign X3DCylinderNode instance (using a properly typed node) to inputOutput SFNode field material.
      */
     public void setCylinder(Cylinder newValue) {
         cylinder = newValue;
     }
-} // end Appearance
+
+    /**
+     * Assign X3DSphereNode instance (using a properly typed node) to inputOutput SFNode field material.
+     */
+    public void setSphere(Sphere newValue) {
+        sphere = newValue;
+    }
+
+} // end Geometry

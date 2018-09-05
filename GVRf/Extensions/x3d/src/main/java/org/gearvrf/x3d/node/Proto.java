@@ -110,13 +110,15 @@ public class Proto
         mGeometry = null;
     }
 
-    public GVRSceneObject getGVRSceneObject() {
+    /*
+    //public GVRSceneObject getGVRSceneObject() {
         return mGVRSceneObject;
     }
 
-    public void setGVRSceneObject(GVRSceneObject gvrSceneObject) {
-        mGVRSceneObject = gvrSceneObject;
-    }
+    //public void setGVRSceneObject(GVRSceneObject gvrSceneObject) {
+    //    mGVRSceneObject = gvrSceneObject;
+    //}
+    */
 
     public Appearance getAppearance() {
         return mAppearance;
@@ -339,7 +341,15 @@ public class Proto
         return field.mNode;
     }
 
+    public boolean getField_SFBool( Field field ) {
+        return field.mBooleanValue;
+    }
+
     public float[] getField_SFFloat( Field field ) {
+        return field.mFloatValue;
+    }
+
+    public float[] getField_SFVec3f( Field field ) {
         return field.mFloatValue;
     }
 
