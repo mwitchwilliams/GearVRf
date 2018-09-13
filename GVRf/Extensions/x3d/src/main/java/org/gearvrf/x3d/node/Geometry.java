@@ -28,7 +28,7 @@ public class Geometry extends X3DGeometryNode
     private Sphere sphere = null;
 
     //private IndexedFaceSet indexedFaceSet = null;
-    //private Text text = null;
+    private Text text = null;
 
     public Geometry() {
     }
@@ -39,7 +39,7 @@ public class Geometry extends X3DGeometryNode
 
     /**
      * Provide Box.
-     * @param newValue
+     * @param box
      */
     public Box getBox() {
         return box;
@@ -47,7 +47,7 @@ public class Geometry extends X3DGeometryNode
 
     /**
      * Provide Cone.
-     * @param newValue
+     * @param cone
      */
     public Cone getCone() {
         return cone;
@@ -55,7 +55,7 @@ public class Geometry extends X3DGeometryNode
 
     /**
      * Provide Cylinder.
-     * @param newValue
+     * @param cylinder
      */
     public Cylinder getCylinder() {
         return cylinder;
@@ -63,10 +63,18 @@ public class Geometry extends X3DGeometryNode
 
     /**
      * Provide Sphere.
-     * @param newValue
+     * @param sphere
      */
     public Sphere getSphere() {
         return sphere;
+    }
+
+    /**
+     * Provide Text.
+     * @param text
+     */
+    public Text getText() {
+        return text;
     }
 
     /**
@@ -86,31 +94,38 @@ public class Geometry extends X3DGeometryNode
     }
 
     /**
-     * Assign X3DBoxNode instance (using a properly typed node) to inputOutput SFNode field material.
+     * Assign X3DBoxNode instance (using a properly typed node) to inputOutput SFNode box.
      */
     public void setBox(Box newValue) {
         box = newValue;
     }
 
     /**
-     * Assign X3DConeNode instance (using a properly typed node) to inputOutput SFNode field material.
+     * Assign X3DConeNode instance (using a properly typed node) to inputOutput SFNode cone.
      */
     public void setCone(Cone newValue) {
         cone = newValue;
     }
 
     /**
-     * Assign X3DCylinderNode instance (using a properly typed node) to inputOutput SFNode field material.
+     * Assign X3DCylinderNode instance (using a properly typed node) to inputOutput SFNode cylinder.
      */
     public void setCylinder(Cylinder newValue) {
         cylinder = newValue;
     }
 
     /**
-     * Assign X3DSphereNode instance (using a properly typed node) to inputOutput SFNode field material.
+     * Assign X3DSphereNode instance (using a properly typed node) to inputOutput SFNode sphere.
      */
     public void setSphere(Sphere newValue) {
         sphere = newValue;
+    }
+
+    /**
+     * Assign X3DTextNode instance (using a properly typed node) to inputOutput SFNode text.
+     */
+    public void setText(Text newValue) {
+        text = newValue;
     }
 
 } // end Geometry

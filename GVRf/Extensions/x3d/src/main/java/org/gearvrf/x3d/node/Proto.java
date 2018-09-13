@@ -78,6 +78,7 @@ public class Proto
     private Appearance mAppearance = null;
     private Geometry mGeometry = null;
     private Geometry mGeometryInstance = null;
+    private Transform mTransform = null;
 
 
     public Proto(X3Dobject x3dObject)
@@ -155,6 +156,14 @@ public class Proto
 
     public void setShape(Shape shape ) {
         mShape = shape;
+    }
+
+    public Transform getTransform() {
+        return mTransform;
+    }
+
+    public void setTransform(Transform transform ) {
+        mTransform = transform;
     }
 
     public boolean isProtoStateNone() {

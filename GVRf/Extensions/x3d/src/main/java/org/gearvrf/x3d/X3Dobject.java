@@ -60,11 +60,14 @@ import org.gearvrf.x3d.node.Appearance;
 import org.gearvrf.x3d.node.Box;
 import org.gearvrf.x3d.node.Cone;
 import org.gearvrf.x3d.node.Cylinder;
+import org.gearvrf.x3d.node.FontStyle;
 import org.gearvrf.x3d.node.Geometry;
 import org.gearvrf.x3d.node.Material;
 import org.gearvrf.x3d.node.Proto;
 import org.gearvrf.x3d.node.Shape;
 import org.gearvrf.x3d.node.Sphere;
+import org.gearvrf.x3d.node.Text;
+import org.gearvrf.x3d.node.Transform;
 import org.joml.Matrix3f;
 import org.joml.Vector2f;
 import org.xml.sax.Attributes;
@@ -912,7 +915,6 @@ public class X3Dobject {
     };
 
     private void Init_Text_FontParams() {
-        Text_FontParams.length = null;
         Text_FontParams.maxExtent = 0;
         Text_FontParams.nameTextAttribute = ""; // DEFind name associated with Text node
         Text_FontParams.string = "";
@@ -1757,6 +1759,21 @@ public class X3Dobject {
                     // a direct child of this LOD.
                     if (lodManager.isActive()) lodManager.AddLODSceneObject( currentSceneObject );
 
+                    if ( proto != null) {
+                        Log.e("X3DDBG", "Proto with Transform");
+                        if ( proto.isProtoStateProtoBody()) {
+                            if ( proto.getTransform() == null) {
+                                Log.e("X3DDBG", "   transform == null");
+                                Transform transform = new Transform(center, rotation,
+                                        scale, scaleOrientation, translation, name );
+                                proto.setTransform( transform );
+                                Log.e("X3DDBG", "   did proto.setTransform() " +
+                                        transform.getDEF().getValue());
+                            }
+                            Log.e("X3DDBG", "Proto - Transform");
+                        }
+                    }
+
                 } // not a 'Transform USE="..."' node
 
             } // end <Transform> node
@@ -1849,18 +1866,15 @@ public class X3Dobject {
                     if ( proto != null) {
                         Log.e("X3DDBG", "Proto with Shape");
                         if ( proto.isProtoStateProtoBody()) {
-                            //GVRSceneObject gvrSceneObject = new GVRSceneObject(gvrContext);
-                            //if (attributeValue != null) gvrSceneObject.setName( attributeValue );
-                            //proto.setGVRSceneObject( gvrSceneObject );
                             if ( proto.getShape() == null) {
-                                Log.e("X3DDBG", "   shape == null, attributeValue " + attributeValue);
+                                Log.e("X3DDBG", "   proto.getShape() == null, attributeValue " + attributeValue);
                                 Shape shape = new Shape(proto, attributeValue);
                                 proto.setShape( shape );
+                                if ( proto.getTransform() != null) {
+                                    proto.getTransform().setShape( shape );
+                                    Log.e("X3DDBG", "      transform.setShape()");
+                                }
                                 Log.e("X3DDBG", "   did proto.setShape()");
-                                //if (proto.getAppearance() != null ) {
-                                    //shape.setAppearance( proto.getAppearance() );
-                                    //Log.e("X3DDBG", "      did shape.setAppearance()");
-                                //}
                             }
                             Log.e("X3DDBG", "   Proto - Shape, name " + attributeValue);
                         }
@@ -3105,7 +3119,7 @@ public class X3Dobject {
                     }
                     GVRSphereSceneObject gvrSphereSceneObject = new GVRSphereSceneObject(
                             gvrContext, solid, new GVRMaterial(gvrContext, x3DShader), radius);
-                    //currentSceneObject.addChildObject(gvrSphereSceneObject);
+
                     if ( proto != null ) {
                         Log.e("X3DDBG", "proto != null; Got Sphere");
                          if (proto.getGeometry() == null) {
@@ -3201,6 +3215,8 @@ public class X3Dobject {
 
                 /********** Text **********/
                 else if (qName.equalsIgnoreCase("Text")) {
+                    String[] string = null;
+                    float[] length = {0};
                     Init_Text_FontParams();
                     attributeValue = attributes.getValue("USE");
                     if (attributeValue != null) {
@@ -3213,7 +3229,6 @@ public class X3Dobject {
                     }
                     attributeValue = attributes.getValue("length");
                     if (attributeValue != null) {
-                        float[] length = null;
                         // reusing the keys parsing here cause it works
                         parseNumbersString(attributeValue, X3Dobject.interpolatorKeyComponent,
                                 1);
@@ -3232,7 +3247,7 @@ public class X3Dobject {
                     }
                     attributeValue = attributes.getValue("string");
                     if (attributeValue != null) {
-                        String[] string = parseMFString(attributeValue);
+                        string = parseMFString(attributeValue);
                         String text = "";
                         for (int i = 0; i < string.length; i++) {
                             if (i > 0) text += "\n";
@@ -3244,6 +3259,19 @@ public class X3Dobject {
                     if (attributeValue != null) {
                         Text_FontParams.solid = parseBooleanString(attributeValue);
                         Log.e(TAG, "Text 'solid' attribute currently not implemented. ");
+                    }
+
+                    if ( proto != null ) {
+                        Log.e("X3DDBG", "proto != null; Got Text");
+                        if (proto.getGeometry() == null) {
+                            Geometry geometry = new Geometry();
+                            proto.setGeometry( geometry );
+                            Text textObj = new Text(null, length[0], Text_FontParams.maxExtent,
+                                    string, Text_FontParams.solid, Text_FontParams.nameTextAttribute);
+                            geometry.setText( textObj );
+                            FontStyle fontStyle = new FontStyle();
+                            textObj.setFontStyle( fontStyle );
+                        }
                     }
                 } // end <Text> node
 
@@ -3337,6 +3365,7 @@ public class X3Dobject {
                             boolean topToBottom = parseBooleanString(attributeValue);
                             Log.e(TAG, "topToBottom feature of FontStyle not implemented");
                         }
+
                     } // not re-USE FontStyle
                 } // end <FontStyle> node
 
@@ -3746,9 +3775,9 @@ public class X3Dobject {
                     else if ( proto != null ) {
                         if ( proto.isProtoStateProtoInterface() ) {
                             // Add this field to the list of Proto field's
-                            Log.e("X3DDBG", "call proto.AddField(,,,'"+value+"')");
+                            Log.e("X3DDBG", "   call proto.AddField(,,,'"+value+"')");
                             proto.AddField(accessType, name, type, value);
-                            Log.e("X3DDBG", "   return from proto.AddField()");
+                            Log.e("X3DDBG", "      return from proto.AddField()");
                         }
                     }
                 }  //  end <field> node
@@ -4258,7 +4287,7 @@ public class X3Dobject {
                 }
                 /********** PROTO Node: IS **********/
                 else if (qName.equalsIgnoreCase("IS")) {
-                    Log.e("X3DDBG", "IS found.");
+                    Log.e("X3DDBG", "<IS> found.");
                     if ( proto != null ) {
                         if ( proto.isProtoStateProtoBody()) {
                             proto.setProtoStateProtoIS();
@@ -4267,7 +4296,7 @@ public class X3Dobject {
                 }
                 /********** PROTO Node: connect **********/
                 else if (qName.equalsIgnoreCase("connect")) {
-                    Log.e("X3DDBG", "connect found.");
+                    Log.e("X3DDBG", "<connect> found.");
                     if ( proto != null ) {
                         if ( proto.isProtoStateProtoIS()) {
                             attributeValue = attributes.getValue("protoField");
@@ -4357,6 +4386,10 @@ public class X3Dobject {
                                 protoInstance = _proto;
                                 Geometry geometryInstance = new Geometry();
                                 Box box = _proto.getGeometry().getBox();
+                                Cone cone = _proto.getGeometry().getCone();
+                                Cylinder cylinder = _proto.getGeometry().getCylinder();
+                                Sphere sphere = _proto.getGeometry().getSphere();
+                                Text text = _proto.getGeometry().getText();
                                 if ( box != null ) {
                                     try {
                                         Box cloneBox = (Box) box.clone();
@@ -4367,8 +4400,7 @@ public class X3Dobject {
                                         Log.e(TAG, "Proto Box exception error");
                                     }
                                 }
-                                Cone cone = _proto.getGeometry().getCone();
-                                if ( cone != null ) {
+                                else if ( cone != null ) {
                                     try {
                                         Cone cloneCone = (Cone) cone.clone();
                                         geometryInstance.setCone( cloneCone );
@@ -4378,8 +4410,7 @@ public class X3Dobject {
                                         Log.e(TAG, "Proto Cone exception error");
                                     }
                                 }
-                                Cylinder cylinder = _proto.getGeometry().getCylinder();
-                                if ( cylinder != null ) {
+                                else if ( cylinder != null ) {
                                     try {
                                         Cylinder cloneCylinder = (Cylinder) cylinder.clone();
                                         geometryInstance.setCylinder( cloneCylinder );
@@ -4389,8 +4420,7 @@ public class X3Dobject {
                                         Log.e(TAG, "Proto Cylinder exception error");
                                     }
                                 }
-                                Sphere sphere = _proto.getGeometry().getSphere();
-                                if ( sphere != null ) {
+                                else if ( sphere != null ) {
                                     try {
                                         Sphere cloneSphere = (Sphere) sphere.clone();
                                         geometryInstance.setSphere( cloneSphere );
@@ -4400,6 +4430,17 @@ public class X3Dobject {
                                         Log.e(TAG, "Proto Sphere exception error");
                                     }
                                 }
+                                else if ( text != null ) {
+                                    try {
+                                        Text cloneText = (Text) text.clone();
+                                        geometryInstance.setText( cloneText );
+                                    }
+                                    catch (Exception CloneNotSupportedException) {
+                                        Log.e("X3DDBG", "Proto <Text> exception error");
+                                        Log.e(TAG, "Proto <Text> exception error");
+                                    }
+                                }
+
                                 protoInstance.setGeometryInstance( geometryInstance );
                                 Log.e("X3DDBG", "After clone");
 
@@ -4443,6 +4484,7 @@ public class X3Dobject {
                         Log.e(TAG, "<ProtoInstance> does not contain a name.");
                     }
                 }  // end if PROTO Node: ProtoInstance
+
                 /********** PROTO Node: fieldValue **********/
                 else if (qName.equalsIgnoreCase("fieldValue")) {
                     attributeValue = attributes.getValue("name");
@@ -4537,6 +4579,11 @@ public class X3Dobject {
                                         sphere.setSolid( parseBooleanString( attributeValue ) );
                                     }
                                 }  //  end Sphere
+                                Text text = protoInstance.getGeometryInstance().getText();
+                                if ( text != null ) {
+                                    Log.e("X3DDBG", "   Text field not yet implemented");
+                                }
+
                             } // geometry !null
                         }
                     }
@@ -4605,7 +4652,7 @@ public class X3Dobject {
                 else
                     currentSceneObject = currentSceneObject.getParent();
             } else if (qName.equalsIgnoreCase("Shape")) {
-                ShapePostParsing();
+                if (proto == null) ShapePostParsing();
                 /*
                 if (!gvrRenderingDataUSEd) {
                     // SHAPE node not being USEd (shared) elsewhere
@@ -4900,31 +4947,33 @@ public class X3Dobject {
             } else if (qName.equalsIgnoreCase("ProximitySensor")) {
                 ;
             } else if (qName.equalsIgnoreCase("Text")) {
-                gvrTextViewSceneObject = new GVRTextViewSceneObject(gvrContext,
-                        Text_FontParams.nameFontStyle,
-                        Text_FontParams.string, Text_FontParams.family, Text_FontParams.justify,
-                        Text_FontParams.spacing, Text_FontParams.size, Text_FontParams.style);
+                if ( proto == null ) {
+                    gvrTextViewSceneObject = new GVRTextViewSceneObject(gvrContext,
+                            Text_FontParams.nameFontStyle,
+                            Text_FontParams.string, Text_FontParams.family, Text_FontParams.justify,
+                            Text_FontParams.spacing, Text_FontParams.size, Text_FontParams.style);
 
-                GVRRenderData gvrRenderData = gvrTextViewSceneObject.getRenderData();
-                gvrRenderData.setRenderingOrder(GVRRenderData.GVRRenderingOrder.TRANSPARENT);
+                    GVRRenderData gvrRenderData = gvrTextViewSceneObject.getRenderData();
+                    gvrRenderData.setRenderingOrder(GVRRenderData.GVRRenderingOrder.TRANSPARENT);
 
 
-                if ( !Text_FontParams.nameTextAttribute.equals("")) {
-                    // add it to the list of DEFined objects
+                    if (!Text_FontParams.nameTextAttribute.equals("")) {
+                        // add it to the list of DEFined objects
                         DefinedItem definedItem = new DefinedItem(Text_FontParams.nameTextAttribute);
                         definedItem.setGVRTextViewSceneObject(gvrTextViewSceneObject);
                         mDefinedItems.add(definedItem); // Array list of DEFined items
-                }
-                if ( !Text_FontParams.nameFontStyle.equals("")) {
-                    // add FontStyle to the list of DEFined objects
-                    DefinedItem definedItem = new DefinedItem(Text_FontParams.nameFontStyle);
-                    definedItem.setGVRTextViewSceneObject(gvrTextViewSceneObject);
-                    mDefinedItems.add(definedItem); // Array list of DEFined items
-                }
+                    }
+                    if (!Text_FontParams.nameFontStyle.equals("")) {
+                        // add FontStyle to the list of DEFined objects
+                        DefinedItem definedItem = new DefinedItem(Text_FontParams.nameFontStyle);
+                        definedItem.setGVRTextViewSceneObject(gvrTextViewSceneObject);
+                        mDefinedItems.add(definedItem); // Array list of DEFined items
+                    }
 
-                gvrTextViewSceneObject.setTextColor(Color.WHITE); // default
-                gvrTextViewSceneObject.setBackgroundColor(Color.TRANSPARENT); // default
-                currentSceneObject.addChildObject(gvrTextViewSceneObject);
+                    gvrTextViewSceneObject.setTextColor(Color.WHITE); // default
+                    gvrTextViewSceneObject.setBackgroundColor(Color.TRANSPARENT); // default
+                    currentSceneObject.addChildObject(gvrTextViewSceneObject);
+                }
             } else if (qName.equalsIgnoreCase("FontStyle")) {
                 ;
             } else if (qName.equalsIgnoreCase("Billboard")) {
@@ -5089,6 +5138,71 @@ public class X3Dobject {
                         currentSceneObject.addChildObject(gvrSphereSceneObject);
                         meshAttachedSceneObject = gvrSphereSceneObject;
                     }
+                    Text text = protoInstance.getGeometryInstance().getText();
+                    if ( text != null ) {
+                        Log.e("X3DDBG", "</ProtoInstance> ck for protoInstance.getGeometryInstance().getText()" );
+                        Log.e("X3DDBG", "   before call to ShapePostParsing()" );
+
+                        Init_Text_FontParams();
+
+                        //GVRTextViewSceneObject gvrTextViewSceneObject = new GVRTextViewSceneObject(gvrContext);
+                        //GVRTextViewSceneObject gvrTextViewSceneObject = new GVRTextViewSceneObject(gvrContext, "'MY text'");
+                        //gvrTextViewSceneObject = new GVRTextViewSceneObject(gvrContext, "MY text");
+                        shaderSettings.initializeTextureMaterial(new GVRMaterial(gvrContext, x3DShader));
+                        shaderSettings.diffuseColor[0] = .2f;
+                        shaderSettings.diffuseColor[1] = .8f;
+                        shaderSettings.diffuseColor[2] = 0.8f;
+
+
+                        gvrTextViewSceneObject = new GVRTextViewSceneObject(gvrContext,
+                                "myFontStyle",
+                                "My String", Text_FontParams.family, Text_FontParams.justify,
+                                Text_FontParams.spacing, Text_FontParams.size, Text_FontParams.style);
+                        gvrTextViewSceneObject.setName("my_text_string");
+
+                        //GVRRenderData gvrRenderData = gvrTextViewSceneObject.getRenderData();
+                        gvrRenderData = gvrTextViewSceneObject.getRenderData();
+                        gvrRenderData.setRenderingOrder(GVRRenderData.GVRRenderingOrder.TRANSPARENT);
+
+                        gvrTextViewSceneObject.setTextColor(Color.WHITE); // default
+                        gvrTextViewSceneObject.setBackgroundColor(Color.TRANSPARENT); // default
+
+
+                        currentSceneObject = AddGVRSceneObject();
+                        currentSceneObject.setName("parent_of_gvrText");
+                        currentSceneObject.addChildObject(gvrTextViewSceneObject);
+
+                        //if (currentSceneObject == null ) root.addChildObject( gvrTextViewSceneObject );
+                        //else currentSceneObject.addChildObject(gvrTextViewSceneObject);
+
+
+/*
+                        GVRTextViewSceneObject gvrTextViewSceneObject = new GVRTextViewSceneObject(gvrContext,
+                                //text.getDEF().getValue(), text.getString()[0], text.getFontStyle().getFamily()[0],
+                                //text.getDEF().getValue(), "my text", GVRTextViewSceneObject.DEFAULT_FONT,
+                                //"my_DEF", "my text", "Air Americana.ttf",
+                                "my_DEF", "my text", GVRTextViewSceneObject.DEFAULT_FONT,
+                                //text.getFontStyle().getJustify()[0], text.getFontStyle().getSpacing(),
+                                //text.getFontStyle().getSize(), text.getFontStyle().getStyle()
+                                //GVRTextViewSceneObject.justifyTypes.BEGIN, text.getFontStyle().getSpacing(),
+                                //text.getFontStyle().getSize(), GVRTextViewSceneObject.fontStyleTypes.PLAIN
+                                GVRTextViewSceneObject.justifyTypes.BEGIN, 0,
+                                12, GVRTextViewSceneObject.fontStyleTypes.PLAIN
+                        );
+
+
+                        //GVRRenderData gvrRenderData = gvrTextViewSceneObject.getRenderData();
+                        gvrRenderData = gvrTextViewSceneObject.getRenderData();
+                        gvrRenderData.setRenderingOrder(GVRRenderData.GVRRenderingOrder.TRANSPARENT);
+                        //gvrRenderData.setRenderingOrder(GVRRenderingOrder.GEOMETRY);
+
+                        gvrTextViewSceneObject.setTextColor(Color.WHITE); // default
+                        gvrTextViewSceneObject.setBackgroundColor(Color.TRANSPARENT); // default
+                        currentSceneObject = AddGVRSceneObject();
+                        currentSceneObject.addChildObject(gvrTextViewSceneObject);
+                        */
+                    }
+
                 }
 
                 protoInstance = null;

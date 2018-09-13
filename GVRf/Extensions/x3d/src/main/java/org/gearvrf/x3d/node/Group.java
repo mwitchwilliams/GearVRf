@@ -15,32 +15,25 @@
 
 package org.gearvrf.x3d.node;
 
-import org.gearvrf.x3d.data_types.SFString;
-
-public class X3DNode implements Cloneable
+public class Group extends X3DNode implements Cloneable
 {
 
-    private static final String TAG = X3DNode.class.getSimpleName();
-    private SFString name = new SFString();
+    private static final String TAG = Group.class.getSimpleName();
 
-    public X3DNode()
-    {
+    private Shape mShape = null;
+
+    public Group() {
     }
 
-    /**
-     * Constructor
-     * @param newValue
-     */
-    public X3DNode( String newValue )
-    {
-        name.setValue( newValue );
+    public Group(String _DEF) {
+        setDEF(_DEF);
     }
 
-    public X3DNode clone() throws
+    public Group clone() throws
             CloneNotSupportedException
     {
         try {
-            X3DNode cloneObj = (X3DNode) super.clone();
+            Group cloneObj = (Group) super.clone();
             return cloneObj;
         }
         catch (CloneNotSupportedException e) {
@@ -49,24 +42,31 @@ public class X3DNode implements Cloneable
     }
 
     /**
-     * Returns SFString field named DEF.
+     * Provide array of 3-tuple float results from inputOutput SFVec3f field named translation.
+     * @return
      */
-    public SFString getDEF() {
-        return name;
+    public Shape getShape() {
+        return mShape;
+    }
+
+    public void setShape(Shape _shape) {
+        mShape = _shape;
     }
 
     /**
      * Assign String value to inputOutput SFString field named DEF.
+     * @param newValue
      */
-    public void setDEF( String newValue ) {
-        if (newValue != null) name.setValue( newValue );
+    public void setDEF(String newValue) {
+        super.setDEF(newValue);
     }
 
     /**
      * Assign String value to inputOutput SFString field named USE.
+     * @param newValue
      */
-    public void setUSE( String newValue ) {
-        //TODO make setUse work.
+    public void setUSE(String newValue) {
+        super.setUSE(newValue);
     }
 
-} // end X3DNode
+} // end Group

@@ -18,7 +18,7 @@ package org.gearvrf.x3d.node;
 import org.gearvrf.x3d.data_types.SFRotation;
 import org.gearvrf.x3d.data_types.SFVec3f;
 
-public class Transform extends X3DNode
+public class Transform extends Group implements Cloneable
 {
 
     private static final String TAG = Transform.class.getSimpleName();
@@ -28,7 +28,6 @@ public class Transform extends X3DNode
     SFRotation scaleOrientation = new SFRotation(0, 0, 1, 0 );
     SFVec3f scale = new SFVec3f(1, 1, 1 );
     SFVec3f translation = new SFVec3f( 0, 0, 0 );
-
 
     public Transform() {
     }
@@ -50,6 +49,23 @@ public class Transform extends X3DNode
         setScaleOrientation(_scaleOrientation);
         setTranslation(_translation);
         setDEF(_DEF);
+    }
+
+    public Transform clone() throws
+            CloneNotSupportedException
+    {
+        try {
+            Transform cloneObj = (Transform) super.clone();
+            cloneObj.center = this.center.clone();
+            cloneObj.rotation = this.rotation.clone();
+            cloneObj.scaleOrientation = this.scaleOrientation.clone();
+            cloneObj.scale = this.scale.clone();
+            cloneObj.translation = this.translation.clone();
+            return cloneObj;
+        }
+        catch (CloneNotSupportedException e) {
+        }
+        return null;
     }
 
     /**
@@ -105,7 +121,6 @@ public class Transform extends X3DNode
         this.center.setValue( newValue[0], newValue[1], newValue[2] );
     }
 
-
     /**
      * Assign 4-tuple float array unit axis, angle (in radians) to inputOutput SFRotation field named rotation.
      * @param newValue
@@ -137,33 +152,5 @@ public class Transform extends X3DNode
     public void setTranslation(float[] newValue) {
         this.translation.setValue( newValue[0], newValue[1], newValue[2] );
     }
-
-    /**
-     * Assign String value to inputOutput SFString field named DEF.
-     * @param newValue
-     */
-    public void setDEF(String newValue) {
-        super.setDEF(newValue);
-    }
-
-    /**
-     * Assign String value to inputOutput SFString field named USE.
-     * @param newValue
-     */
-    public void setUSE(String newValue) {
-        super.setUSE(newValue);
-    }
-
-    //TODO: the following methods are not implemented
-/*
-void	setChildren(X3DNode newValue)
-Set single children node, replacing prior array of existing nodes (if any).
-Transform	setChildren(X3DNode[] newValue)
-Assign X3DNode array (using an array consisting of properly typed nodes or X3DPrototypeInstance objects) to inputOutput MFNode field children.
-Transform	setCssClass(java.lang.String newValue)
-Assign String value to inputOutput SFString field named class.
-Transform	setMetadata(X3DMetadataObject newValue)
-Assign X3DMetadataObject instance (using a properly typed node) to inputOutput SFNode field metadata.
-*/
 
 } // end Transform
