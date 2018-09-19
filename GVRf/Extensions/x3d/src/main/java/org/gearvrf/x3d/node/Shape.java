@@ -20,8 +20,6 @@ public class Shape extends X3DNode
 
     private static final String TAG = Shape.class.getSimpleName();
 
-    //private Appearance mAppearance = null;
-    //private Geometry mGeometry = null;
     private Proto mProto = null;
 
     public Shape( Proto _proto ) {

@@ -90,6 +90,7 @@ public class Proto
         mGeometry = null;
     }
 
+    /*
     public Proto(X3Dobject x3dObject, GVRSceneObject gvrSceneObject)
     {
         mGVRSceneObject = gvrSceneObject;
@@ -110,15 +111,6 @@ public class Proto
         mAppearance = null;
         mGeometry = null;
     }
-
-    /*
-    //public GVRSceneObject getGVRSceneObject() {
-        return mGVRSceneObject;
-    }
-
-    //public void setGVRSceneObject(GVRSceneObject gvrSceneObject) {
-    //    mGVRSceneObject = gvrSceneObject;
-    //}
     */
 
     public Appearance getAppearance() {

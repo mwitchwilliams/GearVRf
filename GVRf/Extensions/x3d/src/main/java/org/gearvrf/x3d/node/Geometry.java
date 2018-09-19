@@ -27,7 +27,7 @@ public class Geometry extends X3DGeometryNode
     private Cylinder cylinder = null;
     private Sphere sphere = null;
 
-    //private IndexedFaceSet indexedFaceSet = null;
+    private IndexedFaceSet indexedFaceSet = null;
     private Text text = null;
 
     public Geometry() {
@@ -75,6 +75,10 @@ public class Geometry extends X3DGeometryNode
      */
     public Text getText() {
         return text;
+    }
+
+    public IndexedFaceSet getIndexedFaceSet() {
+        return indexedFaceSet;
     }
 
     /**
@@ -126,6 +130,10 @@ public class Geometry extends X3DGeometryNode
      */
     public void setText(Text newValue) {
         text = newValue;
+    }
+
+    public void setIndexedFaceSet(IndexedFaceSet newValue) {
+        indexedFaceSet = newValue;
     }
 
 } // end Geometry

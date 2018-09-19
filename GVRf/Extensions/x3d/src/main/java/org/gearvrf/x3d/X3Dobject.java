@@ -59,14 +59,18 @@ import org.gearvrf.x3d.data_types.SFRotation;
 import org.gearvrf.x3d.node.Appearance;
 import org.gearvrf.x3d.node.Box;
 import org.gearvrf.x3d.node.Cone;
+import org.gearvrf.x3d.node.Coordinate;
 import org.gearvrf.x3d.node.Cylinder;
 import org.gearvrf.x3d.node.FontStyle;
 import org.gearvrf.x3d.node.Geometry;
+import org.gearvrf.x3d.node.IndexedFaceSet;
 import org.gearvrf.x3d.node.Material;
+import org.gearvrf.x3d.node.Normal;
 import org.gearvrf.x3d.node.Proto;
 import org.gearvrf.x3d.node.Shape;
 import org.gearvrf.x3d.node.Sphere;
 import org.gearvrf.x3d.node.Text;
+import org.gearvrf.x3d.node.TextureCoordinate;
 import org.gearvrf.x3d.node.Transform;
 import org.joml.Matrix3f;
 import org.joml.Vector2f;
@@ -2176,7 +2180,49 @@ public class X3Dobject {
                                 X3Dobject.textureIndexComponent, 3);
                     }
                 }
+                if ( proto != null ) {
+                    Log.e("X3DDBG", "<IndexedFaceSet>, proto != null");
+                    Geometry geometry = proto.getGeometry();
+                    if (geometry == null) {
+                        geometry = new Geometry();
+                        proto.setGeometry(geometry);
+                    }
+                    IndexedFaceSet indexedFaceSet = new IndexedFaceSet();
+                    geometry.setIndexedFaceSet( indexedFaceSet );
+                    Log.e("X3DDBG", "   COMPLETE <IndexedFaceSet>, proto != null");
 
+
+                    int[] coordIndices = meshCreator.mPositionIndices.array();
+                    //int[] texCoordIndices = meshCreator.mTexcoordIndices.array();
+                    //int[] normalIndices = meshCreator.mNormalIndices.array();
+
+                    Log.e("X3DDBG", "   COMPLETE coordIndices = meshCreator.mPositionIndices.array()");
+
+                    indexedFaceSet.setCoordIndex( meshCreator.mPositionIndices.array() );
+                    indexedFaceSet.setTexCoordIndex( meshCreator.mTexcoordIndices.array() );
+                    indexedFaceSet.setNormalIndex( meshCreator.mNormalIndices.array() );
+
+
+                    int[] posIndices = indexedFaceSet.getCoordIndex();
+                    int[] texCoordIndices = indexedFaceSet.getTexCoordIndex();
+                    int[] normalIndices = indexedFaceSet.getNormalIndex();
+                    String posIndicesString = "";
+                    String texCoordString = "";
+                    String normalIndicesString = "";
+                    for (int i = 0; i < posIndices.length; i++ ) {
+                        posIndicesString += " " + posIndices[i] + ",";
+                    }
+                    for (int i = 0; i < texCoordIndices.length; i++ ) {
+                        texCoordString += " " + texCoordIndices[i] + ",";
+                    }
+                    for (int i = 0; i < normalIndices.length; i++ ) {
+                        normalIndicesString += " " + normalIndices[i] + ",";
+                    }
+                    Log.e("X3DDBG", "      posIndices[] = " + posIndicesString );
+                    Log.e("X3DDBG", "      texCoordIndices[] = " + texCoordString );
+                    Log.e("X3DDBG", "      normalIndices[] = " + normalIndicesString );
+
+                } // end proto != null
             } // end <IndexedFaceSet> node
 
 
@@ -2214,8 +2260,42 @@ public class X3Dobject {
                     if (pointAttribute != null) {
                         parseNumbersString(pointAttribute, X3Dobject.verticesComponent, 3);
                     }
-                } // end NOT a USE Coordinates condition
+                    if ( proto != null ) {
+                        Log.e("X3DDBG", "<Coordinate>, proto != null");
+                        Geometry geometry = proto.getGeometry();
+                        if (geometry != null) {
+                            IndexedFaceSet indexedFaceSet = geometry.getIndexedFaceSet();
+                            if (indexedFaceSet != null) {
+                                Coordinate coordinate = new Coordinate();
+                                indexedFaceSet.setCoord( coordinate );
+                                float[] coordinateValues = meshCreator.mInputPositions.array();
 
+                                //String coordinateValuesString = null;
+                                //for (int i = 0; i < coordinateValues.length; i++ ) {
+                                //    coordinateValuesString += " " + coordinateValues[i] + ",";
+                                //}
+                                //Log.e("X3DDBG", "      coordinateValues[] = " + coordinateValuesString );
+
+                                coordinate.setMeshCreatorInputPositions( coordinateValues);
+
+                                float[] coords = coordinate.getMeshCreatorInputPositions();
+                                String coordString = null;
+                                for (int i = 0; i < coords.length; i++ ) {
+                                    coordString += " " + coords[i] + ",";
+                                }
+                                Log.e("X3DDBG", "      coordString[] = " + coordString );
+                            }
+                            else {
+                                Log.e("X3DDBG", "PROTO: <Coordinate> not inside <IndexedFaceSet>");
+                                Log.e(TAG, "PROTO: <Coordinate> not inside <IndexedFaceSet>");
+                            }
+                        }
+                        else {
+                            Log.e("X3DDBG", "PROTO: <Coordinate> not inside <IndexedFaceSet>");
+                            Log.e(TAG, "PROTO: <Coordinate> not inside <IndexedFaceSet>");
+                        }  // end geometry != null
+                    }  // end proto != null
+                } // end NOT a USE Coordinates condition
             } // end <Coordinate> node
 
 
@@ -2257,6 +2337,41 @@ public class X3Dobject {
                     if (pointAttribute != null) {
                         parseNumbersString(pointAttribute, X3Dobject.textureCoordComponent, 2);
                     }
+                    if ( proto != null ) {
+                        Log.e("X3DDBG", "<TextureCoordinate>, proto != null");
+                        Geometry geometry = proto.getGeometry();
+                        if (geometry != null) {
+                            IndexedFaceSet indexedFaceSet = geometry.getIndexedFaceSet();
+                            if (indexedFaceSet != null) {
+                                TextureCoordinate textureCoordinate = new TextureCoordinate();
+                                indexedFaceSet.setTetureCoordinate( textureCoordinate );
+                                float[] textureCoordinateValues = meshCreator.mInputTexCoords.array();
+
+                                //String textureCoordinateValuesString = null;
+                                //for (int i = 0; i < textureCoordinateValues.length; i++ ) {
+                                //    textureCoordinateValuesString += " " + textureCoordinateValues[i] + ",";
+                                //}
+                                //Log.e("X3DDBG", "      textureCoordinateValues[] = " + textureCoordinateValuesString );
+
+                                textureCoordinate.setMeshCreatorInputTexCoords( textureCoordinateValues );
+
+                                float[] texCoords = textureCoordinate.getMeshCreatorInputTexCoords();
+                                String texCoordString = null;
+                                for (int i = 0; i < texCoords.length; i++ ) {
+                                    texCoordString += " " + texCoords[i] + ",";
+                                }
+                                Log.e("X3DDBG", "      texCoordString[] = " + texCoordString );
+                            }
+                            else {
+                                Log.e("X3DDBG", "PROTO: <TextureCoordinate> not inside <IndexedFaceSet>");
+                                Log.e(TAG, "PROTO: <TextureCoordinate> not inside <IndexedFaceSet>");
+                            }
+                        }
+                        else {
+                            Log.e("X3DDBG", "PROTO: <TextureCoordinate> not inside <IndexedFaceSet>");
+                            Log.e(TAG, "PROTO: <TextureCoordinate> not inside <IndexedFaceSet>");
+                        }  // end geometry != null
+                    }  // end proto != null
 
                 } // end NOT a USE TextureCoordinate condition
             } // end <TextureCoordinate> node
@@ -2296,6 +2411,41 @@ public class X3Dobject {
                     String vectorAttribute = attributes.getValue("vector");
                     if (vectorAttribute != null) {
                         parseNumbersString(vectorAttribute, X3Dobject.normalsComponent, 3);
+                    }
+                    if ( proto != null ) {
+                        Log.e("X3DDBG", "<Normal>, proto != null");
+                        Geometry geometry = proto.getGeometry();
+                        if (geometry != null) {
+                            IndexedFaceSet indexedFaceSet = geometry.getIndexedFaceSet();
+                            if (indexedFaceSet != null) {
+                                Normal normal = new Normal();
+                                indexedFaceSet.setNormal( normal );
+                                float[] normalValues = meshCreator.mInputNormals.array();
+
+                                //String normalValuesString = null;
+                                //for (int i = 0; i < normalValues.length; i++ ) {
+                                //    normalValuesString += " " + normalValues[i] + ",";
+                                //}
+                                //Log.e("X3DDBG", "      normalValues[] = " + normalValuesString );
+
+                                normal.setMeshCreatorInputNormals( normalValues );
+
+                                float[] normals = normal.getMeshCreatorInputNormals();
+                                String normalsString = null;
+                                for (int i = 0; i < normals.length; i++ ) {
+                                    normalsString += " " + normals[i] + ",";
+                                }
+                                Log.e("X3DDBG", "      normalsString[] = " + normalsString );
+                            }
+                            else {
+                                Log.e("X3DDBG", "PROTO: <Normal> not inside <IndexedFaceSet>");
+                                Log.e(TAG, "PROTO: <Normal> not inside <IndexedFaceSet>");
+                            }
+                        }
+                        else {
+                            Log.e("X3DDBG", "PROTO: <Normal> not inside <IndexedFaceSet>");
+                            Log.e(TAG, "PROTO: <Normal> not inside <IndexedFaceSet>");
+                        }  // end geometry != null
                     }
                 } // end NOT a USE Normals condition
             } // end <Normal> node
@@ -2963,11 +3113,6 @@ public class X3Dobject {
 
                     if ( proto != null ) {
                         Log.e("X3DDBG", "proto != null; Got Box");
-                        //GVRSceneObject gvrSceneObject = new GVRSceneObject(gvrContext);
-                        //proto.setGVRSceneObject(gvrSceneObject);
-                        //proto.getGVRSceneObject().addChildObject(gvrConeSceneObject);
-                        //Log.e("X3DDBG", "   Added Cone to Proto's mGVRSceneObject");
-
                         if (proto.getGeometry() == null) {
                             Geometry geometry = new Geometry();
                             proto.setGeometry( geometry );
@@ -2976,7 +3121,6 @@ public class X3Dobject {
                         }
                     }
                     else currentSceneObject.addChildObject(gvrCubeSceneObject);
-                    //currentSceneObject.addChildObject(gvrCubeSceneObject);
 
                     meshAttachedSceneObject = gvrCubeSceneObject;
                 } // end <Box> node
@@ -4369,6 +4513,14 @@ public class X3Dobject {
                                             sphere.setSolid( proto.getField_SFBool(field) );
                                         }
                                     } // end Sphere
+                                    IndexedFaceSet indexedFaceSet = proto.getGeometry().getIndexedFaceSet();
+                                    if ( indexedFaceSet != null ) {
+                                        Log.e("X3DDBG", "<connect> indexedFaceSet set fields");
+                                    } // end indexedFaceSet
+                                    Text text = proto.getGeometry().getText();
+                                    if ( text != null ) {
+                                        Log.e("X3DDBG", "<connect> text set fields");
+                                    } // end text
                                 }  // end proto.getGeometry() != null
                             }
                         }
@@ -4389,15 +4541,20 @@ public class X3Dobject {
                                 Cone cone = _proto.getGeometry().getCone();
                                 Cylinder cylinder = _proto.getGeometry().getCylinder();
                                 Sphere sphere = _proto.getGeometry().getSphere();
+                                IndexedFaceSet indexedFaceSet = _proto.getGeometry().getIndexedFaceSet();
                                 Text text = _proto.getGeometry().getText();
                                 if ( box != null ) {
                                     try {
                                         Box cloneBox = (Box) box.clone();
                                         geometryInstance.setBox( cloneBox );
                                     }
-                                    catch (Exception CloneNotSupportedException) {
-                                        Log.e("X3DDBG", "Proto Box exception error");
-                                        Log.e(TAG, "Proto Box exception error");
+                                    catch (CloneNotSupportedException ex) {
+                                        Log.e("X3DDBG", "Proto Box exception: " + ex);
+                                        Log.e(TAG, "Proto Box exception: " + ex);
+                                    }
+                                    catch (Exception ex) {
+                                        Log.e("X3DDBG", "Proto <IndexedFaceSet> exception: " + ex);
+                                        Log.e(TAG, "Proto <IndexedFaceSet> exception: " + ex);
                                     }
                                 }
                                 else if ( cone != null ) {
@@ -4405,9 +4562,13 @@ public class X3Dobject {
                                         Cone cloneCone = (Cone) cone.clone();
                                         geometryInstance.setCone( cloneCone );
                                     }
-                                    catch (Exception CloneNotSupportedException) {
-                                        Log.e("X3DDBG", "Proto Cone exception error");
-                                        Log.e(TAG, "Proto Cone exception error");
+                                    catch (CloneNotSupportedException ex) {
+                                        Log.e("X3DDBG", "Proto Cone exception: " + ex);
+                                        Log.e(TAG, "Proto Cone exception: " + ex);
+                                    }
+                                    catch (Exception ex) {
+                                        Log.e("X3DDBG", "Proto <IndexedFaceSet> exception: " + ex);
+                                        Log.e(TAG, "Proto <IndexedFaceSet> exception: " + ex);
                                     }
                                 }
                                 else if ( cylinder != null ) {
@@ -4415,9 +4576,13 @@ public class X3Dobject {
                                         Cylinder cloneCylinder = (Cylinder) cylinder.clone();
                                         geometryInstance.setCylinder( cloneCylinder );
                                     }
-                                    catch (Exception CloneNotSupportedException) {
-                                        Log.e("X3DDBG", "Proto Cylinder exception error");
-                                        Log.e(TAG, "Proto Cylinder exception error");
+                                    catch (CloneNotSupportedException ex) {
+                                        Log.e("X3DDBG", "Proto Cylinder exception: " + ex);
+                                        Log.e(TAG, "Proto Cylinder exception: " + ex);
+                                    }
+                                    catch (Exception ex) {
+                                        Log.e("X3DDBG", "Proto <IndexedFaceSet> exception: " + ex);
+                                        Log.e(TAG, "Proto <IndexedFaceSet> exception: " + ex);
                                     }
                                 }
                                 else if ( sphere != null ) {
@@ -4425,19 +4590,105 @@ public class X3Dobject {
                                         Sphere cloneSphere = (Sphere) sphere.clone();
                                         geometryInstance.setSphere( cloneSphere );
                                     }
-                                    catch (Exception CloneNotSupportedException) {
-                                        Log.e("X3DDBG", "Proto Sphere exception error");
-                                        Log.e(TAG, "Proto Sphere exception error");
+                                    catch (CloneNotSupportedException ex) {
+                                        Log.e("X3DDBG", "Proto Sphere exception: " + ex);
+                                        Log.e(TAG, "Proto Sphere exception: " + ex);
+                                    }
+                                    catch (Exception ex) {
+                                        Log.e("X3DDBG", "Proto <IndexedFaceSet> exception: " + ex);
+                                        Log.e(TAG, "Proto <IndexedFaceSet> exception: " + ex);
+                                    }
+                                }
+                                else if ( indexedFaceSet != null ) {
+                                    try {
+                                        Log.e("X3DDBG", "   Proto <IndexedFaceSet> begin clone");
+                                        IndexedFaceSet cloneIndexedFaceSet = (IndexedFaceSet) indexedFaceSet.clone();
+                                        geometryInstance.setIndexedFaceSet( cloneIndexedFaceSet );
+                                        Log.e("X3DDBG", "      clone IFS complete");
+
+                                        int[] coordIndex = geometryInstance.getIndexedFaceSet().getCoordIndex();
+                                        for (int i = 0; i < coordIndex.length; i++) {
+                                            meshCreator.mPositionIndices.add( coordIndex[i] );
+                                        }
+
+                                        int[] texCoordIndex = geometryInstance.getIndexedFaceSet().getTexCoordIndex();
+                                        for (int i = 0; i < texCoordIndex.length; i++) {
+                                            meshCreator.mTexcoordIndices.add( texCoordIndex[i] );
+                                        }
+
+                                        int[] normalIndex = geometryInstance.getIndexedFaceSet().getNormalIndex();
+                                        for (int i = 0; i < normalIndex.length; i++) {
+                                            meshCreator.mNormalIndices.add( normalIndex[i] );
+                                        }
+                                        Log.e("X3DDBG", "         meshCreator.mNormalIndices reset");
+
+                                        gvrIndexBuffer = new GVRIndexBuffer(gvrContext, 4, 0);
+                                        float[] coords = geometryInstance.getIndexedFaceSet().getCoord().getMeshCreatorInputPositions();
+                                        float[] normals = geometryInstance.getIndexedFaceSet().getNormal().getMeshCreatorInputNormals();
+                                        float[] texCoords = geometryInstance.getIndexedFaceSet().getTexCoord().getMeshCreatorInputTexCoords();
+
+                                        //for (int i = 0; i < coords.length/3; i++) {
+                                        meshCreator.addInputPosition( coords );
+                                        meshCreator.addInputNormal(normals);
+                                        meshCreator.addInputTexcoord(texCoords);
+                                        //}
+                                        //meshCreator.mInputNormals.mData
+                                        //meshCreator.mInputNormals.array( normals );
+                                        gvrVertexBuffer = meshCreator.organizeVertices(gvrIndexBuffer);
+
+                                        Log.e("X3DDBG", "Proto <IndexedFaceSet>, got arrays of N, C and TC");
+
+                                        GVRMesh mesh = new GVRMesh(gvrContext, gvrVertexBuffer.getDescriptor());
+
+                                        // set up of GVRRenderDate from <Shape>
+                                        gvrRenderData = new GVRRenderData(gvrContext);
+                                        gvrRenderData.setAlphaToCoverage(true);
+                                        gvrRenderData.setRenderingOrder(GVRRenderingOrder.GEOMETRY);
+                                        gvrRenderData.setCullFace(GVRCullFaceEnum.Back);
+
+                                        gvrRenderData.setMesh(mesh);
+                                        mesh.setIndexBuffer(gvrIndexBuffer);
+                                        mesh.setVertexBuffer(gvrVertexBuffer);
+
+                                        Log.e("X3DDBG", "Proto <IndexedFaceSet>, generated mesh");
+
+
+/*
+                                        if (reorganizeVerts) {
+                                            gvrVertexBuffer = meshCreator.organizeVertices(gvrIndexBuffer);
+                                            reorganizeVerts = false;
+                                        }
+                                        GVRMesh mesh = new GVRMesh(gvrContext, gvrVertexBuffer.getDescriptor());
+
+                                        gvrRenderData.setMesh(mesh);
+                                        mesh.setIndexBuffer(gvrIndexBuffer);
+                                        mesh.setVertexBuffer(gvrVertexBuffer);
+                                        */
+
+                                    }
+                                    catch (CloneNotSupportedException ex) {
+                                        Log.e("X3DDBG", "Proto <IndexedFaceSet> Clone exception: " + ex);
+                                        Log.e(TAG, "Proto <IndexedFaceSet> Clone exception: " + ex);
+                                    }
+                                    catch (Exception ex) {
+                                        Log.e("X3DDBG", "Proto <IndexedFaceSet> exception: " + ex);
+                                        Log.e(TAG, "Proto <IndexedFaceSet> exception: " + ex);
                                     }
                                 }
                                 else if ( text != null ) {
                                     try {
+                                        Log.e("X3DDBG", "Proto <Text> begin clone");
                                         Text cloneText = (Text) text.clone();
                                         geometryInstance.setText( cloneText );
+                                        Log.e("X3DDBG", "   complete clone Text");
                                     }
-                                    catch (Exception CloneNotSupportedException) {
-                                        Log.e("X3DDBG", "Proto <Text> exception error");
-                                        Log.e(TAG, "Proto <Text> exception error");
+                                    catch (CloneNotSupportedException ex) {
+                                        Log.e("X3DDBG", "Proto <Text> exception: " + ex);
+                                        Log.e(TAG, "Proto <Text> exception: " + ex);
+                                    }
+                                    catch (Exception ex) {
+                                        Log.e("X3DDBG", "Proto <IndexedFaceSet> exception: " + ex);
+                                        Log.e(TAG, "Proto <IndexedFaceSet> exception: " + ex);
                                     }
                                 }
 
@@ -4579,6 +4830,10 @@ public class X3Dobject {
                                         sphere.setSolid( parseBooleanString( attributeValue ) );
                                     }
                                 }  //  end Sphere
+                                IndexedFaceSet indexedFaceSet = protoInstance.getGeometryInstance().getIndexedFaceSet();
+                                if ( indexedFaceSet != null ) {
+                                    Log.e("X3DDBG", "   IndexedFaceSet field not yet implemented");
+                                }
                                 Text text = protoInstance.getGeometryInstance().getText();
                                 if ( text != null ) {
                                     Log.e("X3DDBG", "   Text field not yet implemented");
@@ -5052,6 +5307,7 @@ public class X3Dobject {
                 ;
             }
             else if (qName.equalsIgnoreCase("ProtoDeclare")) {
+                Log.e("X3DDBG", "</ProtoDeclare>");
                 if (proto != null) {
                     proto.setProtoStateNone();
                     protos.add(proto);
@@ -5064,6 +5320,7 @@ public class X3Dobject {
                 else Log.e(TAG, "Error with </ProtoInterface>");
             }
             else if (qName.equalsIgnoreCase("ProtoBody")) {
+                Log.e("X3DDBG", "</ProtoBody>");
                 if (proto != null) proto.setProtoStateProtoDeclare();
                 else Log.e(TAG, "Error with </ProtoBody>");
             }
@@ -5077,13 +5334,7 @@ public class X3Dobject {
             }
             else if (qName.equalsIgnoreCase("connect")) {
                 Log.e("X3DDBG", "Ending Proto </connect>");
-                /*
-                if (proto != null) proto.setProtoStateProtoBody();
-                else {
-                    Log.e(TAG, "Error with Proto </IS>");
-                    Log.e("X3DDBG", "Error with Proto </IS>");
-                }
-                */
+                ;
             }
             else if (qName.equalsIgnoreCase("ProtoInstance")) {
                 Log.e("X3DDBG", "</ProtoInstance>" );
@@ -5138,6 +5389,18 @@ public class X3Dobject {
                         currentSceneObject.addChildObject(gvrSphereSceneObject);
                         meshAttachedSceneObject = gvrSphereSceneObject;
                     }
+                    IndexedFaceSet indexedFaceSet = protoInstance.getGeometryInstance().getIndexedFaceSet();
+                    if ( indexedFaceSet != null ) {
+                        Log.e("X3DDBG", "</ProtoInstance> indexedFaceSet != null" );
+                        Log.e("X3DDBG", "   before call to ShapePostParsing()" );
+                        /*
+                        GVRSphereSceneObject gvrSphereSceneObject = new GVRSphereSceneObject(
+                                gvrContext, sphere.getSolid(),
+                                new GVRMaterial(gvrContext, x3DShader), sphere.getRadius());
+                        currentSceneObject.addChildObject(gvrSphereSceneObject);
+                        meshAttachedSceneObject = gvrSphereSceneObject;
+                        */
+                    }
                     Text text = protoInstance.getGeometryInstance().getText();
                     if ( text != null ) {
                         Log.e("X3DDBG", "</ProtoInstance> ck for protoInstance.getGeometryInstance().getText()" );
@@ -5149,9 +5412,9 @@ public class X3Dobject {
                         //GVRTextViewSceneObject gvrTextViewSceneObject = new GVRTextViewSceneObject(gvrContext, "'MY text'");
                         //gvrTextViewSceneObject = new GVRTextViewSceneObject(gvrContext, "MY text");
                         shaderSettings.initializeTextureMaterial(new GVRMaterial(gvrContext, x3DShader));
-                        shaderSettings.diffuseColor[0] = .2f;
-                        shaderSettings.diffuseColor[1] = .8f;
-                        shaderSettings.diffuseColor[2] = 0.8f;
+                        //shaderSettings.diffuseColor[0] = .2f;
+                        //shaderSettings.diffuseColor[1] = .8f;
+                        //shaderSettings.diffuseColor[2] = 0.8f;
 
 
                         gvrTextViewSceneObject = new GVRTextViewSceneObject(gvrContext,
