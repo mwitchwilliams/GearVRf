@@ -63,14 +63,17 @@ import org.gearvrf.x3d.node.Coordinate;
 import org.gearvrf.x3d.node.Cylinder;
 import org.gearvrf.x3d.node.FontStyle;
 import org.gearvrf.x3d.node.Geometry;
+import org.gearvrf.x3d.node.ImageTexture;
 import org.gearvrf.x3d.node.IndexedFaceSet;
 import org.gearvrf.x3d.node.Material;
+import org.gearvrf.x3d.node.MovieTexture;
 import org.gearvrf.x3d.node.Normal;
 import org.gearvrf.x3d.node.Proto;
 import org.gearvrf.x3d.node.Shape;
 import org.gearvrf.x3d.node.Sphere;
 import org.gearvrf.x3d.node.Text;
 import org.gearvrf.x3d.node.TextureCoordinate;
+import org.gearvrf.x3d.node.TextureTransform;
 import org.gearvrf.x3d.node.Transform;
 import org.joml.Matrix3f;
 import org.joml.Vector2f;
@@ -1162,7 +1165,6 @@ public class X3Dobject {
             this.gvrContext = assetRequest.getContext();
             this.activityContext = gvrContext.getContext();
             this.root = root;
-//            x3DShader = gvrContext.getShaderManager().getShaderType(X3DShader.class);
             x3DShader = gvrContext.getShaderManager().getShaderType(X3DShader.class);
             shaderSettings = new ShaderSettings(new GVRMaterial(gvrContext, x3DShader));
 
@@ -2082,9 +2084,30 @@ public class X3Dobject {
                             if ( shaderSettings.getMultiTexture() ) {
                                 shaderSettings.setMultiTextureGVRTexture( gvrTexture );
                             }
-                        }
-                    }
-                }
+                        }  //  end url
+                        if ( proto != null ) {
+                            Log.e("X3DDBG", "PROTO <ImageTexture>");
+                            Appearance appearance = proto.getAppearance();
+                            if (appearance != null) {
+                                if (proto.getAppearance().getTexture() == null) {
+                                    String[] urls = new String[1];
+                                    urls[0] = urlAttribute;
+                                    ImageTexture imageTexture = new ImageTexture(urls, true, true);
+                                    proto.getAppearance().setTexture(imageTexture);
+                                    if (proto.getAppearance().getTexture() != null) {
+                                        Log.e("X3DDBG", "   proto.getAppearance().getTexture() != null");
+                                    }
+                                } else {
+                                    Log.e("X3DDBG", "Proto error: ImageTexture not starting null inside Appearance node");
+                                    Log.e(TAG, "Proto error: ImageTexture not starting null inside Appearance node");
+                                }
+                            } else {
+                                Log.e("X3DDBG", "PROTO: <Appearance> not set.");
+                                Log.e(TAG, "PROTO:  <Appearance> not set.");
+                            }  // end appearance != null
+                        } // end proto != null
+                    }  // end not USE
+                }  //  end if ( !blockTexturing )
             } // end <ImageTexture> node
 
 
@@ -2119,6 +2142,31 @@ public class X3Dobject {
                     translation[1] = -translation[1];
                     shaderSettings.setTextureTranslation(translation);
                 }
+                if ( proto != null ) {
+                    Log.e("X3DDBG", "PROTO <TextureTransform>");
+                    Appearance appearance = proto.getAppearance();
+                    if (appearance != null) {
+                        Log.e("X3DDBG", "   appearance != null");
+                        if (proto.getAppearance().getTextureTransform() == null) {
+                            TextureTransform textureTransform = new TextureTransform(
+                                    shaderSettings.getTextureCenter().getValue(), shaderSettings.getTextureRotation().getValue(),
+                                    shaderSettings.getTextureScale().getValue(), shaderSettings.getTextureTranslation().getValue()
+                            );
+                            proto.getAppearance().setTextureTransform(textureTransform);
+                            if (proto.getAppearance().getTextureTransform() != null) {
+                                Log.e("X3DDBG", "   proto.getAppearance().getTextureTransform() != null: looks good");
+                            }
+                        } else {
+                            Log.e("X3DDBG", "Proto error: TextureTransform not starting null inside Appearance node");
+                            Log.e(TAG, "Proto error: TextureTransform not starting null inside Appearance node");
+                        }
+                    } else {
+                        Log.e("X3DDBG", "PROTO: <Appearance> not set.");
+                        Log.e(TAG, "PROTO:  <Appearance> not set.");
+                    }  // end appearance != null
+                } // end proto != null
+
+
             }  // end TextureTransform
 
             /********** IndexedFaceSet **********/
@@ -2191,36 +2239,11 @@ public class X3Dobject {
                     geometry.setIndexedFaceSet( indexedFaceSet );
                     Log.e("X3DDBG", "   COMPLETE <IndexedFaceSet>, proto != null");
 
-
-                    int[] coordIndices = meshCreator.mPositionIndices.array();
-                    //int[] texCoordIndices = meshCreator.mTexcoordIndices.array();
-                    //int[] normalIndices = meshCreator.mNormalIndices.array();
-
                     Log.e("X3DDBG", "   COMPLETE coordIndices = meshCreator.mPositionIndices.array()");
 
                     indexedFaceSet.setCoordIndex( meshCreator.mPositionIndices.array() );
                     indexedFaceSet.setTexCoordIndex( meshCreator.mTexcoordIndices.array() );
                     indexedFaceSet.setNormalIndex( meshCreator.mNormalIndices.array() );
-
-
-                    int[] posIndices = indexedFaceSet.getCoordIndex();
-                    int[] texCoordIndices = indexedFaceSet.getTexCoordIndex();
-                    int[] normalIndices = indexedFaceSet.getNormalIndex();
-                    String posIndicesString = "";
-                    String texCoordString = "";
-                    String normalIndicesString = "";
-                    for (int i = 0; i < posIndices.length; i++ ) {
-                        posIndicesString += " " + posIndices[i] + ",";
-                    }
-                    for (int i = 0; i < texCoordIndices.length; i++ ) {
-                        texCoordString += " " + texCoordIndices[i] + ",";
-                    }
-                    for (int i = 0; i < normalIndices.length; i++ ) {
-                        normalIndicesString += " " + normalIndices[i] + ",";
-                    }
-                    Log.e("X3DDBG", "      posIndices[] = " + posIndicesString );
-                    Log.e("X3DDBG", "      texCoordIndices[] = " + texCoordString );
-                    Log.e("X3DDBG", "      normalIndices[] = " + normalIndicesString );
 
                 } // end proto != null
             } // end <IndexedFaceSet> node
@@ -2278,12 +2301,12 @@ public class X3Dobject {
 
                                 coordinate.setMeshCreatorInputPositions( coordinateValues);
 
-                                float[] coords = coordinate.getMeshCreatorInputPositions();
-                                String coordString = null;
-                                for (int i = 0; i < coords.length; i++ ) {
-                                    coordString += " " + coords[i] + ",";
-                                }
-                                Log.e("X3DDBG", "      coordString[] = " + coordString );
+                                //float[] coords = coordinate.getMeshCreatorInputPositions();
+                                //String coordString = null;
+                                //for (int i = 0; i < coords.length; i++ ) {
+                                //    coordString += " " + coords[i] + ",";
+                                //}
+                                //Log.e("X3DDBG", "      coordString[] = " + coordString );
                             }
                             else {
                                 Log.e("X3DDBG", "PROTO: <Coordinate> not inside <IndexedFaceSet>");
@@ -2355,12 +2378,12 @@ public class X3Dobject {
 
                                 textureCoordinate.setMeshCreatorInputTexCoords( textureCoordinateValues );
 
-                                float[] texCoords = textureCoordinate.getMeshCreatorInputTexCoords();
-                                String texCoordString = null;
-                                for (int i = 0; i < texCoords.length; i++ ) {
-                                    texCoordString += " " + texCoords[i] + ",";
-                                }
-                                Log.e("X3DDBG", "      texCoordString[] = " + texCoordString );
+                                //float[] texCoords = textureCoordinate.getMeshCreatorInputTexCoords();
+                                //String texCoordString = null;
+                                //for (int i = 0; i < texCoords.length; i++ ) {
+                                //    texCoordString += " " + texCoords[i] + ",";
+                                //}
+                                //Log.e("X3DDBG", "      texCoordString[] = " + texCoordString );
                             }
                             else {
                                 Log.e("X3DDBG", "PROTO: <TextureCoordinate> not inside <IndexedFaceSet>");
@@ -2397,7 +2420,7 @@ public class X3Dobject {
                         gvrVertexBuffer.setFloatArray("a_normal", useItem.getVertexBuffer().getFloatArray("a_normal"));
                         reorganizeVerts = false;
                     }
-                } // end USE Coordinate
+                } // end USE Normal
                 else {
                     // Not a 'Normal USE="..." node
                     attributeValue = attributes.getValue("DEF");
@@ -2430,12 +2453,12 @@ public class X3Dobject {
 
                                 normal.setMeshCreatorInputNormals( normalValues );
 
-                                float[] normals = normal.getMeshCreatorInputNormals();
-                                String normalsString = null;
-                                for (int i = 0; i < normals.length; i++ ) {
-                                    normalsString += " " + normals[i] + ",";
-                                }
-                                Log.e("X3DDBG", "      normalsString[] = " + normalsString );
+                                //float[] normals = normal.getMeshCreatorInputNormals();
+                                //String normalsString = null;
+                                //for (int i = 0; i < normals.length; i++ ) {
+                                //    normalsString += " " + normals[i] + ",";
+                                //}
+                                //Log.e("X3DDBG", "      normalsString[] = " + normalsString );
                             }
                             else {
                                 Log.e("X3DDBG", "PROTO: <Normal> not inside <IndexedFaceSet>");
@@ -3974,6 +3997,32 @@ public class X3Dobject {
                                 }
                         }
                         shaderSettings.setMovieTextureName(attributes.getValue("DEF") );
+
+                        if ( proto != null ) {
+                            Log.e("X3DDBG", "Movie proto != null");
+                            if ( proto.getAppearance() != null) {
+                                Log.e("X3DDBG", "   Movie proto.getAppearance() != null");
+
+                                if ( proto.getAppearance().getMovieTexture() == null) {
+                                    String[] movieTextures = new String[1];
+                                    movieTextures[0] = shaderSettings.movieTextures.get(0);
+                                    MovieTexture movieTexture = new MovieTexture(loop, 1.0f, 1.0f,
+                                            movieTextures);
+                                    proto.getAppearance().setMovieTexture( movieTexture );
+                                    Log.e("X3DDBG", "      MovieTexture SET");
+                                }
+                                else {
+                                    Log.e("X3DDBG", "Proto error: MovieTexture not starting null inside Appearance node");
+                                    Log.e(TAG, "Proto error: MovieTexture not starting null inside Appearance node");
+                                }
+
+                            }
+                            else {
+                                Log.e("X3DDBG", "Proto error: MovieTexture set without Appearance");
+                                Log.e(TAG, "Proto error: MovieTexture set without Appearance");
+                            }
+                        }
+
                     }
                 } // end <MovieTexture> node
 
@@ -4453,6 +4502,39 @@ public class X3Dobject {
                                     Log.e("X3DDBG", "   Set Proto connect nodeField = " + attributeValue);
                                     proto.setNodeField(field, attributeValue);
                                 }
+                                if ( proto.getAppearance() != null ) {
+                                    Log.e("X3DDBG", "   proto.getAppearance() != null");
+                                    if ( proto.getAppearance().getTexture() != null) {
+                                        Log.e("X3DDBG", "      proto.getAppearance().getTexture() != null");
+                                        if (proto.getNodeField(field).equalsIgnoreCase("url")) {
+                                            Log.e("X3DDBG", "         proto.getField_MFString(field) " + proto.getField_MFString(field)[0]);
+                                            proto.getAppearance().getTexture().setUrl( proto.getField_MFString(field));
+                                        }
+                                    }
+                                    if ( proto.getAppearance().getTextureTransform() != null) {
+                                        Log.e("X3DDBG", "      proto.getAppearance().getTextureTransform() != null");
+                                        if (proto.getNodeField(field).equalsIgnoreCase("scale")) {
+                                            proto.getAppearance().getTextureTransform().setScale( proto.getField_SFVec2f(field));
+                                        }
+                                        else if (proto.getNodeField(field).equalsIgnoreCase("rotation")) {
+                                            proto.getAppearance().getTextureTransform().setRotation( proto.getField_SFFloat(field)[0]);
+                                        }
+                                        else if (proto.getNodeField(field).equalsIgnoreCase("translation")) {
+                                            proto.getAppearance().getTextureTransform().setTranslation( proto.getField_SFVec2f(field));
+                                        }
+                                        else if (proto.getNodeField(field).equalsIgnoreCase("center")) {
+                                            proto.getAppearance().getTextureTransform().setCenter( proto.getField_SFVec2f(field));
+                                        }
+                                    }  //  end if TextureTransform
+                                    if ( proto.getAppearance().getMovieTexture() != null) {
+                                        Log.e("X3DDBG", "      proto.getAppearance().getMovieTexture() != null");
+                                        if (proto.getNodeField(field).equalsIgnoreCase("url")) {
+                                            Log.e("X3DDBG", "         proto.getField_MFString(field) " + proto.getField_MFString(field)[0]);
+                                            proto.getAppearance().getMovieTexture().setUrl( proto.getField_MFString(field));
+                                        }
+                                    }  //  end if MovieTexture
+
+                                } // end proto.getAppearance() != null
                                 if ( proto.getGeometry() != null) {
                                     Box box = proto.getGeometry().getBox();
                                     if ( box != null ) {
@@ -4620,20 +4702,15 @@ public class X3Dobject {
                                         for (int i = 0; i < normalIndex.length; i++) {
                                             meshCreator.mNormalIndices.add( normalIndex[i] );
                                         }
-                                        Log.e("X3DDBG", "         meshCreator.mNormalIndices reset");
 
                                         gvrIndexBuffer = new GVRIndexBuffer(gvrContext, 4, 0);
                                         float[] coords = geometryInstance.getIndexedFaceSet().getCoord().getMeshCreatorInputPositions();
                                         float[] normals = geometryInstance.getIndexedFaceSet().getNormal().getMeshCreatorInputNormals();
                                         float[] texCoords = geometryInstance.getIndexedFaceSet().getTexCoord().getMeshCreatorInputTexCoords();
 
-                                        //for (int i = 0; i < coords.length/3; i++) {
                                         meshCreator.addInputPosition( coords );
                                         meshCreator.addInputNormal(normals);
                                         meshCreator.addInputTexcoord(texCoords);
-                                        //}
-                                        //meshCreator.mInputNormals.mData
-                                        //meshCreator.mInputNormals.array( normals );
                                         gvrVertexBuffer = meshCreator.organizeVertices(gvrIndexBuffer);
 
                                         Log.e("X3DDBG", "Proto <IndexedFaceSet>, got arrays of N, C and TC");
@@ -4646,12 +4723,13 @@ public class X3Dobject {
                                         gvrRenderData.setRenderingOrder(GVRRenderingOrder.GEOMETRY);
                                         gvrRenderData.setCullFace(GVRCullFaceEnum.Back);
 
+                                        shaderSettings.initializeTextureMaterial(new GVRMaterial(gvrContext, x3DShader));
+
                                         gvrRenderData.setMesh(mesh);
                                         mesh.setIndexBuffer(gvrIndexBuffer);
                                         mesh.setVertexBuffer(gvrVertexBuffer);
 
                                         Log.e("X3DDBG", "Proto <IndexedFaceSet>, generated mesh");
-
 
 /*
                                         if (reorganizeVerts) {
@@ -4699,8 +4777,11 @@ public class X3Dobject {
                                 if (protoInstance.getShape() != null ) {
                                     if (protoInstance.getShape().getAppearance() != null ) {
                                         Material material = protoInstance.getAppearance().getMaterial();
+                                        ImageTexture imageTexture = protoInstance.getAppearance().getTexture();
+                                        TextureTransform textureTransform = protoInstance.getAppearance().getTextureTransform();
+                                        MovieTexture movieTexture = protoInstance.getAppearance().getMovieTexture();
                                         if (material != null) {
-                                            Log.e("X3DDBG", "   Material protoInstance material != null SETTING");
+                                            Log.e("X3DDBG", "   <ProtoInstance> material != null SETTING");
                                             shaderSettings.ambientIntensity = material.getAmbientIntensity();
                                             shaderSettings.diffuseColor = material.getDiffuseColor();
                                             shaderSettings.emissiveColor = material.getEmissiveColor();
@@ -4708,9 +4789,35 @@ public class X3Dobject {
                                             shaderSettings.specularColor = material.getSpecularColor();
                                             shaderSettings.setTransparency(material.getTransparency());
                                         }
-                                        else {
-                                            Log.e(TAG, "Material missing from ProtoInstance");
-                                            Log.e("X3DDBG", "Material missing from ProtoInstance");
+                                        if ( imageTexture != null ) {
+                                            Log.e("X3DDBG", "   <ProtoInstance> imageTexture != null SETTING");
+                                            gvrTextureParameters = new GVRTextureParameters(gvrContext);
+                                            gvrTextureParameters.setWrapSType(TextureWrapType.GL_REPEAT);
+                                            gvrTextureParameters.setWrapTType(TextureWrapType.GL_REPEAT);
+                                            gvrTextureParameters.setMinFilterType(GVRTextureParameters.TextureFilterType.GL_LINEAR_MIPMAP_NEAREST);
+
+                                            GVRTexture gvrTexture = new GVRTexture(gvrContext, gvrTextureParameters);
+                                            Log.e("X3DDBG", "      <ProtoInstance> imageTexture, set gvrTexture");
+                                            GVRAssetLoader.TextureRequest request = new GVRAssetLoader.TextureRequest(assetRequest, gvrTexture, imageTexture.getUrl()[0]);
+                                            Log.e("X3DDBG", "         <ProtoInstance> imageTexture, request");
+
+                                            assetRequest.loadTexture(request);
+                                            shaderSettings.setTexture(gvrTexture);
+                                            Log.e("X3DDBG", "         <ProtoInstance> shaderSettings");
+
+                                        }
+                                        if (textureTransform != null ){
+                                            Log.e("X3DDBG", "   <ProtoInstance> textureTransform != null SETTING");
+                                            shaderSettings.setTextureCenter( textureTransform.getCenter() );
+                                            shaderSettings.setTextureRotation( textureTransform.getRotation() );
+                                            shaderSettings.setTextureScale( textureTransform.getScale() );
+                                            shaderSettings.setTextureTranslation( textureTransform.getTranslation() );
+                                            Log.e("X3DDBG", "   <ProtoInstance> textureTransform SET");
+                                        }
+                                        if (movieTexture != null ){
+                                            Log.e("X3DDBG", "      <ProtoInstance> movieTexture != null SETTING");
+                                            shaderSettings.movieTextures.add(movieTexture.getUrl()[0]);
+                                            Log.e("X3DDBG", "      <ProtoInstance> movieTexture " + movieTexture.getUrl()[0]);
                                         }
                                     }
                                     else {

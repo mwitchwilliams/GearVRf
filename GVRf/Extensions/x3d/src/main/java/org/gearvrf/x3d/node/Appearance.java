@@ -21,8 +21,9 @@ public class Appearance extends X3DNode implements Cloneable
     private static final String TAG = Appearance.class.getSimpleName();
 
     private Material material = null;
-    //private Texture texture = null;
-    //private TextureTransform textureTransform = null;
+    private ImageTexture imageTexture = null;
+    private TextureTransform textureTransform = null;
+    private MovieTexture movieTexture = null;
 
     public Appearance() {
     }
@@ -37,6 +38,9 @@ public class Appearance extends X3DNode implements Cloneable
         try {
             Appearance cloneObj = (Appearance) super.clone();
             cloneObj.material = this.material.clone();
+            cloneObj.imageTexture = this.imageTexture.clone();
+            cloneObj.textureTransform = this.textureTransform.clone();
+            cloneObj.movieTexture = this.movieTexture.clone();
             return cloneObj;
         }
         catch (CloneNotSupportedException e) {
@@ -50,6 +54,30 @@ public class Appearance extends X3DNode implements Cloneable
      */
     public Material getMaterial() {
         return material;
+    }
+
+    /**
+     * Provide X3DTextureNode instance (using a properly typed node) from inputOutput SFNode field texture.
+     * @param newValue
+     */
+    public ImageTexture getTexture() {
+        return imageTexture;
+    }
+
+    /**
+     * Provide X3DTextureTransformNode instance (using a properly typed node) from inputOutput SFNode field textureTransform.
+     * @param newValue
+     */
+    public TextureTransform getTextureTransform() {
+        return textureTransform;
+    }
+
+    /**
+     * Provide X3DMovieTextureNode instance (using a properly typed node) from inputOutput SFNode field movieTexture.
+     * @param newValue
+     */
+    public MovieTexture getMovieTexture() {
+        return movieTexture;
     }
 
     /**
@@ -75,6 +103,29 @@ public class Appearance extends X3DNode implements Cloneable
         material = newValue;
     }
 
+    /**
+     * Assign X3DTextureNode instance (using a properly typed node) to inputOutput SFNode field texture.
+     */
+    public void setTexture(ImageTexture newValue) {
+        imageTexture = newValue;
+    }
+
+    /**
+     * Provide X3DTextureTransformNode instance (using a properly typed node) from inputOutput SFNode field textureTransform.
+     * @param newValue
+     */
+    public void setTextureTransform(TextureTransform newValue) {
+        textureTransform = newValue;
+    }
+
+    /**
+     * Provide X3DMovieTextureNode instance (using a properly typed node) from inputOutput SFNode field movieTexture.
+     * @param newValue
+     */
+    public void setMovieTexture(MovieTexture newValue) {
+        movieTexture = newValue;
+    }
+
 
     //TODO: the following methods are not implemented
     /*
@@ -83,15 +134,11 @@ public class Appearance extends X3DNode implements Cloneable
     getLineProperties()
     getMetadata()
     getShaders()
-    getTexture()
-    getTextureTransform()
     setCssClass(java.lang.String newValue)
     setFillProperties(FillProperties newValue)
     setLineProperties(LineProperties newValue)
     setMetadata(X3DMetadataObject newValue)
     void  setShaders(X3DNode newValue)
     Appearance  setShaders(X3DNode[] newValue)
-    Appearance  setTexture(X3DTextureNode newValue)
-    Appearance  setTextureTransform(X3DTextureTransformNode newValue)
     */
 } // end Appearance

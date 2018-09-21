@@ -354,4 +354,12 @@ public class Proto
         return field.mFloatValue;
     }
 
+    public float[] getField_SFVec2f( Field field ) {
+        return field.mFloatValue;
+    }
+//MFString
+    public String[] getField_MFString( Field field ) {
+    return field.mStringValue;
+}
+
 } // end Proto
