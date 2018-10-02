@@ -31,7 +31,7 @@ public class FontStyle extends X3DNode implements Cloneable
     MFString justify = new MFString("BEGIN");
     SFString language = new SFString(""); // not currently supported
     SFBool leftToRight = new SFBool(true); // not currently supported
-    SFFloat size = new SFFloat(1);
+    SFFloat size = new SFFloat(10);
     SFFloat spacing = new SFFloat(1);
     SFString style = new SFString("PLAIN");
     SFBool topToBottom = new SFBool(true); // not currently supported

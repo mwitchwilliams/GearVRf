@@ -3462,6 +3462,8 @@ public class X3Dobject {
                         }
                     }
                     else {
+                        String[] justifyMFString = null;
+
                         attributeValue = attributes.getValue("DEF");
                         if (attributeValue != null) {
                             Text_FontParams.nameFontStyle = attributeValue;
@@ -3484,7 +3486,8 @@ public class X3Dobject {
                         }
                         attributeValue = attributes.getValue("justify");
                         if (attributeValue != null) {
-                            String[] justifyMFString = parseMFString(attributeValue);
+                            //String[] justifyMFString = parseMFString(attributeValue);
+                            justifyMFString = parseMFString(attributeValue);
                             GVRTextViewSceneObject.justifyTypes[] justify = new GVRTextViewSceneObject.justifyTypes[justifyMFString.length];
                             for (int i = 0; i < justify.length; i++) {
                                 if (justifyMFString[i].equalsIgnoreCase("END"))
@@ -3531,6 +3534,18 @@ public class X3Dobject {
                         if (attributeValue != null) {
                             boolean topToBottom = parseBooleanString(attributeValue);
                             Log.e(TAG, "topToBottom feature of FontStyle not implemented");
+                        }
+
+                        if ( proto != null ) {
+                            Log.e("X3DDBG", "proto != null; Got FontStyle");
+                            if (proto.getGeometry() != null) {
+                                if ( proto.getGeometry().getText() != null) {
+                                    Text text = proto.getGeometry().getText();
+                                    FontStyle fontStyle = text.getFontStyle();
+                                    if (justifyMFString != null) fontStyle.setJustify( justifyMFString );
+                                    Log.e("X3DDBG", "proto.getGeometry().getText() != null " + justifyMFString);
+                                }
+                            }
                         }
 
                     } // not re-USE FontStyle
@@ -4497,116 +4512,132 @@ public class X3Dobject {
                                 // relate the protoField variable name to the item's property.
                                 Log.e("X3DDBG", "   Inside Proto IS protoField = " + attributeValue);
                                 Proto.Field field = proto.getField(attributeValue);
-                                attributeValue = attributes.getValue("nodeField");
-                                if (attributeValue != null) {
-                                    Log.e("X3DDBG", "   Set Proto connect nodeField = " + attributeValue);
-                                    proto.setNodeField(field, attributeValue);
+                                if (field == null) {
+                                    Log.e("X3DDBG", "Error: possibly undefined Proto Interface value: " + attributeValue);
+                                    Log.e(TAG, "Error: possibly undefined Proto Interface value: " + attributeValue);
                                 }
-                                if ( proto.getAppearance() != null ) {
-                                    Log.e("X3DDBG", "   proto.getAppearance() != null");
-                                    if ( proto.getAppearance().getTexture() != null) {
-                                        Log.e("X3DDBG", "      proto.getAppearance().getTexture() != null");
-                                        if (proto.getNodeField(field).equalsIgnoreCase("url")) {
-                                            Log.e("X3DDBG", "         proto.getField_MFString(field) " + proto.getField_MFString(field)[0]);
-                                            proto.getAppearance().getTexture().setUrl( proto.getField_MFString(field));
-                                        }
+                                else {
+                                    attributeValue = attributes.getValue("nodeField");
+                                    if (attributeValue != null) {
+                                        Log.e("X3DDBG", "   Set Proto connect nodeField = " + attributeValue);
+                                        proto.setNodeField(field, attributeValue);
                                     }
-                                    if ( proto.getAppearance().getTextureTransform() != null) {
-                                        Log.e("X3DDBG", "      proto.getAppearance().getTextureTransform() != null");
-                                        if (proto.getNodeField(field).equalsIgnoreCase("scale")) {
-                                            proto.getAppearance().getTextureTransform().setScale( proto.getField_SFVec2f(field));
+                                    if (proto.getAppearance() != null) {
+                                        Log.e("X3DDBG", "   proto.getAppearance() != null");
+                                        if (proto.getAppearance().getTexture() != null) {
+                                            Log.e("X3DDBG", "      proto.getAppearance().getTexture() != null");
+                                            if (proto.getNodeField(field).equalsIgnoreCase("url")) {
+                                                Log.e("X3DDBG", "         proto.getField_MFString(field) " + proto.getField_MFString(field)[0]);
+                                                proto.getAppearance().getTexture().setUrl(proto.getField_MFString(field));
+                                            }
                                         }
-                                        else if (proto.getNodeField(field).equalsIgnoreCase("rotation")) {
-                                            proto.getAppearance().getTextureTransform().setRotation( proto.getField_SFFloat(field)[0]);
-                                        }
-                                        else if (proto.getNodeField(field).equalsIgnoreCase("translation")) {
-                                            proto.getAppearance().getTextureTransform().setTranslation( proto.getField_SFVec2f(field));
-                                        }
-                                        else if (proto.getNodeField(field).equalsIgnoreCase("center")) {
-                                            proto.getAppearance().getTextureTransform().setCenter( proto.getField_SFVec2f(field));
-                                        }
-                                    }  //  end if TextureTransform
-                                    if ( proto.getAppearance().getMovieTexture() != null) {
-                                        Log.e("X3DDBG", "      proto.getAppearance().getMovieTexture() != null");
-                                        if (proto.getNodeField(field).equalsIgnoreCase("url")) {
-                                            Log.e("X3DDBG", "         proto.getField_MFString(field) " + proto.getField_MFString(field)[0]);
-                                            proto.getAppearance().getMovieTexture().setUrl( proto.getField_MFString(field));
-                                        }
-                                    }  //  end if MovieTexture
-
-                                } // end proto.getAppearance() != null
-                                if ( proto.getGeometry() != null) {
-                                    Box box = proto.getGeometry().getBox();
-                                    if ( box != null ) {
-                                        if (proto.getNodeField(field).equalsIgnoreCase("size")) {
-                                            box.setSize( proto.getField_SFVec3f(field) );
-                                        }
-                                        else if (proto.getNodeField(field).equalsIgnoreCase("solid")) {
-                                            box.setSolid( proto.getField_SFBool(field) );
-                                        }
-                                    } // end Box
-                                    Cone cone = proto.getGeometry().getCone();
-                                    if ( cone != null ) {
-                                        Log.e("X3DDBG", "      Proto connect: got a cone");
-                                        if (proto.getNodeField(field).equalsIgnoreCase("bottom")) {
-                                            cone.setBottom( proto.getField_SFBool(field) );
-                                        }
-                                        else if (proto.getNodeField(field).equalsIgnoreCase("bottomRadius")) {
-                                            cone.setBottomRadius( proto.getField_SFFloat(field)[0] );
-                                        }
-                                        else if (proto.getNodeField(field).equalsIgnoreCase("height")) {
-                                            cone.setHeight( proto.getField_SFFloat(field)[0] );
-                                        }
-                                        else if (proto.getNodeField(field).equalsIgnoreCase("side")) {
-                                            cone.setSide( proto.getField_SFBool(field) );
-                                        }
-                                        else if (proto.getNodeField(field).equalsIgnoreCase("solid")) {
-                                            cone.setSolid( proto.getField_SFBool(field) );
-                                        }
-                                    }  // end if cone != null
-                                    Cylinder cylinder = proto.getGeometry().getCylinder();
-                                    if ( cylinder != null ) {
-                                        if (proto.getNodeField(field).equalsIgnoreCase("bottom")) {
-                                            cylinder.setBottom( proto.getField_SFBool(field) );
-                                        }
-                                        else if (proto.getNodeField(field).equalsIgnoreCase("height")) {
-                                            cylinder.setHeight( proto.getField_SFFloat(field)[0] );
-                                        }
-                                        else if (proto.getNodeField(field).equalsIgnoreCase("radius")) {
-                                            cylinder.setRadius( proto.getField_SFFloat(field)[0] );
-                                        }
-                                        else if (proto.getNodeField(field).equalsIgnoreCase("side")) {
-                                            cylinder.setSide( proto.getField_SFBool(field) );
-                                        }
-                                        else if (proto.getNodeField(field).equalsIgnoreCase("solid")) {
-                                            cylinder.setSolid( proto.getField_SFBool(field) );
-                                        }
-                                        else if (proto.getNodeField(field).equalsIgnoreCase("top")) {
-                                            cylinder.setTop( proto.getField_SFBool(field) );
-                                            Log.e("X3DDBG", "   cylinder top = " + cylinder.getTop());
-                                        }
-                                    } // end Cylinder
-                                    Sphere sphere = proto.getGeometry().getSphere();
-                                    if ( sphere != null ) {
-                                        if (proto.getNodeField(field).equalsIgnoreCase("radius")) {
-                                            sphere.setRadius( proto.getField_SFFloat(field)[0] );
-                                        }
-                                        else if (proto.getNodeField(field).equalsIgnoreCase("solid")) {
-                                            sphere.setSolid( proto.getField_SFBool(field) );
-                                        }
-                                    } // end Sphere
-                                    IndexedFaceSet indexedFaceSet = proto.getGeometry().getIndexedFaceSet();
-                                    if ( indexedFaceSet != null ) {
-                                        Log.e("X3DDBG", "<connect> indexedFaceSet set fields");
-                                    } // end indexedFaceSet
-                                    Text text = proto.getGeometry().getText();
-                                    if ( text != null ) {
-                                        Log.e("X3DDBG", "<connect> text set fields");
-                                    } // end text
-                                }  // end proto.getGeometry() != null
-                            }
-                        }
-                    }
+                                        if (proto.getAppearance().getTextureTransform() != null) {
+                                            Log.e("X3DDBG", "      proto.getAppearance().getTextureTransform() != null");
+                                            if (proto.getNodeField(field).equalsIgnoreCase("scale")) {
+                                                proto.getAppearance().getTextureTransform().setScale(proto.getField_SFVec2f(field));
+                                            } else if (proto.getNodeField(field).equalsIgnoreCase("rotation")) {
+                                                proto.getAppearance().getTextureTransform().setRotation(proto.getField_SFFloat(field)[0]);
+                                            } else if (proto.getNodeField(field).equalsIgnoreCase("translation")) {
+                                                proto.getAppearance().getTextureTransform().setTranslation(proto.getField_SFVec2f(field));
+                                            } else if (proto.getNodeField(field).equalsIgnoreCase("center")) {
+                                                proto.getAppearance().getTextureTransform().setCenter(proto.getField_SFVec2f(field));
+                                            }
+                                        }  //  end if TextureTransform
+                                        if (proto.getAppearance().getMovieTexture() != null) {
+                                            Log.e("X3DDBG", "      proto.getAppearance().getMovieTexture() != null");
+                                            if (proto.getNodeField(field).equalsIgnoreCase("url")) {
+                                                Log.e("X3DDBG", "         proto.getField_MFString(field) " + proto.getField_MFString(field)[0]);
+                                                proto.getAppearance().getMovieTexture().setUrl(proto.getField_MFString(field));
+                                            }
+                                        }  //  end if MovieTexture
+                                    } // end proto.getAppearance() != null
+                                    if (proto.getGeometry() != null) {
+                                        Box box = proto.getGeometry().getBox();
+                                        if (box != null) {
+                                            if (proto.getNodeField(field).equalsIgnoreCase("size")) {
+                                                box.setSize(proto.getField_SFVec3f(field));
+                                            } else if (proto.getNodeField(field).equalsIgnoreCase("solid")) {
+                                                box.setSolid(proto.getField_SFBool(field));
+                                            }
+                                        } // end Box
+                                        Cone cone = proto.getGeometry().getCone();
+                                        if (cone != null) {
+                                            Log.e("X3DDBG", "      Proto connect: got a cone");
+                                            if (proto.getNodeField(field).equalsIgnoreCase("bottom")) {
+                                                cone.setBottom(proto.getField_SFBool(field));
+                                            } else if (proto.getNodeField(field).equalsIgnoreCase("bottomRadius")) {
+                                                cone.setBottomRadius(proto.getField_SFFloat(field)[0]);
+                                            } else if (proto.getNodeField(field).equalsIgnoreCase("height")) {
+                                                cone.setHeight(proto.getField_SFFloat(field)[0]);
+                                            } else if (proto.getNodeField(field).equalsIgnoreCase("side")) {
+                                                cone.setSide(proto.getField_SFBool(field));
+                                            } else if (proto.getNodeField(field).equalsIgnoreCase("solid")) {
+                                                cone.setSolid(proto.getField_SFBool(field));
+                                            }
+                                        }  // end if cone != null
+                                        Cylinder cylinder = proto.getGeometry().getCylinder();
+                                        if (cylinder != null) {
+                                            if (proto.getNodeField(field).equalsIgnoreCase("bottom")) {
+                                                cylinder.setBottom(proto.getField_SFBool(field));
+                                            } else if (proto.getNodeField(field).equalsIgnoreCase("height")) {
+                                                cylinder.setHeight(proto.getField_SFFloat(field)[0]);
+                                            } else if (proto.getNodeField(field).equalsIgnoreCase("radius")) {
+                                                cylinder.setRadius(proto.getField_SFFloat(field)[0]);
+                                            } else if (proto.getNodeField(field).equalsIgnoreCase("side")) {
+                                                cylinder.setSide(proto.getField_SFBool(field));
+                                            } else if (proto.getNodeField(field).equalsIgnoreCase("solid")) {
+                                                cylinder.setSolid(proto.getField_SFBool(field));
+                                            } else if (proto.getNodeField(field).equalsIgnoreCase("top")) {
+                                                cylinder.setTop(proto.getField_SFBool(field));
+                                                Log.e("X3DDBG", "   cylinder top = " + cylinder.getTop());
+                                            }
+                                        } // end Cylinder
+                                        Sphere sphere = proto.getGeometry().getSphere();
+                                        if (sphere != null) {
+                                            if (proto.getNodeField(field).equalsIgnoreCase("radius")) {
+                                                sphere.setRadius(proto.getField_SFFloat(field)[0]);
+                                            } else if (proto.getNodeField(field).equalsIgnoreCase("solid")) {
+                                                sphere.setSolid(proto.getField_SFBool(field));
+                                            }
+                                        } // end Sphere
+                                        IndexedFaceSet indexedFaceSet = proto.getGeometry().getIndexedFaceSet();
+                                        if (indexedFaceSet != null) {
+                                            Log.e("X3DDBG", "<connect> indexedFaceSet set fields");
+                                        } // end indexedFaceSet
+                                        Text text = proto.getGeometry().getText();
+                                        if (text != null) {
+                                            Log.e("X3DDBG", "<connect> text set fields");
+                                            FontStyle fontStyle = text.getFontStyle();
+                                            if (proto.getNodeField(field).equalsIgnoreCase("string")) {
+                                                Log.e("X3DDBG", "   <connect> text set string: " + proto.getNodeField(field));
+                                                text.setString(proto.getField_MFString(field));
+                                            } else if (proto.getNodeField(field).equalsIgnoreCase("family")) {
+                                                Log.e("X3DDBG", "   <connect> text set family: " + proto.getNodeField(field));
+                                                Log.e("X3DDBG", "      <connect> text family[0]: " + proto.getField_MFString(field)[0]);
+                                                if (fontStyle != null)
+                                                    fontStyle.setFamily(proto.getField_MFString(field));
+                                            } else if (proto.getNodeField(field).equalsIgnoreCase("justify")) {
+                                                Log.e("X3DDBG", "   <connect> text set justify: " + proto.getNodeField(field));
+                                                Log.e("X3DDBG", "      <connect> text justify[0]: " + proto.getField_MFString(field)[0]);
+                                                if (fontStyle != null)
+                                                    fontStyle.setJustify(proto.getField_MFString(field));
+                                            } else if (proto.getNodeField(field).equalsIgnoreCase("size")) {
+                                                Log.e("X3DDBG", "   <connect> text set size: " + proto.getNodeField(field));
+                                                Log.e("X3DDBG", "      <connect> text size: " + proto.getField_SFFloat(field)[0]);
+                                                if (fontStyle != null)
+                                                    fontStyle.setSize(proto.getField_SFFloat(field)[0] * 10);
+                                            } else if (proto.getNodeField(field).equalsIgnoreCase("style")) {
+                                                Log.e("X3DDBG", "   <connect> text set style: " + proto.getNodeField(field));
+                                                Log.e("X3DDBG", "      <connect> text style[0]: " + proto.getField_SFString(field) );
+                                                if (fontStyle != null)
+                                                    fontStyle.setStyle(proto.getField_SFString(field));
+                                            }
+                                        } // end text
+                                    }  // end proto.getGeometry() != null
+                                }
+                            }  //  end if (attributeValue != null)
+                        }  //  end if ( proto.isProtoStateProtoIS())
+                    }  //  end if proto != null
                 }  // end else if Proto connect
                 /********** PROTO Node: ProtoInstance **********/
                 else if (qName.equalsIgnoreCase("ProtoInstance")) {
@@ -4756,7 +4787,10 @@ public class X3Dobject {
                                 else if ( text != null ) {
                                     try {
                                         Log.e("X3DDBG", "Proto <Text> begin clone");
+                                        FontStyle fontStyle = text.getFontStyle();
+                                        FontStyle cloneFontStyle = (FontStyle) fontStyle.clone();
                                         Text cloneText = (Text) text.clone();
+                                        cloneText.setFontStyle( cloneFontStyle );
                                         geometryInstance.setText( cloneText );
                                         Log.e("X3DDBG", "   complete clone Text");
                                     }
@@ -4943,7 +4977,38 @@ public class X3Dobject {
                                 }
                                 Text text = protoInstance.getGeometryInstance().getText();
                                 if ( text != null ) {
-                                    Log.e("X3DDBG", "   Text field not yet implemented");
+                                    FontStyle fontStyle = text.getFontStyle();
+                                    Log.e("X3DDBG", "   *** protoInstance.getNodeField(field) = " + protoInstance.getNodeField(field));
+                                    if (protoInstance.getNodeField(field).equalsIgnoreCase("string")) {
+                                        Log.e("X3DDBG", "      *** attributeValue[0], length = " + attributeValue +", " + attributeValue.length());
+                                        String[] strArray = parseMFString(attributeValue);
+                                        Log.e("X3DDBG", "         *** strArray[0], length = " + strArray[0] +", " + strArray.length);
+                                        text.setString( strArray );
+                                    }
+                                    if (protoInstance.getNodeField(field).equalsIgnoreCase("family")) {
+                                        Log.e("X3DDBG", "      *** attributeValue[0], length = " + attributeValue +", " + attributeValue.length());
+                                        String[] strArray = parseMFString(attributeValue);
+                                        Log.e("X3DDBG", "         *** strArray[0], length = " + strArray[0] +", " + strArray.length);
+                                        if (fontStyle != null) fontStyle.setFamily( strArray );
+                                    }
+                                    if (protoInstance.getNodeField(field).equalsIgnoreCase("justify")) {
+                                        Log.e("X3DDBG", "      *** attributeValue[0], length = " + attributeValue +", " + attributeValue.length());
+                                        String[] strArray = parseMFString(attributeValue);
+                                        Log.e("X3DDBG", "         *** strArray[0], length = " + strArray[0] +", " + strArray.length);
+                                        if (fontStyle != null) fontStyle.setJustify( strArray );
+                                    }
+                                    if (protoInstance.getNodeField(field).equalsIgnoreCase("size")) {
+                                        Log.e("X3DDBG", "      *** attributeValue[0], length = " + attributeValue +", " + attributeValue.length());
+                                        float size = parseSingleFloatString(attributeValue, false, true);
+                                        Log.e("X3DDBG", "         *** text size = " + size);
+                                        if (fontStyle != null) fontStyle.setSize( size*10);
+                                    }
+                                    if (protoInstance.getNodeField(field).equalsIgnoreCase("style")) {
+                                        Log.e("X3DDBG", "      *** attributeValue[0], length = " + attributeValue +", " + attributeValue.length());
+                                        String[] strArray = parseMFString(attributeValue);
+                                        Log.e("X3DDBG", "         *** strArray[0], length = " + strArray[0] +", " + strArray.length);
+                                        if (fontStyle != null) fontStyle.setStyle(strArray[0]);
+                                    }
                                 }
 
                             } // geometry !null
@@ -5515,71 +5580,68 @@ public class X3Dobject {
 
                         Init_Text_FontParams();
 
+                        FontStyle fontStyle = text.getFontStyle();
                         //GVRTextViewSceneObject gvrTextViewSceneObject = new GVRTextViewSceneObject(gvrContext);
                         //GVRTextViewSceneObject gvrTextViewSceneObject = new GVRTextViewSceneObject(gvrContext, "'MY text'");
                         //gvrTextViewSceneObject = new GVRTextViewSceneObject(gvrContext, "MY text");
                         shaderSettings.initializeTextureMaterial(new GVRMaterial(gvrContext, x3DShader));
-                        //shaderSettings.diffuseColor[0] = .2f;
-                        //shaderSettings.diffuseColor[1] = .8f;
-                        //shaderSettings.diffuseColor[2] = 0.8f;
+
+                        String textString = "";
+                        for (int i = 0; i < text.getString().length; i++) {
+                            textString += text.getString()[i];
+                            if (i != (text.getString().length - 1) ) {
+                                textString += '\n';
+                            }
+                        }
+                        Log.e("X3DDBG", "      textString: " + textString);
+
+
+                        GVRTextViewSceneObject.justifyTypes jutifyType = GVRTextViewSceneObject.justifyTypes.BEGIN;
+                        if ( fontStyle.getJustify()[0].equalsIgnoreCase("MIDDLE")) jutifyType = GVRTextViewSceneObject.justifyTypes.MIDDLE;
+                        else if ( fontStyle.getJustify()[0].equalsIgnoreCase("END")) jutifyType = GVRTextViewSceneObject.justifyTypes.END;
+
+                        String fontFamily = Text_FontParams.family;
+                        Log.e("X3DDBG", "   </ProtoInstance> Text FontStyle fontFamily, getFamily() " + fontFamily + ", " + fontStyle.getFamily()[0]);
+                        if (fontStyle.getFamily() != null) fontFamily = fontStyle.getFamily()[0];
+
+                        float size = fontStyle.getSize();
+
+                        GVRTextViewSceneObject.fontStyleTypes fontStyleType = GVRTextViewSceneObject.fontStyleTypes.PLAIN;
+                        if ( fontStyle.getStyle().equalsIgnoreCase("BOLD")) fontStyleType = GVRTextViewSceneObject.fontStyleTypes.BOLD;
+                        else if ( fontStyle.getStyle().equalsIgnoreCase("ITALIC")) fontStyleType = GVRTextViewSceneObject.fontStyleTypes.ITALIC;
+                        else if ( fontStyle.getStyle().equalsIgnoreCase("BOLDITALIC")) fontStyleType = GVRTextViewSceneObject.fontStyleTypes.BOLDITALIC;
 
 
                         gvrTextViewSceneObject = new GVRTextViewSceneObject(gvrContext,
                                 "myFontStyle",
-                                "My String", Text_FontParams.family, Text_FontParams.justify,
-                                Text_FontParams.spacing, Text_FontParams.size, Text_FontParams.style);
+                                //"My\nString",
+                                textString,
+                                fontFamily,
+                                //Text_FontParams.family,
+                                //Text_FontParams.justify,
+                                jutifyType,
+                                Text_FontParams.spacing,
+                                //Text_FontParams.size,
+                                size,
+                                fontStyleType);
+                                //Text_FontParams.style);
                         gvrTextViewSceneObject.setName("my_text_string");
-
-                        //GVRRenderData gvrRenderData = gvrTextViewSceneObject.getRenderData();
-                        gvrRenderData = gvrTextViewSceneObject.getRenderData();
-                        gvrRenderData.setRenderingOrder(GVRRenderData.GVRRenderingOrder.TRANSPARENT);
 
                         gvrTextViewSceneObject.setTextColor(Color.WHITE); // default
                         gvrTextViewSceneObject.setBackgroundColor(Color.TRANSPARENT); // default
-
 
                         currentSceneObject = AddGVRSceneObject();
                         currentSceneObject.setName("parent_of_gvrText");
                         currentSceneObject.addChildObject(gvrTextViewSceneObject);
 
-                        //if (currentSceneObject == null ) root.addChildObject( gvrTextViewSceneObject );
-                        //else currentSceneObject.addChildObject(gvrTextViewSceneObject);
-
-
-/*
-                        GVRTextViewSceneObject gvrTextViewSceneObject = new GVRTextViewSceneObject(gvrContext,
-                                //text.getDEF().getValue(), text.getString()[0], text.getFontStyle().getFamily()[0],
-                                //text.getDEF().getValue(), "my text", GVRTextViewSceneObject.DEFAULT_FONT,
-                                //"my_DEF", "my text", "Air Americana.ttf",
-                                "my_DEF", "my text", GVRTextViewSceneObject.DEFAULT_FONT,
-                                //text.getFontStyle().getJustify()[0], text.getFontStyle().getSpacing(),
-                                //text.getFontStyle().getSize(), text.getFontStyle().getStyle()
-                                //GVRTextViewSceneObject.justifyTypes.BEGIN, text.getFontStyle().getSpacing(),
-                                //text.getFontStyle().getSize(), GVRTextViewSceneObject.fontStyleTypes.PLAIN
-                                GVRTextViewSceneObject.justifyTypes.BEGIN, 0,
-                                12, GVRTextViewSceneObject.fontStyleTypes.PLAIN
-                        );
-
-
-                        //GVRRenderData gvrRenderData = gvrTextViewSceneObject.getRenderData();
-                        gvrRenderData = gvrTextViewSceneObject.getRenderData();
-                        gvrRenderData.setRenderingOrder(GVRRenderData.GVRRenderingOrder.TRANSPARENT);
-                        //gvrRenderData.setRenderingOrder(GVRRenderingOrder.GEOMETRY);
-
-                        gvrTextViewSceneObject.setTextColor(Color.WHITE); // default
-                        gvrTextViewSceneObject.setBackgroundColor(Color.TRANSPARENT); // default
-                        currentSceneObject = AddGVRSceneObject();
-                        currentSceneObject.addChildObject(gvrTextViewSceneObject);
-                        */
-                    }
-
-                }
+                    }  //  end text != null
+                }  //  end if ( protoInstance.getGeometryInstance() != null)
 
                 protoInstance = null;
                 Log.e("X3DDBG", "   </ProtoInstance> call ShapePostParsing()" );
                 ShapePostParsing();
                 Log.e("X3DDBG", "   </ProtoInstance> return from ShapePostParsing()" );
-            }
+            }  //  end ProtoInstance
             else if (qName.equalsIgnoreCase("fieldValue")) {
                 ;
             }

@@ -357,7 +357,11 @@ public class Proto
     public float[] getField_SFVec2f( Field field ) {
         return field.mFloatValue;
     }
-//MFString
+
+    public String getField_SFString( Field field ) {
+        return field.mStringValue[0];
+    }
+
     public String[] getField_MFString( Field field ) {
     return field.mStringValue;
 }

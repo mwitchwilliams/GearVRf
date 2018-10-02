@@ -63,11 +63,19 @@ public class Text extends X3DNode  implements Cloneable
             cloneObj.fontStyle.justify = this.fontStyle.justify.clone();
             cloneObj.length = this.length.clone();
             cloneObj.maxExtent = this.maxExtent.clone();
+            Log.e("X3DDBG", "<Text> clone string BGN");
             cloneObj.string = this.string.clone();
-            //cloneObj.solid = this.solid.clone();
+            Log.e("X3DDBG", "<Text> clone string END");
+            cloneObj.solid = this.solid.clone();
             return cloneObj;
         }
         catch (CloneNotSupportedException e) {
+            Log.e("X3DDBG", "<Text> clone error: " + e);
+            Log.e(TAG, "<Text> clone error: " + e);
+        }
+        catch (Exception e) {
+            Log.e("X3DDBG", "<Text> Exception error: " + e);
+            Log.e(TAG, "<Text> Exception error: " + e);
         }
         return null;
     }
