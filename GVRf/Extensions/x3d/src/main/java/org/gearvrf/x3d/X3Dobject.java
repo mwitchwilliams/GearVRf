@@ -134,7 +134,7 @@ import com.google.android.exoplayer2.upstream.DataSource;
 
 public class X3Dobject {
 
-
+/*
     protected GVRVideoSceneObjectPlayer<ExoPlayer> makeExoPlayer(String movieFileName ) {
 
         GVRVideoSceneObjectPlayer<ExoPlayer> gvrVideoSceneObjectPlayer = null;
@@ -220,7 +220,7 @@ public class X3Dobject {
         }
         return gvrVideoSceneObjectPlayer;
     }  //  end makeExoPlayer
-
+*/
 
     /**
      * This class facilitates construction of GearVRF meshes from X3D data.
@@ -239,6 +239,7 @@ public class X3Dobject {
      * X3D parser is sequential so it only needs a single instance of this
      * class per X3D file parsed.
      */
+    /*
     static class MeshCreator
     {
         static class FloatArray
@@ -404,20 +405,22 @@ public class X3Dobject {
         {
             mVertexBufferDefine = item;
         }
-
+*/
         /*
          * Add a new X3D position index to use in later generating the vertex buffer.
          * These indices are the same as those in the X3D file.
          */
+        /*
         void addPositionIndex(int index)
         {
             mPositionIndices.add(index);
         }
-
+*/
         /*
          * Add a new X3D normal index to use in later generating vertex buffer.
          * These indices are the same as those in the X3D file.
          */
+        /*
         void addNormalIndex(int index)
         {
             if (mUseNormals)
@@ -425,18 +428,19 @@ public class X3Dobject {
                 mNormalIndices.add(index);
             }
         }
-
+*/
         /*
          * Add a new X3D texture coordinate index to use in later generating the vertex buffer.
          * These indices are the same as those in the X3D file.
          */
+        /*
         void addTexcoordIndex(int index)
         {
             if (mUseTexCoords) {
                 mTexcoordIndices.add(index);
             }
         }
-
+*/
         /*
          * Add a position to the input vertex storage array.
          * These positions are the same as in the X3D file
@@ -445,11 +449,12 @@ public class X3Dobject {
          * index table for positions, normals and texture coordinates.
          * GearVRF keeps a single index table.
          */
+        /*
         void addInputPosition(float[] pos)
         {
             mInputPositions.add(pos);
         }
-
+*/
         /*
          * Add a normal to the input vertex storage array.
          * These normals are the same as in the X3D file
@@ -458,13 +463,14 @@ public class X3Dobject {
          * index table for positions, normals and texture coordinates.
          * GearVRF keeps a single index table.
          */
+        /*
         void addInputNormal(float[] norm)
         {
             if (mUseNormals) {
                 mInputNormals.add(norm);
             }
         }
-
+*/
         /*
          * Add a texture coordinate to the input vertex storage array.
          * These texture coordinates are the same as in the X3D file
@@ -473,6 +479,7 @@ public class X3Dobject {
          * index table for positions, normals and texture coordinates.
          * GearVRF keeps a single index table.
          */
+        /*
         void addInputTexcoord(float[] tc)
         {
             if (mUseTexCoords) {
@@ -483,7 +490,7 @@ public class X3Dobject {
                 mInputTexCoords.add(tc);
             }
         }
-
+*/
         /*
          * Generates normals for the output vertices by computing
          * face normals and averaging them.
@@ -492,6 +499,7 @@ public class X3Dobject {
          * normals shared by this vertex. Then normalize the normals.
          * The resulting normals are in mOutputNormals.
          */
+        /*
         private void generateNormals(int[] faces, int numIndices, FloatArray positions)
         {
             Vector3f side0 = new Vector3f();
@@ -505,6 +513,7 @@ public class X3Dobject {
                 /*
                  * Compute face normals
                  */
+        /*
                 for (int f = 0; f < numIndices; f += 3)
                 {
                     int v1Index = faces[f] * 3;
@@ -521,9 +530,11 @@ public class X3Dobject {
                     normal.normalize();
                     mInputNormals.set(f * 3, normal);
                 }
+    */
                 /*
                  * Add face normals to produce vertex normals
                  */
+                /*
                 float[] normals = mOutputNormals.array();
                 for (int f = 0; f < numIndices; f += 3)
                 {
@@ -542,9 +553,11 @@ public class X3Dobject {
                     normals[v3Index + 1] += normal.y;
                     normals[v3Index + 2] += normal.z;
                 }
+*/
                 /*
                  * Normalize output normals
                  */
+                /*
                 for (int i = 0; i < mOutputNormals.getSize(); ++i)
                 {
                     int nindex = i * 3;
@@ -558,7 +571,7 @@ public class X3Dobject {
                 Log.e(TAG, e.toString());
             }
         }  //  end generateNormals
-
+*/
         /*
          * Create a vertex and index buffer from the X3D indices,
          * positions, normals and texture coordinates.
@@ -569,6 +582,7 @@ public class X3Dobject {
          * and texture coordinates. This function converts the
          * X3D input data into a GVRVertexBuffer and GVRIndexBuffer.
          */
+        /*
         GVRVertexBuffer organizeVertices(GVRIndexBuffer ibuf)
         {
             boolean hasTexCoords = mUseTexCoords & (mInputTexCoords.getSize() > 0);;
@@ -583,33 +597,38 @@ public class X3Dobject {
             {
                 descriptor += " float3 a_normal";
             }
+*/
             /*
              * If there are no texture coordinates or normals,
              * we can just copy the input positions directly from
              * X3D and generate normals if necessary.
              */
+            /*
             if (!hasTexCoords && !hasNormals)
             {
                 return copyVertices(descriptor, ibuf, mUseNormals);
             }
+*/
             /*
              * If the X3D file does not have normal or texcoord indices,
              * we can just copy the input data directly from X3D
              * because the positions, normals and texcoord arrays
              * are all in the same order.
              */
+            /*
             if ((mTexcoordIndices.getSize() == 0) &&
                 (mNormalIndices.getSize() == 0))
             {
                 return copyVertices(descriptor, ibuf, mUseNormals);
             }
-
+*/
             /*
              * The X3D file has different index tables for positions,
              * normals and texture coordinates. We must regenerate the
              * vertex table to duplicate vertices in the cases where
              * a position has more than one normal or textoord.
              */
+            /*
             Map<String, Integer> vertexMap = new LinkedHashMap<String, Integer>();
             int[] newIndices = new int[mPositionIndices.getSize()];
             float[] pos = new float[3];
@@ -617,11 +636,12 @@ public class X3Dobject {
             float[] tc = new float[2];
             int[] normalIndices = (mNormalIndices.getSize() > 0) ? mNormalIndices.array() : mPositionIndices.array();
             int[] texcoordIndices = (mTexcoordIndices.getSize() > 0) ? mTexcoordIndices.array() : mPositionIndices.array();
-
+*/
             /*
              * Scan all the faces and compose the set of unique vertices
              * (where a vertex has a position, normal and texcoord)
              */
+            /*
             mOutputPositions.setCapacity(mInputPositions.getSize());
             for (char f = 0; f < mPositionIndices.getSize(); f++)
             {
@@ -684,7 +704,7 @@ public class X3Dobject {
             clear();
             return vbuffer;
         }
-
+*/
         /*
          * Create a vertex and index buffer from the X3D indices,
          * and positions.
@@ -698,6 +718,7 @@ public class X3Dobject {
          * coordinates, the order of the vertices is the same as in
          * the X3D file.
          */
+        /*
         public GVRVertexBuffer copyVertices(String descriptor, GVRIndexBuffer ibuf, boolean makeNormals)
         {
             GVRVertexBuffer vbuffer = new GVRVertexBuffer(mContext, descriptor, mInputPositions.getSize() / 3);
@@ -739,8 +760,8 @@ public class X3Dobject {
             clear();
             return vbuffer;
         }
-    }
-
+    }  //  end MeshCreator
+*/
 
     /**
      * Allows developers to access the root of X3D scene graph
@@ -775,16 +796,16 @@ public class X3Dobject {
     private static int animationCount = 1;
 
 
-    private final static int verticesComponent = 1;
-    private final static int normalsComponent = 2;
-    private final static int textureCoordComponent = 3;
-    private final static int indexedFaceSetComponent = 4;
-    private final static int normalIndexComponent = 5;
-    private final static int textureIndexComponent = 6;
-    private final static int interpolatorKeyComponent = 7;
-    private final static int interpolatorKeyValueComponent = 8;
-    private final static int LODComponent = 9;
-    private final static int elevationGridHeight = 10;
+    protected final static int verticesComponent = 1;
+    protected final static int normalsComponent = 2;
+    protected final static int textureCoordComponent = 3;
+    protected final static int indexedFaceSetComponent = 4;
+    protected final static int normalIndexComponent = 5;
+    protected final static int textureIndexComponent = 6;
+    protected final static int interpolatorKeyComponent = 7;
+    protected final static int interpolatorKeyValueComponent = 8;
+    protected final static int LODComponent = 9;
+    protected final static int elevationGridHeight = 10;
     private boolean reorganizeVerts = false;
 
     private static final float CUBE_WIDTH = 20.0f; // used for cube maps
@@ -845,15 +866,16 @@ public class X3Dobject {
     private GVRTexture gvrTexture = null;
     private ArrayList<ScriptObject> scriptObjects = new ArrayList<ScriptObject>();
 
-    private Vector<Key> keys = new Vector<Key>();
-    private Vector<KeyValue> keyValues = new Vector<KeyValue>();
-    private Vector<Float> floatArray = new Vector<Float>();
+    protected Vector<Key> keys = new Vector<Key>();
+    protected Vector<KeyValue> keyValues = new Vector<KeyValue>();
+    protected Vector<Float> floatArray = new Vector<Float>();
 
     private Vector<TimeSensor> timeSensors = new Vector<TimeSensor>();
     private Vector<Interpolator> interpolators = new Vector<Interpolator>();
 
     private Vector<InlineObject> inlineObjects = new Vector<InlineObject>();
-    private MeshCreator meshCreator = null;
+//    private MeshCreator meshCreator = null;
+    private Utility utility = null;
 
     /**
      * public list of <Viewpoints> since camera position can be
@@ -934,6 +956,7 @@ public class X3Dobject {
         Text_FontParams.size = 10.0f;
         Text_FontParams.style = GVRTextViewSceneObject.fontStyleTypes.PLAIN;
     }
+
     //Called after parsing </Shape>
     private void ShapePostParsing() {
         if (!gvrRenderingDataUSEd) {
@@ -1039,7 +1062,7 @@ public class X3Dobject {
                         try {
                             GVRVideoSceneObjectPlayer<?> videoSceneObjectPlayer = null;
                             try {
-                                videoSceneObjectPlayer = makeExoPlayer(shaderSettings.movieTextures.get(0));
+                                videoSceneObjectPlayer = utility.makeExoPlayer(shaderSettings.movieTextures.get(0));
                             }
                             catch (Exception e) {
                                 Log.e(TAG, "Exception getting videoSceneObjectPlayer: " + e);
@@ -1174,7 +1197,8 @@ public class X3Dobject {
             blockLighting = settings.contains(GVRImportSettings.NO_LIGHTING);
             blockTexturing = settings.contains(GVRImportSettings.NO_TEXTURING);
 
-            meshCreator = new MeshCreator(this.gvrContext, settings);
+    //        meshCreator = new MeshCreator(this.gvrContext, settings);
+            utility = new Utility(this, gvrContext, settings);
             // Camera rig setup code based on GVRScene::init()
             GVRCamera leftCamera = new GVRPerspectiveCamera(gvrContext);
             leftCamera.setRenderMask(GVRRenderMaskBit.Left);
@@ -1210,7 +1234,7 @@ public class X3Dobject {
     /*********************************************/
 
 
-    private void AddKeys(float key)
+    protected void AddKeys(float key)
 
     {
         Key newKey = new Key(key);
@@ -1218,7 +1242,7 @@ public class X3Dobject {
     }
 
 
-    private void AddKeyValues(float[] values)
+    protected void AddKeyValues(float[] values)
 
     {
         KeyValue newKeyValue = new KeyValue(values);
@@ -1233,7 +1257,7 @@ public class X3Dobject {
     class UserHandler extends DefaultHandler {
 
         String attributeValue = null;
-
+        /*
         private float[] parseFixedLengthFloatString(String numberString,
                                                     int componentCount, boolean constrained0to1, boolean zeroOrGreater) {
             StringReader sr = new StringReader(numberString);
@@ -1297,14 +1321,13 @@ public class X3Dobject {
             return componentFloat;
         } // end parseFixedLengthFloatString
 
-        private float parseSingleFloatString(String numberString,
-                                             boolean constrained0to1, boolean zeroOrGreater) {
-            float[] value = parseFixedLengthFloatString(numberString, 1,
-                    constrained0to1,
-                    zeroOrGreater);
-            return value[0];
-        }
-
+                private float parseSingleFloatString(String numberString,
+                                                     boolean constrained0to1, boolean zeroOrGreater) {
+                    float[] value = parseFixedLengthFloatString(numberString, 1,
+                            constrained0to1,
+                            zeroOrGreater);
+                    return value[0];
+                }
         private boolean parseBooleanString(String booleanString) {
             StringReader sr = new StringReader(booleanString);
             StreamTokenizer st = new StreamTokenizer(sr);
@@ -1324,6 +1347,7 @@ public class X3Dobject {
             }
             return value;
         }
+
 
         // multi-field string
         private String[] parseMFString(String mfString) {
@@ -1516,6 +1540,7 @@ public class X3Dobject {
                 Log.e(TAG, "Error: parseNumbersString - " + e);
             }
         } // parseNumbersString
+*/
 
         private void ReplicateGVRSceneObjStructure(String attributeValue) {
             // TODO: needs to complete implementation.  May instead
@@ -1648,28 +1673,28 @@ public class X3Dobject {
                     // Parsing Center value must occur before Rotation
                     String translationAttribute = attributes.getValue("translation");
                     if (translationAttribute != null) {
-                        translation = parseFixedLengthFloatString(translationAttribute, 3,
+                        translation = utility.parseFixedLengthFloatString(translationAttribute, 3,
                                 false, false);
                     }
                     String centerAttribute = attributes.getValue("center");
                     if (centerAttribute != null) {
-                        center = parseFixedLengthFloatString(centerAttribute, 3, false,
+                        center = utility.parseFixedLengthFloatString(centerAttribute, 3, false,
                                 false);
                     }
                     String rotationAttribute = attributes.getValue("rotation");
                     if (rotationAttribute != null) {
-                        rotation = parseFixedLengthFloatString(rotationAttribute, 4, false,
+                        rotation = utility.parseFixedLengthFloatString(rotationAttribute, 4, false,
                                 false);
                     }
                     String scaleOrientationAttribute = attributes
                             .getValue("scaleOrientation");
                     if (scaleOrientationAttribute != null) {
-                        scaleOrientation = parseFixedLengthFloatString(scaleOrientationAttribute,
+                        scaleOrientation = utility.parseFixedLengthFloatString(scaleOrientationAttribute,
                                 4, false, false);
                     }
                     attributeValue = attributes.getValue("scale");
                     if (attributeValue != null) {
-                        scale = parseFixedLengthFloatString(attributeValue, 3, false, false);
+                        scale = utility.parseFixedLengthFloatString(attributeValue, 3, false, false);
                     }
 
                     currentSceneObject = AddGVRSceneObject();
@@ -1962,19 +1987,19 @@ public class X3Dobject {
                     }
                     String diffuseColorAttribute = attributes.getValue("diffuseColor");
                     if (diffuseColorAttribute != null) {
-                        float diffuseColor[] = parseFixedLengthFloatString(diffuseColorAttribute,
+                        float diffuseColor[] = utility.parseFixedLengthFloatString(diffuseColorAttribute,
                                 3, true, false);
                         shaderSettings.setDiffuseColor(diffuseColor);
                     }
                     String specularColorAttribute = attributes.getValue("specularColor");
                     if (specularColorAttribute != null) {
-                        float specularColor[] = parseFixedLengthFloatString(specularColorAttribute,
+                        float specularColor[] = utility.parseFixedLengthFloatString(specularColorAttribute,
                                 3, true, false);
                         shaderSettings.setSpecularColor(specularColor);
                     }
                     String emissiveColorAttribute = attributes.getValue("emissiveColor");
                     if (emissiveColorAttribute != null) {
-                        float emissiveColor[] = parseFixedLengthFloatString(emissiveColorAttribute,
+                        float emissiveColor[] = utility.parseFixedLengthFloatString(emissiveColorAttribute,
                                 3, true, false);
                         shaderSettings.setEmmissiveColor(emissiveColor);
                     }
@@ -1983,20 +2008,20 @@ public class X3Dobject {
                     if (ambientIntensityAttribute != null) {
                         Log.e(TAG, "Material ambientIntensity currently not implemented.");
                         shaderSettings
-                                .setAmbientIntensity(parseSingleFloatString(ambientIntensityAttribute,
+                                .setAmbientIntensity(utility.parseSingleFloatString(ambientIntensityAttribute,
                                         true, false));
                     }
                     String shininessAttribute = attributes.getValue("shininess");
                     if (shininessAttribute != null) {
                         shaderSettings
-                                .setShininess(parseSingleFloatString(shininessAttribute, true,
+                                .setShininess(utility.parseSingleFloatString(shininessAttribute, true,
                                         false));
                     }
                     String transparencyAttribute = attributes.getValue("transparency");
                     if (transparencyAttribute != null) {
 
                         shaderSettings
-                                .setTransparency(parseSingleFloatString(transparencyAttribute,
+                                .setTransparency(utility.parseSingleFloatString(transparencyAttribute,
                                         true, false));
                     }
                     if ( proto != null ) {
@@ -2059,14 +2084,14 @@ public class X3Dobject {
                             final String filename = urlAttribute;
                             String repeatSAttribute = attributes.getValue("repeatS");
                             if (repeatSAttribute != null) {
-                                if (!parseBooleanString(repeatSAttribute)) {
+                                if (!utility.parseBooleanString(repeatSAttribute)) {
                                     gvrTextureParameters
                                             .setWrapSType(TextureWrapType.GL_CLAMP_TO_EDGE);
                                 }
                             }
                             String repeatTAttribute = attributes.getValue("repeatT");
                             if (repeatTAttribute != null) {
-                                if (!parseBooleanString(repeatTAttribute)) {
+                                if (!utility.parseBooleanString(repeatTAttribute)) {
                                     gvrTextureParameters
                                             .setWrapTType(TextureWrapType.GL_CLAMP_TO_EDGE);
                                 }
@@ -2121,25 +2146,25 @@ public class X3Dobject {
                 }
                 String centerAttribute = attributes.getValue("center");
                 if (centerAttribute != null) {
-                    float[] center = parseFixedLengthFloatString(centerAttribute, 2,
+                    float[] center = utility.parseFixedLengthFloatString(centerAttribute, 2,
                             false, false);
                     shaderSettings.setTextureCenter(center);
                 }
                 String rotationAttribute = attributes.getValue("rotation");
                 if (rotationAttribute != null) {
-                    float[] rotation = parseFixedLengthFloatString(rotationAttribute, 1,
+                    float[] rotation = utility.parseFixedLengthFloatString(rotationAttribute, 1,
                             false, false);
                     shaderSettings.setTextureRotation( rotation[0] );
                 }
                 String scaleAttribute = attributes.getValue("scale");
                 if (scaleAttribute != null) {
-                    float[] scale = parseFixedLengthFloatString(scaleAttribute, 2, false,
+                    float[] scale = utility.parseFixedLengthFloatString(scaleAttribute, 2, false,
                             true);
                     shaderSettings.setTextureScale(scale);
                 }
                 String translationAttribute = attributes.getValue("translation");
                 if (translationAttribute != null) {
-                    float[] translation = parseFixedLengthFloatString(translationAttribute,
+                    float[] translation = utility.parseFixedLengthFloatString(translationAttribute,
                             2, false, false);
                     translation[1] = -translation[1];
                     shaderSettings.setTextureTranslation(translation);
@@ -2187,13 +2212,13 @@ public class X3Dobject {
                     }
                     attributeValue = attributes.getValue("solid");
                     if (attributeValue != null) {
-                        if ( !parseBooleanString(attributeValue)) {
+                        if ( !utility.parseBooleanString(attributeValue)) {
                             Log.e(TAG, "IndexedFaceSet solid=false not implemented. ");
                         }
                     }
                     attributeValue = attributes.getValue("ccw");
                     if (attributeValue != null) {
-                        if ( !parseBooleanString(attributeValue)) {
+                        if ( !utility.parseBooleanString(attributeValue)) {
                             Log.e(TAG, "IndexedFaceSet ccw=false attribute not implemented. ");
                         }
                     }
@@ -2207,7 +2232,7 @@ public class X3Dobject {
                     attributeValue = attributes.getValue("normalPerVertex");
                     if (attributeValue != null) {
 
-                        if ( !parseBooleanString(attributeValue)) {
+                        if ( !utility.parseBooleanString(attributeValue)) {
                             Log.e(TAG,
                                     "IndexedFaceSet normalPerVertex=false attribute not implemented. ");
                         }
@@ -2215,18 +2240,18 @@ public class X3Dobject {
                     }
                     String coordIndexAttribute = attributes.getValue("coordIndex");
                     if (coordIndexAttribute != null) {
-                        parseNumbersString(coordIndexAttribute,
+                        utility.parseNumbersString(coordIndexAttribute,
                                 X3Dobject.indexedFaceSetComponent, 3);
                         reorganizeVerts = true;
                     }
                     String normalIndexAttribute = attributes.getValue("normalIndex");
                     if (normalIndexAttribute != null) {
-                        parseNumbersString(normalIndexAttribute,
+                        utility.parseNumbersString(normalIndexAttribute,
                                 X3Dobject.normalIndexComponent, 3);
                     }
                     String texCoordIndexAttribute = attributes.getValue("texCoordIndex");
                     if (texCoordIndexAttribute != null) {
-                        parseNumbersString(texCoordIndexAttribute,
+                        utility.parseNumbersString(texCoordIndexAttribute,
                                 X3Dobject.textureIndexComponent, 3);
                     }
                 }
@@ -2243,9 +2268,9 @@ public class X3Dobject {
 
                     Log.e("X3DDBG", "   COMPLETE coordIndices = meshCreator.mPositionIndices.array()");
 
-                    indexedFaceSet.setCoordIndex( meshCreator.mPositionIndices.array() );
-                    indexedFaceSet.setTexCoordIndex( meshCreator.mTexcoordIndices.array() );
-                    indexedFaceSet.setNormalIndex( meshCreator.mNormalIndices.array() );
+                    indexedFaceSet.setCoordIndex( utility.meshCreator.mPositionIndices.array() );
+                    indexedFaceSet.setTexCoordIndex( utility.meshCreator.mTexcoordIndices.array() );
+                    indexedFaceSet.setNormalIndex( utility.meshCreator.mNormalIndices.array() );
 
                 } // end proto != null
             } // end <IndexedFaceSet> node
@@ -2277,13 +2302,13 @@ public class X3Dobject {
                     attributeValue = attributes.getValue("DEF");
                     if (attributeValue != null) {
                         DefinedItem definedItem = new DefinedItem(attributeValue);
-                            meshCreator.defineVertexBuffer(definedItem);
+                            utility.meshCreator.defineVertexBuffer(definedItem);
                         // Array list of DEFined items clones objects with USE
                         mDefinedItems.add(definedItem);
                     }
                     String pointAttribute = attributes.getValue("point");
                     if (pointAttribute != null) {
-                        parseNumbersString(pointAttribute, X3Dobject.verticesComponent, 3);
+                        utility.parseNumbersString(pointAttribute, X3Dobject.verticesComponent, 3);
                     }
                     if ( proto != null ) {
                         Log.e("X3DDBG", "<Coordinate>, proto != null");
@@ -2293,22 +2318,10 @@ public class X3Dobject {
                             if (indexedFaceSet != null) {
                                 Coordinate coordinate = new Coordinate();
                                 indexedFaceSet.setCoord( coordinate );
-                                float[] coordinateValues = meshCreator.mInputPositions.array();
-
-                                //String coordinateValuesString = null;
-                                //for (int i = 0; i < coordinateValues.length; i++ ) {
-                                //    coordinateValuesString += " " + coordinateValues[i] + ",";
-                                //}
-                                //Log.e("X3DDBG", "      coordinateValues[] = " + coordinateValuesString );
+                                float[] coordinateValues = utility.meshCreator.mInputPositions.array();
 
                                 coordinate.setMeshCreatorInputPositions( coordinateValues);
 
-                                //float[] coords = coordinate.getMeshCreatorInputPositions();
-                                //String coordString = null;
-                                //for (int i = 0; i < coords.length; i++ ) {
-                                //    coordString += " " + coords[i] + ",";
-                                //}
-                                //Log.e("X3DDBG", "      coordString[] = " + coordString );
                             }
                             else {
                                 Log.e("X3DDBG", "PROTO: <Coordinate> not inside <IndexedFaceSet>");
@@ -2360,7 +2373,7 @@ public class X3Dobject {
                     // upside down
                     String pointAttribute = attributes.getValue("point");
                     if (pointAttribute != null) {
-                        parseNumbersString(pointAttribute, X3Dobject.textureCoordComponent, 2);
+                        utility.parseNumbersString(pointAttribute, X3Dobject.textureCoordComponent, 2);
                     }
                     if ( proto != null ) {
                         Log.e("X3DDBG", "<TextureCoordinate>, proto != null");
@@ -2370,22 +2383,10 @@ public class X3Dobject {
                             if (indexedFaceSet != null) {
                                 TextureCoordinate textureCoordinate = new TextureCoordinate();
                                 indexedFaceSet.setTetureCoordinate( textureCoordinate );
-                                float[] textureCoordinateValues = meshCreator.mInputTexCoords.array();
-
-                                //String textureCoordinateValuesString = null;
-                                //for (int i = 0; i < textureCoordinateValues.length; i++ ) {
-                                //    textureCoordinateValuesString += " " + textureCoordinateValues[i] + ",";
-                                //}
-                                //Log.e("X3DDBG", "      textureCoordinateValues[] = " + textureCoordinateValuesString );
+                                float[] textureCoordinateValues = utility.meshCreator.mInputTexCoords.array();
 
                                 textureCoordinate.setMeshCreatorInputTexCoords( textureCoordinateValues );
 
-                                //float[] texCoords = textureCoordinate.getMeshCreatorInputTexCoords();
-                                //String texCoordString = null;
-                                //for (int i = 0; i < texCoords.length; i++ ) {
-                                //    texCoordString += " " + texCoords[i] + ",";
-                                //}
-                                //Log.e("X3DDBG", "      texCoordString[] = " + texCoordString );
                             }
                             else {
                                 Log.e("X3DDBG", "PROTO: <TextureCoordinate> not inside <IndexedFaceSet>");
@@ -2435,7 +2436,7 @@ public class X3Dobject {
                     }
                     String vectorAttribute = attributes.getValue("vector");
                     if (vectorAttribute != null) {
-                        parseNumbersString(vectorAttribute, X3Dobject.normalsComponent, 3);
+                        utility.parseNumbersString(vectorAttribute, X3Dobject.normalsComponent, 3);
                     }
                     if ( proto != null ) {
                         Log.e("X3DDBG", "<Normal>, proto != null");
@@ -2445,7 +2446,7 @@ public class X3Dobject {
                             if (indexedFaceSet != null) {
                                 Normal normal = new Normal();
                                 indexedFaceSet.setNormal( normal );
-                                float[] normalValues = meshCreator.mInputNormals.array();
+                                float[] normalValues = utility.meshCreator.mInputNormals.array();
 
                                 //String normalValuesString = null;
                                 //for (int i = 0; i < normalValues.length; i++ ) {
@@ -2560,12 +2561,12 @@ public class X3Dobject {
                         }
                         attributeValue = attributes.getValue("ambientIntensity");
                         if (attributeValue != null) {
-                            ambientIntensity = parseSingleFloatString(attributeValue, true,
+                            ambientIntensity = utility.parseSingleFloatString(attributeValue, true,
                                     false);
                         }
                         attributeValue = attributes.getValue("attenuation");
                         if (attributeValue != null) {
-                            attenuation = parseFixedLengthFloatString(attributeValue, 3,
+                            attenuation = utility.parseFixedLengthFloatString(attributeValue, 3,
                                     false, true);
                             if ((attenuation[0] == 0) && (attenuation[1] == 0)
                                     && (attenuation[2] == 0))
@@ -2573,30 +2574,30 @@ public class X3Dobject {
                         }
                         attributeValue = attributes.getValue("color");
                         if (attributeValue != null) {
-                            color = parseFixedLengthFloatString(attributeValue, 3, true,
+                            color = utility.parseFixedLengthFloatString(attributeValue, 3, true,
                                     false);
                         }
                         attributeValue = attributes.getValue("global");
                         if (attributeValue != null) {
-                            global = parseBooleanString(attributeValue); // NOT IMPLEMENTED
+                            global = utility.parseBooleanString(attributeValue); // NOT IMPLEMENTED
                             Log.e(TAG, "Point Light global attribute not implemented. ");
                         }
                         attributeValue = attributes.getValue("intensity");
                         if (attributeValue != null) {
-                            intensity = parseSingleFloatString(attributeValue, true, false);
+                            intensity = utility.parseSingleFloatString(attributeValue, true, false);
                         }
                         attributeValue = attributes.getValue("location");
                         if (attributeValue != null) {
-                            location = parseFixedLengthFloatString(attributeValue, 3, false,
+                            location = utility.parseFixedLengthFloatString(attributeValue, 3, false,
                                     false);
                         }
                         attributeValue = attributes.getValue("on");
                         if (attributeValue != null) {
-                            on = parseBooleanString(attributeValue);
+                            on = utility.parseBooleanString(attributeValue);
                         }
                         attributeValue = attributes.getValue("radius");
                         if (attributeValue != null) {
-                            radius = parseSingleFloatString(attributeValue, false, true);
+                            radius = utility.parseSingleFloatString(attributeValue, false, true);
                         }
                         // In x3d, ambientIntensity is only 1 value, not 3.
                         newPtLight.setAmbientIntensity(ambientIntensity, ambientIntensity,
@@ -2701,17 +2702,17 @@ public class X3Dobject {
                         }
                         attributeValue = attributes.getValue("ambientIntensity");
                         if (attributeValue != null) {
-                            ambientIntensity = parseSingleFloatString(attributeValue, true,
+                            ambientIntensity = utility.parseSingleFloatString(attributeValue, true,
                                     false);
                         }
                         attributeValue = attributes.getValue("color");
                         if (attributeValue != null) {
-                            color = parseFixedLengthFloatString(attributeValue, 3, true,
+                            color = utility.parseFixedLengthFloatString(attributeValue, 3, true,
                                     false);
                         }
                         attributeValue = attributes.getValue("direction");
                         if (attributeValue != null) {
-                            direction = parseFixedLengthFloatString(attributeValue, 3, false,
+                            direction = utility.parseFixedLengthFloatString(attributeValue, 3, false,
                                     false);
                         }
                         attributeValue = attributes.getValue("global");
@@ -2721,11 +2722,11 @@ public class X3Dobject {
                         }
                         attributeValue = attributes.getValue("intensity");
                         if (attributeValue != null) {
-                            intensity = parseSingleFloatString(attributeValue, true, false);
+                            intensity = utility.parseSingleFloatString(attributeValue, true, false);
                         }
                         attributeValue = attributes.getValue("on");
                         if (attributeValue != null) {
-                            on = parseBooleanString(attributeValue);
+                            on = utility.parseBooleanString(attributeValue);
                         }
 
                         newDirectionalLight.setAmbientIntensity(1, 1, 1, 1);
@@ -2854,12 +2855,12 @@ public class X3Dobject {
                         }
                         attributeValue = attributes.getValue("ambientIntensity");
                         if (attributeValue != null) {
-                            ambientIntensity = parseSingleFloatString(attributeValue, true,
+                            ambientIntensity = utility.parseSingleFloatString(attributeValue, true,
                                     false);
                         }
                         attributeValue = attributes.getValue("attenuation");
                         if (attributeValue != null) {
-                            attenuation = parseFixedLengthFloatString(attributeValue, 3,
+                            attenuation = utility.parseFixedLengthFloatString(attributeValue, 3,
                                     false, true);
                             if ((attenuation[0] == 0) && (attenuation[1] == 0)
                                     && (attenuation[2] == 0))
@@ -2867,7 +2868,7 @@ public class X3Dobject {
                         }
                         attributeValue = attributes.getValue("beamWidth");
                         if (attributeValue != null) {
-                            beamWidth = parseSingleFloatString(attributeValue, false, true);
+                            beamWidth = utility.parseSingleFloatString(attributeValue, false, true);
                             if (beamWidth > (float) Math.PI / 2) {
                                 beamWidth = (float) Math.PI / 2;
                                 Log.e(TAG, "Spot Light beamWidth cannot exceed PI/2.");
@@ -2875,12 +2876,12 @@ public class X3Dobject {
                         }
                         attributeValue = attributes.getValue("color");
                         if (attributeValue != null) {
-                            color = parseFixedLengthFloatString(attributeValue, 3, true,
+                            color = utility.parseFixedLengthFloatString(attributeValue, 3, true,
                                     false);
                         }
                         attributeValue = attributes.getValue("cutOffAngle");
                         if (attributeValue != null) {
-                            cutOffAngle = parseSingleFloatString(attributeValue, false, true);
+                            cutOffAngle = utility.parseSingleFloatString(attributeValue, false, true);
                             if (cutOffAngle > (float) Math.PI / 2) {
                                 cutOffAngle = (float) Math.PI / 2;
                                 Log.e(TAG, "Spot Light cutOffAngle cannot exceed PI/2.");
@@ -2888,7 +2889,7 @@ public class X3Dobject {
                         }
                         attributeValue = attributes.getValue("direction");
                         if (attributeValue != null) {
-                            direction = parseFixedLengthFloatString(attributeValue, 3, false,
+                            direction = utility.parseFixedLengthFloatString(attributeValue, 3, false,
                                     false);
                         }
                         attributeValue = attributes.getValue("global");
@@ -2898,20 +2899,20 @@ public class X3Dobject {
                         }
                         attributeValue = attributes.getValue("intensity");
                         if (attributeValue != null) {
-                            intensity = parseSingleFloatString(attributeValue, true, false);
+                            intensity = utility.parseSingleFloatString(attributeValue, true, false);
                         }
                         attributeValue = attributes.getValue("location");
                         if (attributeValue != null) {
-                            location = parseFixedLengthFloatString(attributeValue, 3, false,
+                            location = utility.parseFixedLengthFloatString(attributeValue, 3, false,
                                     false);
                         }
                         attributeValue = attributes.getValue("on");
                         if (attributeValue != null) {
-                            on = parseBooleanString(attributeValue);
+                            on = utility.parseBooleanString(attributeValue);
                         }
                         attributeValue = attributes.getValue("radius");
                         if (attributeValue != null) {
-                            radius = parseSingleFloatString(attributeValue, false, true);
+                            radius = utility.parseSingleFloatString(attributeValue, false, true);
                         }
                         // x3d only has a single value for ambient intensity
                         newSpotLight.setAmbientIntensity(ambientIntensity, ambientIntensity,
@@ -2963,34 +2964,34 @@ public class X3Dobject {
                 }
                 attributeValue = attributes.getValue("cycleInterval");
                 if (attributeValue != null) {
-                    cycleInterval = parseSingleFloatString(attributeValue, false, true);
+                    cycleInterval = utility.parseSingleFloatString(attributeValue, false, true);
                 }
                 attributeValue = attributes.getValue("enabled");
                 if (attributeValue != null) {
-                    enabled = parseBooleanString(attributeValue);
+                    enabled = utility.parseBooleanString(attributeValue);
                 }
                 attributeValue = attributes.getValue("loop");
                 if (attributeValue != null) {
-                    loop = parseBooleanString(attributeValue);
+                    loop = utility.parseBooleanString(attributeValue);
                 }
                 attributeValue = attributes.getValue("pauseTime");
                 if (attributeValue != null) {
-                    pauseTime = parseSingleFloatString(attributeValue, false, true);
+                    pauseTime = utility.parseSingleFloatString(attributeValue, false, true);
                     Log.e(TAG, "Timer pauseTime not currently implemented. ");
                 }
                 attributeValue = attributes.getValue("resumeTime");
                 if (attributeValue != null) {
-                    resumeTime = parseSingleFloatString(attributeValue, false, true);
+                    resumeTime = utility.parseSingleFloatString(attributeValue, false, true);
                     Log.e(TAG, "Timer resumeTime not currently implemented. ");
                 }
                 attributeValue = attributes.getValue("startTime");
                 if (attributeValue != null) {
-                    startTime = parseSingleFloatString(attributeValue, false, true);
+                    startTime = utility.parseSingleFloatString(attributeValue, false, true);
                     Log.e(TAG, "Timer startTime not currently implemented. ");
                 }
                 attributeValue = attributes.getValue("stopTime");
                 if (attributeValue != null) {
-                    stopTime = parseSingleFloatString(attributeValue, false, true);
+                    stopTime = utility.parseSingleFloatString(attributeValue, false, true);
                     Log.e(TAG, "Timer stopTime not currently implemented. ");
                 }
 
@@ -3041,7 +3042,7 @@ public class X3Dobject {
                     }
                     attributeValue = attributes.getValue("key");
                     if (attributeValue != null) {
-                        parseNumbersString(attributeValue, X3Dobject.interpolatorKeyComponent,
+                        utility.parseNumbersString(attributeValue, X3Dobject.interpolatorKeyComponent,
                                 1);
 
                         keysList = new float[keys.size()];
@@ -3053,7 +3054,7 @@ public class X3Dobject {
                     }
                     attributeValue = attributes.getValue("keyValue");
                     if (attributeValue != null) {
-                        parseNumbersString(attributeValue,
+                        utility.parseNumbersString(attributeValue,
                                 X3Dobject.interpolatorKeyValueComponent, 3);
 
                         keyValuesList = new float[keyValues.size() * 3];
@@ -3084,7 +3085,7 @@ public class X3Dobject {
                     }
                     attributeValue = attributes.getValue("key");
                     if (attributeValue != null) {
-                        parseNumbersString(attributeValue, X3Dobject.interpolatorKeyComponent,
+                        utility.parseNumbersString(attributeValue, X3Dobject.interpolatorKeyComponent,
                                 1);
 
                         keysList = new float[keys.size()];
@@ -3096,7 +3097,7 @@ public class X3Dobject {
                     }
                     attributeValue = attributes.getValue("keyValue");
                     if (attributeValue != null) {
-                        parseNumbersString(attributeValue,
+                        utility.parseNumbersString(attributeValue,
                                 X3Dobject.interpolatorKeyValueComponent, 4);
 
                         keyValuesList = new float[keyValues.size() * 4];
@@ -3125,11 +3126,11 @@ public class X3Dobject {
 
                     attributeValue = attributes.getValue("size");
                     if (attributeValue != null) {
-                        size = parseFixedLengthFloatString(attributeValue, 3, false, true);
+                        size = utility.parseFixedLengthFloatString(attributeValue, 3, false, true);
                     }
                     attributeValue = attributes.getValue("solid");
                     if (attributeValue != null) {
-                        solid = parseBooleanString(attributeValue);
+                        solid = utility.parseBooleanString(attributeValue);
                     }
                     Vector3f sizeVector = new Vector3f(size[0], size[1], size[2]);
                     GVRCubeSceneObject gvrCubeSceneObject = new GVRCubeSceneObject(
@@ -3161,23 +3162,23 @@ public class X3Dobject {
 
                     attributeValue = attributes.getValue("bottom");
                     if (attributeValue != null) {
-                        bottom = parseBooleanString(attributeValue);
+                        bottom = utility.parseBooleanString(attributeValue);
                     }
                     attributeValue = attributes.getValue("bottomRadius");
                     if (attributeValue != null) {
-                        bottomRadius = parseSingleFloatString(attributeValue, false, true);
+                        bottomRadius = utility.parseSingleFloatString(attributeValue, false, true);
                     }
                     attributeValue = attributes.getValue("height");
                     if (attributeValue != null) {
-                        height = parseSingleFloatString(attributeValue, false, true);
+                        height = utility.parseSingleFloatString(attributeValue, false, true);
                     }
                     attributeValue = attributes.getValue("side");
                     if (attributeValue != null) {
-                        side = parseBooleanString(attributeValue);
+                        side = utility.parseBooleanString(attributeValue);
                     }
                     attributeValue = attributes.getValue("solid");
                     if (attributeValue != null) {
-                        solid = parseBooleanString(attributeValue);
+                        solid = utility.parseBooleanString(attributeValue);
                     }
                     GVRCylinderSceneObject.CylinderParams params = new GVRCylinderSceneObject.CylinderParams();
                     params.BottomRadius = bottomRadius;
@@ -3222,27 +3223,27 @@ public class X3Dobject {
 
                     attributeValue = attributes.getValue("bottom");
                     if (attributeValue != null) {
-                        bottom = parseBooleanString(attributeValue);
+                        bottom = utility.parseBooleanString(attributeValue);
                     }
                     attributeValue = attributes.getValue("height");
                     if (attributeValue != null) {
-                        height = parseSingleFloatString(attributeValue, false, true);
+                        height = utility.parseSingleFloatString(attributeValue, false, true);
                     }
                     attributeValue = attributes.getValue("radius");
                     if (attributeValue != null) {
-                        radius = parseSingleFloatString(attributeValue, false, true);
+                        radius = utility.parseSingleFloatString(attributeValue, false, true);
                     }
                     attributeValue = attributes.getValue("side");
                     if (attributeValue != null) {
-                        side = parseBooleanString(attributeValue);
+                        side = utility.parseBooleanString(attributeValue);
                     }
                     attributeValue = attributes.getValue("solid");
                     if (attributeValue != null) {
-                        solid = parseBooleanString(attributeValue);
+                        solid = utility.parseBooleanString(attributeValue);
                     }
                     attributeValue = attributes.getValue("top");
                     if (attributeValue != null) {
-                        top = parseBooleanString(attributeValue);
+                        top = utility.parseBooleanString(attributeValue);
                     }
                     GVRCylinderSceneObject.CylinderParams params = new GVRCylinderSceneObject.CylinderParams();
                     params.BottomRadius = radius;
@@ -3280,11 +3281,11 @@ public class X3Dobject {
                     boolean solid = true; // sphere visible from inside
                     attributeValue = attributes.getValue("radius");
                     if (attributeValue != null) {
-                        radius = parseSingleFloatString(attributeValue, false, true);
+                        radius = utility.parseSingleFloatString(attributeValue, false, true);
                     }
                     attributeValue = attributes.getValue("solid");
                     if (attributeValue != null) {
-                        solid = parseBooleanString(attributeValue);
+                        solid = utility.parseBooleanString(attributeValue);
                     }
                     GVRSphereSceneObject gvrSphereSceneObject = new GVRSphereSceneObject(
                             gvrContext, solid, new GVRMaterial(gvrContext, x3DShader), radius);
@@ -3331,7 +3332,7 @@ public class X3Dobject {
                     }
                     attributeValue = attributes.getValue("centerOfRotation");
                     if (attributeValue != null) {
-                        centerOfRotation = parseFixedLengthFloatString(attributeValue, 3,
+                        centerOfRotation = utility.parseFixedLengthFloatString(attributeValue, 3,
                                 false, false);
                         Log.e(TAG, "X3D Viewpoint centerOfRotation not implemented in GearVR.");
                     }
@@ -3341,28 +3342,28 @@ public class X3Dobject {
                     }
                     attributeValue = attributes.getValue("fieldOfView");
                     if (attributeValue != null) {
-                        fieldOfView = parseSingleFloatString(attributeValue, false, true);
+                        fieldOfView = utility.parseSingleFloatString(attributeValue, false, true);
                         if (fieldOfView > (float) Math.PI)
                             fieldOfView = (float) Math.PI;
                         Log.e(TAG, "X3D Viewpoint fieldOfView not implemented in GearVR. ");
                     }
                     attributeValue = attributes.getValue("jump");
                     if (attributeValue != null) {
-                        jump = parseBooleanString(attributeValue);
+                        jump = utility.parseBooleanString(attributeValue);
                     }
                     attributeValue = attributes.getValue("orientation");
                     if (attributeValue != null) {
-                        orientation = parseFixedLengthFloatString(attributeValue, 4, false,
+                        orientation = utility.parseFixedLengthFloatString(attributeValue, 4, false,
                                 false);
                     }
                     attributeValue = attributes.getValue("position");
                     if (attributeValue != null) {
-                        position = parseFixedLengthFloatString(attributeValue, 3, false,
+                        position = utility.parseFixedLengthFloatString(attributeValue, 3, false,
                                 false);
                     }
                     attributeValue = attributes.getValue("retainUserOffsets");
                     if (attributeValue != null) {
-                        retainUserOffsets = parseBooleanString(attributeValue);
+                        retainUserOffsets = utility.parseBooleanString(attributeValue);
                         Log.e(TAG, "Viewpoint retainUserOffsets attribute not implemented. ");
                     }
                     // Add viewpoint to the list.
@@ -3399,7 +3400,7 @@ public class X3Dobject {
                     attributeValue = attributes.getValue("length");
                     if (attributeValue != null) {
                         // reusing the keys parsing here cause it works
-                        parseNumbersString(attributeValue, X3Dobject.interpolatorKeyComponent,
+                        utility.parseNumbersString(attributeValue, X3Dobject.interpolatorKeyComponent,
                                 1);
                         length = new float[keys.size()];
                         for (int i = 0; i < length.length; i++) {
@@ -3411,12 +3412,12 @@ public class X3Dobject {
                     }
                     attributeValue = attributes.getValue("maxExtent");
                     if (attributeValue != null) {
-                        Text_FontParams.maxExtent = parseSingleFloatString(attributeValue, false, true);
+                        Text_FontParams.maxExtent = utility.parseSingleFloatString(attributeValue, false, true);
                         Log.e(TAG, "Text 'maxExtent' attribute currently not implemented. ");
                     }
                     attributeValue = attributes.getValue("string");
                     if (attributeValue != null) {
-                        string = parseMFString(attributeValue);
+                        string = utility.parseMFString(attributeValue);
                         String text = "";
                         for (int i = 0; i < string.length; i++) {
                             if (i > 0) text += "\n";
@@ -3426,7 +3427,7 @@ public class X3Dobject {
                     }
                     attributeValue = attributes.getValue("solid");
                     if (attributeValue != null) {
-                        Text_FontParams.solid = parseBooleanString(attributeValue);
+                        Text_FontParams.solid = utility.parseBooleanString(attributeValue);
                         Log.e(TAG, "Text 'solid' attribute currently not implemented. ");
                     }
 
@@ -3472,7 +3473,7 @@ public class X3Dobject {
                         }
                         attributeValue = attributes.getValue("family");
                         if (attributeValue != null) {
-                            String[] family = parseMFString(attributeValue);
+                            String[] family = utility.parseMFString(attributeValue);
                             // handle spaces in the font name
                             if (family.length > 1) {
                                 for (int i = 1; i < family.length; i++) {
@@ -3483,13 +3484,13 @@ public class X3Dobject {
                         }
                         attributeValue = attributes.getValue("horizontal");
                         if (attributeValue != null) {
-                            boolean horizontal = parseBooleanString(attributeValue);
+                            boolean horizontal = utility.parseBooleanString(attributeValue);
                             Log.e(TAG, "horizontal feature of FontStyle not implemented");
                         }
                         attributeValue = attributes.getValue("justify");
                         if (attributeValue != null) {
-                            //String[] justifyMFString = parseMFString(attributeValue);
-                            justifyMFString = parseMFString(attributeValue);
+                            //String[] justifyMFString = utility.parseMFString(attributeValue);
+                            justifyMFString = utility.parseMFString(attributeValue);
                             GVRTextViewSceneObject.justifyTypes[] justify = new GVRTextViewSceneObject.justifyTypes[justifyMFString.length];
                             for (int i = 0; i < justify.length; i++) {
                                 if (justifyMFString[i].equalsIgnoreCase("END"))
@@ -3509,16 +3510,16 @@ public class X3Dobject {
                         }
                         attributeValue = attributes.getValue("leftToRight");
                         if (attributeValue != null) {
-                            boolean leftToRight = parseBooleanString(attributeValue);
+                            boolean leftToRight = utility.parseBooleanString(attributeValue);
                             Log.e(TAG, "leftToRight feature of FontStyle not implemented");
                         }
                         attributeValue = attributes.getValue("spacing");
                         if (attributeValue != null) {
-                            Text_FontParams.spacing = 10.0f * (parseSingleFloatString(attributeValue, false, true) - 1);
+                            Text_FontParams.spacing = 10.0f * (utility.parseSingleFloatString(attributeValue, false, true) - 1);
                         }
                         attributeValue = attributes.getValue("size");
                         if (attributeValue != null) {
-                            Text_FontParams.size = 10.0f * parseSingleFloatString(attributeValue, false, true);
+                            Text_FontParams.size = 10.0f * utility.parseSingleFloatString(attributeValue, false, true);
                         }
                         attributeValue = attributes.getValue("style");
                         if (attributeValue != null) {
@@ -3534,7 +3535,7 @@ public class X3Dobject {
                         }
                         attributeValue = attributes.getValue("topToBottom");
                         if (attributeValue != null) {
-                            boolean topToBottom = parseBooleanString(attributeValue);
+                            boolean topToBottom = utility.parseBooleanString(attributeValue);
                             Log.e(TAG, "topToBottom feature of FontStyle not implemented");
                         }
 
@@ -3568,7 +3569,7 @@ public class X3Dobject {
                     }
                     attributeValue = attributes.getValue("axisOfRotation");
                     if (attributeValue != null) {
-                        axisOfRotation = parseFixedLengthFloatString(attributeValue, 3, true,
+                        axisOfRotation = utility.parseFixedLengthFloatString(attributeValue, 3, true,
                                 false);
                     }
 
@@ -3586,7 +3587,6 @@ public class X3Dobject {
                     }
                     attributeValue = attributes.getValue("url");
                     if (attributeValue != null) {
-                        //url = parseMFString(attributeValue);
                         url[0] = attributeValue;
                         GVRSceneObject inlineGVRSceneObject = currentSceneObject; // preserve
                         // the
@@ -3634,11 +3634,11 @@ public class X3Dobject {
                     }
                     attributeValue = attributes.getValue("center");
                     if (attributeValue != null) {
-                        center = parseFixedLengthFloatString(attributeValue, 3, false, false);
+                        center = utility.parseFixedLengthFloatString(attributeValue, 3, false, false);
                     }
                     attributeValue = attributes.getValue("range");
                     if (attributeValue != null) {
-                        parseNumbersString(attributeValue, X3Dobject.LODComponent, 1);
+                        utility.parseNumbersString(attributeValue, X3Dobject.LODComponent, 1);
                         range = new float[keys.size() + 2];
                         range[0] = 0;
                         for (int i = 0; i < keys.size(); i++) {
@@ -3672,7 +3672,7 @@ public class X3Dobject {
                     }
                     attributeValue = attributes.getValue("whichChoice");
                     if (attributeValue != null) {
-                        whichChoice = parseIntegerString(attributeValue);
+                        whichChoice = utility.parseIntegerString(attributeValue);
                     }
                     currentSceneObject = AddGVRSceneObject();
                     currentSceneObject.setName( name );
@@ -3703,12 +3703,11 @@ public class X3Dobject {
                     }
                     attributeValue = attributes.getValue("parameter");
                     if (attributeValue != null) {
-                        parameter = parseMFString(attributeValue);
+                        parameter = utility.parseMFString(attributeValue);
                     }
                     attributeValue = attributes.getValue("url");
                     if (attributeValue != null) {
 
-                        // url = parseMFString(attributeValue);
                         // TODO: issues with parsing
 
                         // multiple strings with special chars
@@ -3741,7 +3740,7 @@ public class X3Dobject {
                     }
                     attributeValue = attributes.getValue("enabled");
                     if (attributeValue != null) {
-                        enabled = parseBooleanString(attributeValue);
+                        enabled = utility.parseBooleanString(attributeValue);
                     }
 
                     Sensor sensor = new Sensor(name, Sensor.Type.TOUCH, currentSceneObject, enabled);
@@ -3768,16 +3767,16 @@ public class X3Dobject {
                     }
                     attributeValue = attributes.getValue("enabled");
                     if (attributeValue != null) {
-                        enabled = parseBooleanString(attributeValue);
+                        enabled = utility.parseBooleanString(attributeValue);
                     }
                     attributeValue = attributes.getValue("maxPosition");
                     if (attributeValue != null) {
-                        float[] maxValues = parseFixedLengthFloatString(attributeValue, 2, false, false);
+                        float[] maxValues = utility.parseFixedLengthFloatString(attributeValue, 2, false, false);
                         maxPosition.setValue(maxValues[0], maxValues[1]);
                     }
                     attributeValue = attributes.getValue("minPosition");
                     if (attributeValue != null) {
-                        float[] minValues = parseFixedLengthFloatString(attributeValue, 2, false, false);
+                        float[] minValues = utility.parseFixedLengthFloatString(attributeValue, 2, false, false);
                         minPosition.setValue(minValues[0], minValues[1]);
                     }
 
@@ -3808,13 +3807,13 @@ public class X3Dobject {
                     }
                     attributeValue = attributes.getValue("axisRotation");
                     if (attributeValue != null) {
-                        axisRotation.setValue( parseFixedLengthFloatString(attributeValue, 4, true, true) );
+                        axisRotation.setValue( utility.parseFixedLengthFloatString(attributeValue, 4, true, true) );
                         Log.e(TAG, "CylinderSensor axisRotation not implemented");
                     }
 
                     attributeValue = attributes.getValue("enabled");
                     if (attributeValue != null) {
-                        enabled.setValue( parseBooleanString(attributeValue) );
+                        enabled.setValue( utility.parseBooleanString(attributeValue) );
                     }
                     attributeValue = attributes.getValue("diskAngle");
                     if (attributeValue != null) {
@@ -3822,14 +3821,14 @@ public class X3Dobject {
                     }
                     attributeValue = attributes.getValue("maxAngle");
                     if (attributeValue != null) {
-                        float maxValue = parseSingleFloatString(attributeValue, false, false);
+                        float maxValue = utility.parseSingleFloatString(attributeValue, false, false);
                         if (maxValue > Math.PI*2) maxValue = (float)Math.PI*2;
                         else if (maxValue < -Math.PI*2) maxValue = -(float)Math.PI*2;
                         maxAngle.setValue(maxValue);
                     }
                     attributeValue = attributes.getValue("minAngle");
                     if (attributeValue != null) {
-                        float minValue = parseSingleFloatString(attributeValue, false, false);
+                        float minValue = utility.parseSingleFloatString(attributeValue, false, false);
                         if (minValue > Math.PI*2) minValue = (float)Math.PI*2;
                         else if (minValue < -Math.PI*2) minValue = -(float)Math.PI*2;
                         minAngle.setValue(minValue);
@@ -3859,7 +3858,7 @@ public class X3Dobject {
                     }
                     attributeValue = attributes.getValue("enabled");
                     if (attributeValue != null) {
-                        enabled = parseBooleanString(attributeValue);
+                        enabled = utility.parseBooleanString(attributeValue);
                     }
 
                     Sensor sensor = new Sensor(name, Sensor.Type.SPHERE, currentSceneObject, enabled);
@@ -3883,7 +3882,7 @@ public class X3Dobject {
                     }
                     attributeValue = attributes.getValue("url");
                     if (attributeValue != null) {
-                        url = parseMFString(attributeValue);
+                        url = utility.parseMFString(attributeValue);
                     }
                 }  //  end <ProximitySensor> node
 
@@ -3907,15 +3906,15 @@ public class X3Dobject {
                     }
                     attributeValue = attributes.getValue("url");
                     if (attributeValue != null) {
-                        url = parseMFString(attributeValue);
+                        url = utility.parseMFString(attributeValue);
                     }
                     attributeValue = attributes.getValue("directOutput");
                     if (attributeValue != null) {
-                        directOutput = parseBooleanString(attributeValue);
+                        directOutput = utility.parseBooleanString(attributeValue);
                     }
                     attributeValue = attributes.getValue("mustEvaluate");
                     if (attributeValue != null) {
-                        mustEvaluate = parseBooleanString(attributeValue);
+                        mustEvaluate = utility.parseBooleanString(attributeValue);
                     }
                     currentScriptObject = new ScriptObject(name, directOutput, mustEvaluate, url);
                 }  //  end <Script> node
@@ -3991,7 +3990,7 @@ public class X3Dobject {
 
                         String urlAttribute = attributes.getValue("url");
                         if (urlAttribute != null) {
-                            String[] urlsString = parseMFString(urlAttribute);
+                            String[] urlsString = utility.parseMFString(urlAttribute);
 
                             for (int i = 0; i < urlsString.length; i++) {
                                 shaderSettings.movieTextures.add(urlsString[i]);
@@ -3999,17 +3998,17 @@ public class X3Dobject {
                         }
                         attributeValue = attributes.getValue("loop");
                         if (attributeValue != null) {
-                            shaderSettings.setMovieTextureLoop(parseBooleanString(attributeValue) );
+                            shaderSettings.setMovieTextureLoop(utility.parseBooleanString(attributeValue) );
                         }
                         String repeatSAttribute = attributes.getValue("repeatS");
                         if (repeatSAttribute != null) {
-                                if (!parseBooleanString(repeatSAttribute)) {
+                                if (!utility.parseBooleanString(repeatSAttribute)) {
                                     //TODO: gvrTextureParameters.setWrapSType(TextureWrapType.GL_CLAMP_TO_EDGE);
                                 }
                         }
                         String repeatTAttribute = attributes.getValue("repeatT");
                         if (repeatTAttribute != null) {
-                                if (!parseBooleanString(repeatTAttribute)) {
+                                if (!utility.parseBooleanString(repeatTAttribute)) {
                                     //TODO: gvrTextureParameters.setWrapTType(TextureWrapType.GL_CLAMP_TO_EDGE);
                                 }
                         }
@@ -4061,29 +4060,29 @@ public class X3Dobject {
                     }
                     attributeValue = attributes.getValue("alpha");
                     if (attributeValue != null) {
-                        alpha = parseSingleFloatString(attributeValue, true,
+                        alpha = utility.parseSingleFloatString(attributeValue, true,
                                 true);
                         Log.e(TAG, "MultiTexture alpha not implemented");
                     }
                     attributeValue = attributes.getValue("color");
                     if (attributeValue != null) {
-                        color = parseFixedLengthFloatString(attributeValue, 3, true,
+                        color = utility.parseFixedLengthFloatString(attributeValue, 3, true,
                                 false);
                         Log.e(TAG, "MultiTexture color not implemented");
                     }
                     attributeValue = attributes.getValue("function");
                     if (attributeValue != null) {
-                        function = parseMFString(attributeValue);
+                        function = utility.parseMFString(attributeValue);
                         Log.e(TAG, "MultiTexture function not implemented");
                     }
                     attributeValue = attributes.getValue("mode");
                     if (attributeValue != null) {
-                        String[] modeString = parseMFString(attributeValue);
+                        String[] modeString = utility.parseMFString(attributeValue);
                         mode.setValue(modeString.length, modeString);
                     }
                     attributeValue = attributes.getValue("source");
                     if (attributeValue != null) {
-                        source = parseMFString(attributeValue);
+                        source = utility.parseMFString(attributeValue);
                         Log.e(TAG, "MultiTexture source not implemented");
                     }
 
@@ -4102,7 +4101,7 @@ public class X3Dobject {
                     }
                     attributeValue = attributes.getValue("toggle");
                     if (attributeValue != null) {
-                        toggle = parseBooleanString(attributeValue);
+                        toggle = utility.parseBooleanString(attributeValue);
                     }
                     EventUtility eventUtility = new EventUtility(name, EventUtility.DataType.BOOLEAN, EventUtility.Type.TOGGLE, toggle);
                     eventUtilities.add(eventUtility);
@@ -4112,6 +4111,7 @@ public class X3Dobject {
                 /********** ElevationGrid **********/
                 else if (qName.equalsIgnoreCase("ElevationGrid")) {
                     Log.e(TAG, "X3D ElevationGrid not currently implemented. ");
+                    /*
                     String name = "";
                     float creaseAngle = 0;
                     float[] height = null;
@@ -4127,21 +4127,21 @@ public class X3Dobject {
                     }
                     attributeValue = attributes.getValue("xDimension");
                     if (attributeValue != null) {
-                        xDimension = (int) parseSingleFloatString(attributeValue, false,
+                        xDimension = (int) utility.parseSingleFloatString(attributeValue, false,
                                 true);
                     }
                     attributeValue = attributes.getValue("xSpacing");
                     if (attributeValue != null) {
-                        xSpacing = (int) parseSingleFloatString(attributeValue, false, true);
+                        xSpacing = (int) utility.parseSingleFloatString(attributeValue, false, true);
                     }
                     attributeValue = attributes.getValue("zDimension");
                     if (attributeValue != null) {
-                        zDimension = (int) parseSingleFloatString(attributeValue, false,
+                        zDimension = (int) utility.parseSingleFloatString(attributeValue, false,
                                 true);
                     }
                     attributeValue = attributes.getValue("zSpacing");
                     if (attributeValue != null) {
-                        zSpacing = parseSingleFloatString(attributeValue, false, true);
+                        zSpacing = utility.parseSingleFloatString(attributeValue, false, true);
                     }
                     attributeValue = attributes.getValue("height");
                     if (attributeValue != null) {
@@ -4249,10 +4249,11 @@ public class X3Dobject {
                             accumNormal.add(polygonNormals[i]);
 
                         }
-                        /*********** Calculate vertex normals next"); */
+                        //
                         //TODO: ElevationGrid not completed
                         // gvrMesh = new GVRMesh(gvrContext);
                     }
+                    */
                 } // end <ElevationGrid> node
 
 
@@ -4274,22 +4275,22 @@ public class X3Dobject {
                     }
                     attributeValue = attributes.getValue("avatarSize");
                     if (attributeValue != null) {
-                        avatarSize = parseFixedLengthFloatString(attributeValue, 3, false,
+                        avatarSize = utility.parseFixedLengthFloatString(attributeValue, 3, false,
                                 true);
                         Log.e(TAG, "NavigationInfo avatarSize attribute not implemented. ");
                     }
                     attributeValue = attributes.getValue("headlight");
                     if (attributeValue != null) {
-                        headlight = parseBooleanString(attributeValue);
+                        headlight = utility.parseBooleanString(attributeValue);
                     }
                     attributeValue = attributes.getValue("speed");
                     if (attributeValue != null) {
-                        speed = parseSingleFloatString(attributeValue, false, true);
+                        speed = utility.parseSingleFloatString(attributeValue, false, true);
                         Log.e(TAG, "NavigationInfo speed attribute not implemented. ");
                     }
                     attributeValue = attributes.getValue("transitionTime");
                     if (attributeValue != null) {
-                        transitionTime = parseSingleFloatString(attributeValue, false, true);
+                        transitionTime = utility.parseSingleFloatString(attributeValue, false, true);
                         Log.e(TAG,
                                 "NavigationInfo transitionTime attribute not implemented. ");
                     }
@@ -4299,7 +4300,7 @@ public class X3Dobject {
                     }
                     attributeValue = attributes.getValue("visibilityLimit");
                     if (attributeValue != null) {
-                        visibilityLimit = parseSingleFloatString(attributeValue, false, true);
+                        visibilityLimit = utility.parseSingleFloatString(attributeValue, false, true);
                         Log.e(TAG,
                                 "NavigationInfo visibilityLimit attribute not implemented. ");
                     }
@@ -4342,42 +4343,42 @@ public class X3Dobject {
                     }
                     attributeValue = attributes.getValue("skyColor");
                     if (attributeValue != null) {
-                        skycolor = parseFixedLengthFloatString(attributeValue, 3, true,
+                        skycolor = utility.parseFixedLengthFloatString(attributeValue, 3, true,
                                 false);
                     }
                     attributeValue = attributes.getValue("backUrl");
                     if (attributeValue != null) {
-                        backUrl = parseMFString(attributeValue);
+                        backUrl = utility.parseMFString(attributeValue);
                     }
                     attributeValue = attributes.getValue("bottomUrl");
                     if (attributeValue != null) {
-                        bottomUrl = parseMFString(attributeValue);
+                        bottomUrl = utility.parseMFString(attributeValue);
                     }
                     attributeValue = attributes.getValue("frontUrl");
                     if (attributeValue != null) {
-                        frontUrl = parseMFString(attributeValue);
+                        frontUrl = utility.parseMFString(attributeValue);
                     }
                     attributeValue = attributes.getValue("leftUrl");
                     if (attributeValue != null) {
-                        leftUrl = parseMFString(attributeValue);
+                        leftUrl = utility.parseMFString(attributeValue);
                     }
                     attributeValue = attributes.getValue("rightUrl");
                     if (attributeValue != null) {
-                        rightUrl = parseMFString(attributeValue);
+                        rightUrl = utility.parseMFString(attributeValue);
                     }
                     attributeValue = attributes.getValue("topUrl");
                     if (attributeValue != null) {
-                        topUrl = parseMFString(attributeValue);
+                        topUrl = utility.parseMFString(attributeValue);
                     }
                     attributeValue = attributes.getValue("transparency");
                     if (attributeValue != null) {
-                        transparency = parseSingleFloatString(attributeValue, true, false);
+                        transparency = utility.parseSingleFloatString(attributeValue, true, false);
                         Log.e(TAG, "Background transparency attribute not implemented. ");
                     }
                     attributeValue = attributes.getValue("groundAngle");
                     if (attributeValue != null) {
                         Log.e(TAG, "Background groundAngle attribute not implemented. ");
-                        groundAngle = parseSingleFloatString(attributeValue, false, true);
+                        groundAngle = utility.parseSingleFloatString(attributeValue, false, true);
                         if (groundAngle > (float) Math.PI / 2) {
                             groundAngle = (float) Math.PI / 2;
                             Log.e(TAG, "Background groundAngle cannot exceed PI/2.");
@@ -4878,30 +4879,30 @@ public class X3Dobject {
                                     Log.e("X3DDBG", "   <fieldValue appearance.getMaterial() != null SETTING");
                                     Material material = appearance.getMaterial();
                                     if (  protoInstance.getNodeField(field).equalsIgnoreCase("ambientIntensity"))
-                                        shaderSettings.ambientIntensity = parseSingleFloatString(attributeValue, true, false);
+                                        shaderSettings.ambientIntensity = utility.parseSingleFloatString(attributeValue, true, false);
                                     else if (  protoInstance.getNodeField(field).equalsIgnoreCase("diffuseColor"))
-                                        shaderSettings.diffuseColor = parseFixedLengthFloatString(attributeValue, 3, true, false);
+                                        shaderSettings.diffuseColor = utility.parseFixedLengthFloatString(attributeValue, 3, true, false);
                                     else if (  protoInstance.getNodeField(field).equalsIgnoreCase("emissiveColor"))
-                                        shaderSettings.emissiveColor = parseFixedLengthFloatString(attributeValue, 3, true, false);
+                                        shaderSettings.emissiveColor = utility.parseFixedLengthFloatString(attributeValue, 3, true, false);
                                     else if (  protoInstance.getNodeField(field).equalsIgnoreCase("shininess"))
-                                        shaderSettings.shininess = parseSingleFloatString(attributeValue, true, false);
+                                        shaderSettings.shininess = utility.parseSingleFloatString(attributeValue, true, false);
                                     else if (  protoInstance.getNodeField(field).equalsIgnoreCase("specularColor"))
-                                        shaderSettings.specularColor = parseFixedLengthFloatString(attributeValue, 3, true, false);
+                                        shaderSettings.specularColor = utility.parseFixedLengthFloatString(attributeValue, 3, true, false);
                                     else if (  protoInstance.getNodeField(field).equalsIgnoreCase("transparency"))
-                                        shaderSettings.setTransparency(parseSingleFloatString(attributeValue, true, false) );
+                                        shaderSettings.setTransparency(utility.parseSingleFloatString(attributeValue, true, false) );
                                     Log.e("X3DDBG", "      <fieldValue Material SET");
                                 }
                                 if ( appearance.getTextureTransform() != null ) {
                                     TextureTransform textureTransform = appearance.getTextureTransform();
                                     Log.e("X3DDBG", "   <fieldValue textureTransform != null SETTING");
                                     if (  protoInstance.getNodeField(field).equalsIgnoreCase("center"))
-                                        shaderSettings.setTextureCenter( parseFixedLengthFloatString(attributeValue, 2, false, false) );
+                                        shaderSettings.setTextureCenter( utility.parseFixedLengthFloatString(attributeValue, 2, false, false) );
                                     else if (  protoInstance.getNodeField(field).equalsIgnoreCase("rotation"))
-                                        shaderSettings.setTextureRotation( parseSingleFloatString(attributeValue, false, false) );
+                                        shaderSettings.setTextureRotation( utility.parseSingleFloatString(attributeValue, false, false) );
                                     else if (  protoInstance.getNodeField(field).equalsIgnoreCase("scale"))
-                                        shaderSettings.setTextureScale( parseFixedLengthFloatString(attributeValue, 2, false, false) );
+                                        shaderSettings.setTextureScale( utility.parseFixedLengthFloatString(attributeValue, 2, false, false) );
                                     else if (  protoInstance.getNodeField(field).equalsIgnoreCase("translation"))
-                                        shaderSettings.setTextureTranslation( parseFixedLengthFloatString(attributeValue, 2, false, false) );
+                                        shaderSettings.setTextureTranslation( utility.parseFixedLengthFloatString(attributeValue, 2, false, false) );
                                     Log.e("X3DDBG", "      <fieldValue textureTransform SET");
                                 }
                             }  //  protoInstance.getAppearance() != null
@@ -4916,69 +4917,69 @@ public class X3Dobject {
                                 if ( box != null ) {
                                     if (protoInstance.getNodeField(field).equalsIgnoreCase("size")) {
                                         box.setSize(
-                                                parseFixedLengthFloatString(attributeValue, 3, false, false)
+                                                utility.parseFixedLengthFloatString(attributeValue, 3, false, false)
                                         );
                                     }
                                     else if (protoInstance.getNodeField(field).equalsIgnoreCase("solid")) {
                                         box.setSolid(
-                                                parseBooleanString( attributeValue ) );
+                                                utility.parseBooleanString( attributeValue ) );
                                     }
                                 }  //  end Box
                                 if ( cone != null ) {
                                     if (protoInstance.getNodeField(field).equalsIgnoreCase("bottom")) {
                                         cone.setBottom(
-                                                parseBooleanString( attributeValue ) );
+                                                utility.parseBooleanString( attributeValue ) );
                                     }
                                     else if (protoInstance.getNodeField(field).equalsIgnoreCase("bottomRadius")) {
                                         cone.setBottomRadius(
-                                                parseSingleFloatString(attributeValue, false, true));
+                                                utility.parseSingleFloatString(attributeValue, false, true));
                                     }
                                     else if (protoInstance.getNodeField(field).equalsIgnoreCase("height")) {
                                         cone.setHeight(
-                                                parseSingleFloatString(attributeValue, false, true));
+                                                utility.parseSingleFloatString(attributeValue, false, true));
                                     }
                                     else if (protoInstance.getNodeField(field).equalsIgnoreCase("side")) {
                                         cone.setSide(
-                                                parseBooleanString( attributeValue ) );
+                                                utility.parseBooleanString( attributeValue ) );
                                     }
                                     else if (protoInstance.getNodeField(field).equalsIgnoreCase("solid")) {
                                         cone.setSolid(
-                                                parseBooleanString( attributeValue ) );
+                                                utility.parseBooleanString( attributeValue ) );
                                     }
                                 }  //  end Cone
                                 if ( cylinder != null ) {
                                     if (protoInstance.getNodeField(field).equalsIgnoreCase("bottom")) {
                                         cylinder.setBottom(
-                                                parseBooleanString( attributeValue ) );
+                                                utility.parseBooleanString( attributeValue ) );
                                     }
                                     else if (protoInstance.getNodeField(field).equalsIgnoreCase("height")) {
                                         cylinder.setHeight(
-                                                parseSingleFloatString(attributeValue, false, true));
+                                                utility.parseSingleFloatString(attributeValue, false, true));
                                     }
                                     else if (protoInstance.getNodeField(field).equalsIgnoreCase("radius")) {
                                         cylinder.setRadius(
-                                                parseSingleFloatString(attributeValue, false, true));
+                                                utility.parseSingleFloatString(attributeValue, false, true));
                                     }
                                     else if (protoInstance.getNodeField(field).equalsIgnoreCase("side")) {
                                         cylinder.setSide(
-                                                parseBooleanString( attributeValue ) );
+                                                utility.parseBooleanString( attributeValue ) );
                                     }
                                     else if (protoInstance.getNodeField(field).equalsIgnoreCase("solid")) {
                                         cylinder.setSolid(
-                                                parseBooleanString( attributeValue ) );
+                                                utility.parseBooleanString( attributeValue ) );
                                     }
                                     else if (protoInstance.getNodeField(field).equalsIgnoreCase("top")) {
                                         cylinder.setTop(
-                                                parseBooleanString( attributeValue ) );
+                                                utility.parseBooleanString( attributeValue ) );
                                         Log.e("X3DDBG", "         Cylinder top = " + cylinder.getTop() );
                                     }
                                 }  //  end Cylinder
                                 if ( sphere != null ) {
                                     if (protoInstance.getNodeField(field).equalsIgnoreCase("radius")) {
-                                        sphere.setRadius(parseSingleFloatString(attributeValue, false, true));
+                                        sphere.setRadius(utility.parseSingleFloatString(attributeValue, false, true));
                                     }
                                     else if (protoInstance.getNodeField(field).equalsIgnoreCase("solid")) {
-                                        sphere.setSolid( parseBooleanString( attributeValue ) );
+                                        sphere.setSolid( utility.parseBooleanString( attributeValue ) );
                                     }
                                 }  //  end Sphere
                                 if ( indexedFaceSet != null ) {
@@ -4988,32 +4989,32 @@ public class X3Dobject {
                                     FontStyle fontStyle = text.getFontStyle();
                                     Log.e("X3DDBG", "   *** protoInstance.getNodeField(field) = " + protoInstance.getNodeField(field));
                                     if (protoInstance.getNodeField(field).equalsIgnoreCase("string")) {
-                                        String[] strArray = parseMFString(attributeValue);
+                                        String[] strArray = utility.parseMFString(attributeValue);
                                         Log.e("X3DDBG", "      *** strArray[0], length = " + strArray[0] +", " + strArray.length);
                                         text.setString( strArray );
                                     }
                                     if (protoInstance.getNodeField(field).equalsIgnoreCase("family")) {
-                                        String[] strArray = parseMFString(attributeValue);
+                                        String[] strArray = utility.parseMFString(attributeValue);
                                         Log.e("X3DDBG", "      *** family strArray[0], length = " + strArray[0] +", " + strArray.length);
                                         if (fontStyle != null) fontStyle.setFamily( strArray );
                                     }
                                     if (protoInstance.getNodeField(field).equalsIgnoreCase("justify")) {
-                                        String[] strArray = parseMFString(attributeValue);
+                                        String[] strArray = utility.parseMFString(attributeValue);
                                         Log.e("X3DDBG", "      *** justify strArray[0], length = " + strArray[0] +", " + strArray.length);
                                         if (fontStyle != null) fontStyle.setJustify( strArray );
                                     }
                                     if (protoInstance.getNodeField(field).equalsIgnoreCase("size")) {
-                                        float size = parseSingleFloatString(attributeValue, false, true);
+                                        float size = utility.parseSingleFloatString(attributeValue, false, true);
                                         Log.e("X3DDBG", "      *** text size = " + size);
                                         if (fontStyle != null) fontStyle.setSize( size*10);
                                     }
                                     if (protoInstance.getNodeField(field).equalsIgnoreCase("spacing")) {
-                                        float spacing = parseSingleFloatString(attributeValue, false, true);
+                                        float spacing = utility.parseSingleFloatString(attributeValue, false, true);
                                         Log.e("X3DDBG", "      *** text spacing = " + spacing);
                                         if (fontStyle != null) fontStyle.setSpacing( spacing );
                                     }
                                     if (protoInstance.getNodeField(field).equalsIgnoreCase("style")) {
-                                        String[] strArray = parseMFString(attributeValue);
+                                        String[] strArray = utility.parseMFString(attributeValue);
                                         Log.e("X3DDBG", "      *** style strArray[0], length = " + strArray[0] +", " + strArray.length);
                                         if (fontStyle != null) fontStyle.setStyle(strArray[0]);
                                     }
@@ -5115,7 +5116,7 @@ public class X3Dobject {
                 }
                 else {
                     if (reorganizeVerts) {
-                        gvrVertexBuffer = meshCreator.organizeVertices(gvrIndexBuffer);
+                        gvrVertexBuffer = utility.meshCreator.organizeVertices(gvrIndexBuffer);
                         reorganizeVerts = false;
                     }
                     GVRMesh mesh = new GVRMesh(gvrContext, gvrVertexBuffer.getDescriptor());
@@ -5358,17 +5359,17 @@ public class X3Dobject {
 
                         int[] coordIndex = indexedFaceSet.getCoordIndex();
                         for (int i = 0; i < coordIndex.length; i++) {
-                            meshCreator.mPositionIndices.add( coordIndex[i] );
+                            utility.meshCreator.mPositionIndices.add( coordIndex[i] );
                         }
 
                         int[] texCoordIndex = indexedFaceSet.getTexCoordIndex();
                         for (int i = 0; i < texCoordIndex.length; i++) {
-                            meshCreator.mTexcoordIndices.add( texCoordIndex[i] );
+                            utility.meshCreator.mTexcoordIndices.add( texCoordIndex[i] );
                         }
 
                         int[] normalIndex = indexedFaceSet.getNormalIndex();
                         for (int i = 0; i < normalIndex.length; i++) {
-                            meshCreator.mNormalIndices.add( normalIndex[i] );
+                            utility.meshCreator.mNormalIndices.add( normalIndex[i] );
                         }
 
                         gvrIndexBuffer = new GVRIndexBuffer(gvrContext, 4, 0);
@@ -5376,10 +5377,10 @@ public class X3Dobject {
                         float[] normals = indexedFaceSet.getNormal().getMeshCreatorInputNormals();
                         float[] texCoords = indexedFaceSet.getTexCoord().getMeshCreatorInputTexCoords();
 
-                        meshCreator.addInputPosition( coords );
-                        meshCreator.addInputNormal(normals);
-                        meshCreator.addInputTexcoord(texCoords);
-                        gvrVertexBuffer = meshCreator.organizeVertices(gvrIndexBuffer);
+                        utility.meshCreator.addInputPosition( coords );
+                        utility.meshCreator.addInputNormal(normals);
+                        utility.meshCreator.addInputTexcoord(texCoords);
+                        gvrVertexBuffer = utility.meshCreator.organizeVertices(gvrIndexBuffer);
 
                         Log.e("X3DDBG", "</ProtoInstance> <IndexedFaceSet>, got arrays of N, C and TC");
 

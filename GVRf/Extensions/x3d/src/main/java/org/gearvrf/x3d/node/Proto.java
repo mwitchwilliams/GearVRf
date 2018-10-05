@@ -18,18 +18,8 @@ package org.gearvrf.x3d.node;
 import org.gearvrf.GVRSceneObject;
 import org.gearvrf.utility.Log;
 import org.gearvrf.x3d.ScriptObject;
+import org.gearvrf.x3d.Utility;
 import org.gearvrf.x3d.X3Dobject;
-import org.gearvrf.x3d.data_types.MFString;
-import org.gearvrf.x3d.data_types.MFVec3f;
-import org.gearvrf.x3d.data_types.SFBool;
-import org.gearvrf.x3d.data_types.SFColor;
-import org.gearvrf.x3d.data_types.SFFloat;
-import org.gearvrf.x3d.data_types.SFInt32;
-import org.gearvrf.x3d.data_types.SFRotation;
-import org.gearvrf.x3d.data_types.SFString;
-import org.gearvrf.x3d.data_types.SFTime;
-import org.gearvrf.x3d.data_types.SFVec2f;
-import org.gearvrf.x3d.data_types.SFVec3f;
 
 import java.util.ArrayList;
 
@@ -89,29 +79,6 @@ public class Proto
         mAppearance = null;
         mGeometry = null;
     }
-
-    /*
-    public Proto(X3Dobject x3dObject, GVRSceneObject gvrSceneObject)
-    {
-        mGVRSceneObject = gvrSceneObject;
-        mX3Dobject = x3dObject;
-        mScriptObject = new ScriptObject();
-        mUtility = new Utility();
-        mAppearance = null;
-        mGeometry = null;
-    }
-
-    public Proto(X3Dobject x3dObject, GVRSceneObject gvrSceneObject, String name)
-    {
-        mGVRSceneObject = gvrSceneObject;
-        mName = name;
-        mX3Dobject = x3dObject;
-        mScriptObject = new ScriptObject();
-        mUtility = new Utility();
-        mAppearance = null;
-        mGeometry = null;
-    }
-    */
 
     public Appearance getAppearance() {
         return mAppearance;
