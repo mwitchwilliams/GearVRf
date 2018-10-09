@@ -134,635 +134,6 @@ import com.google.android.exoplayer2.upstream.DataSource;
 
 public class X3Dobject {
 
-/*
-    protected GVRVideoSceneObjectPlayer<ExoPlayer> makeExoPlayer(String movieFileName ) {
-
-        GVRVideoSceneObjectPlayer<ExoPlayer> gvrVideoSceneObjectPlayer = null;
-
-        try {
-            final Context context = activityContext;
-            final String movieFileNameFinal = movieFileName;
-
-            DataSource.Factory dataSourceFactory = new DataSource.Factory() {
-                @Override
-                public DataSource createDataSource() {
-                    return new AssetDataSource(context);
-                }
-            };
-
-            final MediaSource mediaSource = new ExtractorMediaSource(Uri.parse("asset:///" + movieFileName),
-                    dataSourceFactory,
-                    new DefaultExtractorsFactory(), null, null);
-
-            final SimpleExoPlayer player = ExoPlayerFactory.newSimpleInstance(context,
-                    new DefaultTrackSelector());
-            player.prepare(mediaSource);
-            Log.e(TAG, "Load movie " + movieFileNameFinal + ".");
-
-            gvrVideoSceneObjectPlayer = new GVRVideoSceneObjectPlayer<ExoPlayer>() {
-                @Override
-                public ExoPlayer getPlayer() {
-                    return player;
-                }
-
-                @Override
-                public void setSurface(final Surface surface) {
-                    player.addListener(new Player.DefaultEventListener() {
-                        @Override
-                        public void onPlayerStateChanged(boolean playWhenReady, int playbackState) {
-                            switch (playbackState) {
-                                case Player.STATE_BUFFERING:
-                                    break;
-                                case Player.STATE_ENDED:
-                                    player.seekTo(0);
-                                    break;
-                                case Player.STATE_IDLE:
-                                    break;
-                                case Player.STATE_READY:
-                                    break;
-                                default:
-                                    break;
-                            }
-                        }
-                    });
-                    player.setVideoSurface(surface);
-                }
-
-                @Override
-                public void release() {
-                    player.release();
-                }
-
-                @Override
-                public boolean canReleaseSurfaceImmediately() {
-                    return false;
-                }
-
-                @Override
-                public void pause() {
-                    player.setPlayWhenReady(false);
-                }
-
-                @Override
-                public void start() {
-                    Log.e(TAG, "movie start.");
-                    player.setPlayWhenReady(true);
-                }
-
-                @Override
-                public boolean isPlaying() {
-                    return player.getPlayWhenReady();
-                }
-            };
-        }
-        catch (Exception e) {
-                Log.e(TAG, "Exception makeExoPlayer: " + e);
-        }
-        return gvrVideoSceneObjectPlayer;
-    }  //  end makeExoPlayer
-*/
-
-    /**
-     * This class facilitates construction of GearVRF meshes from X3D data.
-     * X3D can have different indices for positions, normals and texture coordinates.
-     * GearVRF has a single set of indices into a vertex array which may have
-     * position, normal and texcoord components.
-     * <p>
-     * As the X3D file is parsed, the indices and vertex data are accumulated
-     * internally to this class. When the entire mesh has been parsed,
-     * a GVRIndexBuffer and GVRVertexBuffer is produced from the X3D data.
-     * Every effort is made to use the original vertices and indices if possible.
-     * Vertices are only duplicated if necessary.
-     * <p>
-     * This class uses the same data areas over again so you will require an
-     * instance for each mesh you want to parse simultaneously. The current
-     * X3D parser is sequential so it only needs a single instance of this
-     * class per X3D file parsed.
-     */
-    /*
-    static class MeshCreator
-    {
-        static class FloatArray
-        {
-            private float[] mData;
-            private int     mCurSize;
-            private int     mMinSize;
-
-            FloatArray(int initialSize)
-            {
-                mMinSize = initialSize;
-            }
-
-            float[] array() { return mData; }
-
-            int getSize() { return mCurSize; }
-
-            void fill(float v) { Arrays.fill(mData, v); }
-
-            void setCapacity(int c)
-            {
-                if ((mData == null) || (c > mData.length))
-                {
-                    mData = new float[c];
-                }
-            }
-
-            void clear()
-            {
-                mCurSize = 0;
-            }
-
-            void get(int index, float[] entry)
-            {
-                for (int i = 0; i < entry.length; ++i)
-                {
-                    entry[i] = mData[index + i];
-                }
-            }
-
-            float get(int index)
-            {
-                return mData[index];
-            }
-
-            void set(int index, Vector3f v)
-            {
-                mData[index] = v.x;
-                mData[index + 1] = v.y;
-                mData[index + 2] = v.z;
-            }
-
-            void get(int index, Vector3f v)
-            {
-                v.x = mData[index];
-                v.y = mData[index + 1];
-                v.z = mData[index + 2];
-            }
-
-            void add(float[] entry)
-            {
-                if (mData == null)
-                {
-                    mData = new float[mMinSize];
-                }
-                else if (mCurSize + entry.length > mData.length)
-                {
-                    mData = Arrays.copyOf(mData, (mCurSize * 3) / 2);
-                }
-                for (int i = 0; i < entry.length; ++i)
-                {
-                    mData[mCurSize + i] = entry[i];
-                }
-                mCurSize += entry.length;
-            }
-        };
-
-        static class IntArray
-        {
-            private int[]   mData;
-            private int     mCurSize;
-            private int     mMinSize;
-
-            IntArray(int initialSize)
-            {
-                mMinSize = initialSize;
-            }
-
-            int[] array() { return mData; }
-
-            int getSize() { return mCurSize; }
-
-            void setCapacity(int c)
-            {
-                if ((mData == null) || (c > mData.length))
-                {
-                    mData = new int[c];
-                }
-            }
-
-            void clear()
-            {
-                mCurSize = 0;
-            }
-
-            int get(int index)
-            {
-                return mData[index];
-            }
-
-            void add(int v)
-            {
-                if (mData == null)
-                {
-                    mData = new int[mMinSize];
-                }
-                else if (mCurSize + 1 > mData.length)
-                {
-                    mData = Arrays.copyOf(mData, (mCurSize * 3) / 2);
-                }
-                mData[mCurSize++] = v;
-            }
-        };
-
-        private IntArray mPositionIndices = new IntArray(64);
-        private IntArray mNormalIndices = new IntArray(64);
-        private IntArray mTexcoordIndices = new IntArray(64);
-        private FloatArray mInputPositions = new FloatArray(64 * 3);
-        private FloatArray mInputNormals = new FloatArray(64 * 3);
-        private FloatArray mInputTexCoords = new FloatArray(64 * 3);
-        private FloatArray mOutputPositions = new FloatArray(64 * 3);
-        private FloatArray mOutputNormals = new FloatArray(64 * 3);
-        private FloatArray mOutputTexCoords = new FloatArray(64 * 3);
-        private GVRContext mContext;
-        private DefinedItem mVertexBufferDefine;
-        private float mMaxYTexcoord = Float.NEGATIVE_INFINITY;
-        private boolean mUseNormals;
-        private boolean mUseTexCoords;
-
-        MeshCreator(GVRContext ctx, EnumSet<GVRImportSettings> settings)
-        {
-            mContext = ctx;
-            mVertexBufferDefine = null;
-            mUseNormals = !settings.contains(GVRImportSettings.NO_LIGHTING);
-            mUseTexCoords = !settings.contains(GVRImportSettings.NO_TEXTURING);
-        }
-
-        void clear()
-        {
-            mOutputPositions.clear();
-            mOutputNormals.clear();
-            mOutputTexCoords.clear();
-            mInputPositions.clear();
-            mInputNormals.clear();
-            mInputTexCoords.clear();
-            mPositionIndices.clear();
-            mNormalIndices.clear();
-            mTexcoordIndices.clear();
-            mMaxYTexcoord = Float.NEGATIVE_INFINITY;
-        }
-
-        void defineVertexBuffer(DefinedItem item)
-        {
-            mVertexBufferDefine = item;
-        }
-*/
-        /*
-         * Add a new X3D position index to use in later generating the vertex buffer.
-         * These indices are the same as those in the X3D file.
-         */
-        /*
-        void addPositionIndex(int index)
-        {
-            mPositionIndices.add(index);
-        }
-*/
-        /*
-         * Add a new X3D normal index to use in later generating vertex buffer.
-         * These indices are the same as those in the X3D file.
-         */
-        /*
-        void addNormalIndex(int index)
-        {
-            if (mUseNormals)
-            {
-                mNormalIndices.add(index);
-            }
-        }
-*/
-        /*
-         * Add a new X3D texture coordinate index to use in later generating the vertex buffer.
-         * These indices are the same as those in the X3D file.
-         */
-        /*
-        void addTexcoordIndex(int index)
-        {
-            if (mUseTexCoords) {
-                mTexcoordIndices.add(index);
-            }
-        }
-*/
-        /*
-         * Add a position to the input vertex storage array.
-         * These positions are the same as in the X3D file
-         * and they will probably not match the output positions
-         * because vertices may be duplicated. X3D keeps a separate
-         * index table for positions, normals and texture coordinates.
-         * GearVRF keeps a single index table.
-         */
-        /*
-        void addInputPosition(float[] pos)
-        {
-            mInputPositions.add(pos);
-        }
-*/
-        /*
-         * Add a normal to the input vertex storage array.
-         * These normals are the same as in the X3D file
-         * and they will probably not match the output normals
-         * because vertices may be duplicated. X3D keeps a separate
-         * index table for positions, normals and texture coordinates.
-         * GearVRF keeps a single index table.
-         */
-        /*
-        void addInputNormal(float[] norm)
-        {
-            if (mUseNormals) {
-                mInputNormals.add(norm);
-            }
-        }
-*/
-        /*
-         * Add a texture coordinate to the input vertex storage array.
-         * These texture coordinates are the same as in the X3D file
-         * and they will probably not match the output texture coordinates
-         * because vertices may be duplicated. X3D keeps a separate
-         * index table for positions, normals and texture coordinates.
-         * GearVRF keeps a single index table.
-         */
-        /*
-        void addInputTexcoord(float[] tc)
-        {
-            if (mUseTexCoords) {
-                if (tc[1] > mMaxYTexcoord)
-                {
-                    mMaxYTexcoord = tc[1];
-                }
-                mInputTexCoords.add(tc);
-            }
-        }
-*/
-        /*
-         * Generates normals for the output vertices by computing
-         * face normals and averaging them.
-         * First generate the polygon normal from the cross product of any
-         * 2 lines of the polygon.  Second, for each vertex, sum the polygon
-         * normals shared by this vertex. Then normalize the normals.
-         * The resulting normals are in mOutputNormals.
-         */
-        /*
-        private void generateNormals(int[] faces, int numIndices, FloatArray positions)
-        {
-            Vector3f side0 = new Vector3f();
-            Vector3f side1 = new Vector3f();
-            Vector3f normal = new Vector3f();
-            try
-            {
-                mInputNormals.setCapacity(numIndices * 3);
-                mOutputNormals.setCapacity(positions.getSize());
-                mOutputNormals.fill(0.0f);
-                /*
-                 * Compute face normals
-                 */
-        /*
-                for (int f = 0; f < numIndices; f += 3)
-                {
-                    int v1Index = faces[f] * 3;
-                    int v2Index = faces[f + 1] * 3;
-                    int v3Index = faces[f + 2] * 3;
-
-                    side0.setComponent(0, positions.get(v1Index) - positions.get(v2Index));
-                    side0.setComponent(1, positions.get(v1Index + 1) - positions.get(v2Index + 1));
-                    side0.setComponent(2, positions.get(v1Index + 2) - positions.get(v2Index + 2));
-                    side1.setComponent(0, positions.get(v2Index) - positions.get(v3Index));
-                    side1.setComponent(1, positions.get(v2Index + 1) - positions.get(v3Index + 1));
-                    side1.setComponent(2, positions.get(v2Index + 2) - positions.get(v3Index + 2));
-                    side0.cross(side1, normal);
-                    normal.normalize();
-                    mInputNormals.set(f * 3, normal);
-                }
-    */
-                /*
-                 * Add face normals to produce vertex normals
-                 */
-                /*
-                float[] normals = mOutputNormals.array();
-                for (int f = 0; f < numIndices; f += 3)
-                {
-                    int v1Index = faces[f] * 3;
-                    int v2Index = faces[f + 1] * 3;
-                    int v3Index = faces[f + 2] * 3;
-
-                    mInputNormals.get(f * 3, normal);
-                    normals[v1Index] += normal.x;
-                    normals[v1Index + 1] += normal.y;
-                    normals[v1Index + 2] += normal.z;
-                    normals[v2Index] += normal.x;
-                    normals[v2Index + 1] += normal.y;
-                    normals[v2Index + 2] += normal.z;
-                    normals[v3Index] += normal.x;
-                    normals[v3Index + 1] += normal.y;
-                    normals[v3Index + 2] += normal.z;
-                }
-*/
-                /*
-                 * Normalize output normals
-                 */
-                /*
-                for (int i = 0; i < mOutputNormals.getSize(); ++i)
-                {
-                    int nindex = i * 3;
-                    mOutputNormals.get(nindex, normal);
-                    normal.normalize();
-                    mOutputNormals.set(nindex, normal);
-                }
-            }
-            catch (Exception e)
-            {
-                Log.e(TAG, e.toString());
-            }
-        }  //  end generateNormals
-*/
-        /*
-         * Create a vertex and index buffer from the X3D indices,
-         * positions, normals and texture coordinates.
-         * X3D keeps a separate index table for positions, normals
-         * and texture coordinates which allows for more sharing.
-         * GearVRF keeps a single index table for the triangles
-         * so there must be the same number of positions, normals
-         * and texture coordinates. This function converts the
-         * X3D input data into a GVRVertexBuffer and GVRIndexBuffer.
-         */
-        /*
-        GVRVertexBuffer organizeVertices(GVRIndexBuffer ibuf)
-        {
-            boolean hasTexCoords = mUseTexCoords & (mInputTexCoords.getSize() > 0);;
-            boolean hasNormals = mInputNormals.getSize() > 0;
-            String descriptor = "float3 a_position";
-
-            if (hasTexCoords)
-            {
-                descriptor += " float2 a_texcoord";
-            }
-            if (mUseNormals)
-            {
-                descriptor += " float3 a_normal";
-            }
-*/
-            /*
-             * If there are no texture coordinates or normals,
-             * we can just copy the input positions directly from
-             * X3D and generate normals if necessary.
-             */
-            /*
-            if (!hasTexCoords && !hasNormals)
-            {
-                return copyVertices(descriptor, ibuf, mUseNormals);
-            }
-*/
-            /*
-             * If the X3D file does not have normal or texcoord indices,
-             * we can just copy the input data directly from X3D
-             * because the positions, normals and texcoord arrays
-             * are all in the same order.
-             */
-            /*
-            if ((mTexcoordIndices.getSize() == 0) &&
-                (mNormalIndices.getSize() == 0))
-            {
-                return copyVertices(descriptor, ibuf, mUseNormals);
-            }
-*/
-            /*
-             * The X3D file has different index tables for positions,
-             * normals and texture coordinates. We must regenerate the
-             * vertex table to duplicate vertices in the cases where
-             * a position has more than one normal or textoord.
-             */
-            /*
-            Map<String, Integer> vertexMap = new LinkedHashMap<String, Integer>();
-            int[] newIndices = new int[mPositionIndices.getSize()];
-            float[] pos = new float[3];
-            float[] norm = new float[3];
-            float[] tc = new float[2];
-            int[] normalIndices = (mNormalIndices.getSize() > 0) ? mNormalIndices.array() : mPositionIndices.array();
-            int[] texcoordIndices = (mTexcoordIndices.getSize() > 0) ? mTexcoordIndices.array() : mPositionIndices.array();
-*/
-            /*
-             * Scan all the faces and compose the set of unique vertices
-             * (where a vertex has a position, normal and texcoord)
-             */
-            /*
-            mOutputPositions.setCapacity(mInputPositions.getSize());
-            for (char f = 0; f < mPositionIndices.getSize(); f++)
-            {
-                String key = "";
-                int vindex = mPositionIndices.get(f) * 3;
-
-                mInputPositions.get(vindex, pos);
-                key += String.valueOf(pos[0]) + String.valueOf(pos[1]) + String.valueOf(pos[2]);
-                if (hasTexCoords)
-                {
-                    int tindex = texcoordIndices[f] * 2;
-                    mInputTexCoords.get(tindex, tc);
-                    // flip the Y texture coordinate
-                    //tc[1] = -tc[1];
-                    tc[1] = mMaxYTexcoord - tc[1];
-                    key += String.valueOf(tc[0]) + String.valueOf(tc[1]);
-                }
-                if (hasNormals)
-                {
-                    int nindex = normalIndices[f] * 3;
-                    mInputNormals.get(nindex, norm);
-                    key += String.valueOf(norm[0]) + String.valueOf(norm[1]) + String.valueOf(norm[2]);
-                }
-                Integer newindex = vertexMap.get(key);
-                if (newindex == null)
-                {
-                    newindex = vertexMap.size();
-                    vertexMap.put(key, newindex);
-                    mOutputPositions.add(pos);
-                    if (hasNormals)
-                    {
-                        mOutputNormals.add(norm);
-                    }
-                    if (hasTexCoords)
-                    {
-                        mOutputTexCoords.add(tc);
-                    }
-                }
-                newIndices[f] = newindex;
-            }
-            GVRVertexBuffer vbuffer = new GVRVertexBuffer(mContext, descriptor, mOutputPositions.getSize() / 3);
-            if (mVertexBufferDefine != null)
-            {
-                mVertexBufferDefine.setVertexBuffer(vbuffer);
-            }
-            vbuffer.setFloatArray("a_position", mOutputPositions.array(), 3, 0);
-            if (!hasNormals)
-            {
-                generateNormals(newIndices, newIndices.length, mOutputPositions);
-            }
-            else if (mUseNormals)
-            {
-                vbuffer.setFloatArray("a_normal", mOutputNormals.array(), 3, 0);
-            }
-            if (hasTexCoords)
-            {
-                vbuffer.setFloatArray("a_texcoord", mOutputTexCoords.array(), 2, 0);
-            }
-            ibuf.setIntVec(newIndices);
-            clear();
-            return vbuffer;
-        }
-*/
-        /*
-         * Create a vertex and index buffer from the X3D indices,
-         * and positions.
-         * X3D keeps a separate index table for positions, normals
-         * and texture coordinates which allows for more sharing.
-         * GearVRF keeps a single index table for the triangles
-         * so there must be the same number of positions, normals
-         * and texture coordinates. This function copies the positions
-         * from X3D input data into a GVRVertexBuffer and GVRIndexBuffer.
-         * It optionally generates normals. Because there are no texture
-         * coordinates, the order of the vertices is the same as in
-         * the X3D file.
-         */
-        /*
-        public GVRVertexBuffer copyVertices(String descriptor, GVRIndexBuffer ibuf, boolean makeNormals)
-        {
-            GVRVertexBuffer vbuffer = new GVRVertexBuffer(mContext, descriptor, mInputPositions.getSize() / 3);
-            if (mVertexBufferDefine != null)
-            {
-                mVertexBufferDefine.setVertexBuffer(vbuffer);
-            }
-            vbuffer.setFloatArray("a_position", mInputPositions.array(), 3, 0);
-            if (mInputNormals.getSize() == 0)
-            {
-                if (makeNormals)
-                {
-                    generateNormals(mPositionIndices.array(), mPositionIndices.getSize(), mInputPositions);
-                    vbuffer.setFloatArray("a_normal", mOutputNormals.array(), 3, 0);
-                }
-            }
-            else
-            {
-                if (mInputNormals.getSize() != mInputPositions.getSize())
-                {
-                    throw new UnsupportedOperationException("MeshCreator.copyVertices requires input positions and normals to be the same length");
-                }
-                vbuffer.setFloatArray("a_normal", mInputNormals.array(), 3, 0);
-            }
-            if (mInputTexCoords.getSize() > 0)
-            {
-                // flip the Y texture coordinate
-
-                float[] texCoords = mInputTexCoords.array().clone();
-                int n = texCoords.length;
-                for(int i=1; i<n; i+=2)
-                {
-                    //texCoords[i] = -texCoords[i];
-                    texCoords[i] = mMaxYTexcoord - texCoords[i];
-                }
-                vbuffer.setFloatArray("a_texcoord", texCoords, 2, 0);
-            }
-            ibuf.setIntVec(mPositionIndices.array());
-            clear();
-            return vbuffer;
-        }
-    }  //  end MeshCreator
-*/
-
     /**
      * Allows developers to access the root of X3D scene graph
      * by calling: GVRSceneObject.getSceneObjectByName(X3D_ROOT_NODE);
@@ -874,7 +245,6 @@ public class X3Dobject {
     private Vector<Interpolator> interpolators = new Vector<Interpolator>();
 
     private Vector<InlineObject> inlineObjects = new Vector<InlineObject>();
-//    private MeshCreator meshCreator = null;
     private Utility utility = null;
 
     /**
@@ -1170,7 +540,6 @@ public class X3Dobject {
         gvrRenderingDataUSEd = false; // for DEFine and USE gvrRenderingData for
         // x3d SHAPE node
         gvrRenderData = null;
-        Log.e("X3DDBG", "@@@ ShapePostParsing gvrRenderData Reset to null @@@" );
 
     }  //  end ShapePostParsing
 
@@ -1197,7 +566,6 @@ public class X3Dobject {
             blockLighting = settings.contains(GVRImportSettings.NO_LIGHTING);
             blockTexturing = settings.contains(GVRImportSettings.NO_TEXTURING);
 
-    //        meshCreator = new MeshCreator(this.gvrContext, settings);
             utility = new Utility(this, gvrContext, settings);
             // Camera rig setup code based on GVRScene::init()
             GVRCamera leftCamera = new GVRPerspectiveCamera(gvrContext);
@@ -1257,290 +625,6 @@ public class X3Dobject {
     class UserHandler extends DefaultHandler {
 
         String attributeValue = null;
-        /*
-        private float[] parseFixedLengthFloatString(String numberString,
-                                                    int componentCount, boolean constrained0to1, boolean zeroOrGreater) {
-            StringReader sr = new StringReader(numberString);
-            StreamTokenizer st = new StreamTokenizer(sr);
-            st.parseNumbers();
-            int tokenType;
-            float componentFloat[] = new float[componentCount];
-            try {
-                for (int i = 0; i < componentCount; i++) {
-                    if ((tokenType = st.nextToken()) == StreamTokenizer.TT_NUMBER) {
-                        componentFloat[i] = (float) st.nval;
-                    } else { // check for an exponent 'e'
-                        if (tokenType == StreamTokenizer.TT_WORD) {
-                            String word = st.sval;
-                            if (word.startsWith("e-")) { // negative exponent
-                                String exponentString = word.substring(2, word.length());
-                                try {
-                                    --i; // with this exponent, we are still working with the
-                                    // previous number
-                                    Integer exponentInt = Integer.parseInt(exponentString);
-                                    componentFloat[i] *= (float) Math
-                                            .pow(10, -exponentInt.intValue());
-                                } catch (NumberFormatException e) {
-                                    Log.e(TAG,
-                                            "parsing fixed length string, exponent number conversion error: "
-                                                    + exponentString);
-                                }
-                            } else if (word.equalsIgnoreCase("e")) { // exponent with plus sign
-                                tokenType = st.nextToken();
-                                if (tokenType == 43) { // "+" plus sign
-                                    if ((tokenType = st.nextToken()) == StreamTokenizer.TT_NUMBER) {
-                                        --i; // with this exponent, we are still working with the
-                                        // previous number
-                                        float exponent = (float) st.nval;
-                                        componentFloat[i] *= (float) Math.pow(10, exponent);
-                                    } else {
-                                        st.pushBack();
-                                        Log.e(TAG,
-                                                "Error: exponent in X3D parser with fixed length float");
-                                    }
-                                } else
-                                    st.pushBack();
-                            } else
-                                st.pushBack();
-                        }
-                    } // end check for 'e' exponent
-                    if (constrained0to1) {
-                        if (componentFloat[i] < 0)
-                            componentFloat[i] = 0;
-                        else if (componentFloat[i] > 1)
-                            componentFloat[i] = 1;
-                    } else if (zeroOrGreater) {
-                        if (componentFloat[i] < 0)
-                            componentFloat[i] = 0;
-                    }
-                } // end for-loop
-            } // end 'try'
-            catch (IOException e) {
-                Log.d(TAG, "Error parsing fixed length float string: " + e);
-            }
-            return componentFloat;
-        } // end parseFixedLengthFloatString
-
-                private float parseSingleFloatString(String numberString,
-                                                     boolean constrained0to1, boolean zeroOrGreater) {
-                    float[] value = parseFixedLengthFloatString(numberString, 1,
-                            constrained0to1,
-                            zeroOrGreater);
-                    return value[0];
-                }
-        private boolean parseBooleanString(String booleanString) {
-            StringReader sr = new StringReader(booleanString);
-            StreamTokenizer st = new StreamTokenizer(sr);
-            boolean value = false;
-            int tokenType;
-            try {
-                tokenType = st.nextToken();
-                if (tokenType == StreamTokenizer.TT_WORD) {
-                    if (st.sval.equalsIgnoreCase("true"))
-                        value = true;
-                }
-            } catch (IOException e) {
-
-                Log.e(TAG, "Boolean Error: " + e);
-
-                e.printStackTrace();
-            }
-            return value;
-        }
-
-
-        // multi-field string
-        private String[] parseMFString(String mfString) {
-            Vector<String> strings = new Vector<String>();
-
-            StringReader sr = new StringReader(mfString);
-            StreamTokenizer st = new StreamTokenizer(sr);
-            st.quoteChar('"');
-            st.quoteChar('\'');
-            String[] mfStrings = null;
-
-            int tokenType;
-            try {
-                while ((tokenType = st.nextToken()) != StreamTokenizer.TT_EOF) {
-
-                    strings.add(st.sval);
-
-                }
-            } catch (IOException e) {
-
-                Log.d(TAG, "String parsing Error: " + e);
-
-                e.printStackTrace();
-            }
-            mfStrings = new String[strings.size()];
-            for (int i = 0; i < strings.size(); i++) {
-                mfStrings[i] = strings.get(i);
-            }
-            return mfStrings;
-        } // end parseMFString
-
-        private int parseIntegerString(String numberString) {
-            StringReader sr = new StringReader(numberString);
-            StreamTokenizer st = new StreamTokenizer(sr);
-            st.parseNumbers();
-            int tokenType;
-            int returnValue = 0;
-
-            try {
-                if ((tokenType = st.nextToken()) != StreamTokenizer.TT_EOF) {
-                    if (tokenType == StreamTokenizer.TT_NUMBER) {
-                        returnValue = (int) st.nval;
-                    }
-                }
-            }
-            catch (IOException e) {
-                Log.e(TAG, "Error: parseIntegerString - " + e);
-            }
-            return returnValue;
-        } // end parseIntegerString
-
-        private void parseNumbersString(String numberString, int componentType,
-                                        int componentCount) {
-            //preprocessing to get rid of 'e' or 'E' exponent
-            // otherwise the SAX parser splits 3e-2 (which is .03) into two
-            // number, 3 and -2.
-            if ( (numberString.indexOf('e') != -1) || (numberString.indexOf('E') != -1) ) {
-                int stringPos = 0;
-                String newReplacementString = "";
-                // we do assume the numberString won't be mixing 'e' and 'E'
-                // but we want to handle any either character
-                char eChar = 'e';
-                if ( numberString.indexOf('E') != -1 ) eChar = 'E';
-                while (numberString.indexOf(eChar, stringPos) != -1)  {
-                    int ePos = numberString.indexOf(eChar, stringPos);
-                    // check for the first space or comma before 'e'.
-                    int prevSpaceBefore_e = Math.max( (numberString.lastIndexOf(' ', ePos)), (numberString.lastIndexOf(',', ePos)) );
-                    prevSpaceBefore_e++;
-                    // Copy from the current position until the comma or space before the 'e'
-                    newReplacementString += numberString.substring(stringPos, prevSpaceBefore_e);
-                    // check for the next space or comma after 'e'.
-                    // Otherwise, we might be at the end of the string.
-                    int nextSpaceAfter_e = Math.min( (numberString.indexOf(' ', ePos)), (numberString.indexOf(',', ePos)) );
-                    if (nextSpaceAfter_e == -1) {
-                        // at the end of the original string, find the last space, comma or EOL of the string
-                        nextSpaceAfter_e = Math.max( (numberString.indexOf(' ', ePos)), (numberString.indexOf(',', ePos)) );
-                        if (nextSpaceAfter_e == -1) nextSpaceAfter_e = Math.max( nextSpaceAfter_e, numberString.length() );
-                    }
-                    String exponentString = numberString.substring(ePos+1, nextSpaceAfter_e);
-                    try {
-                        double newReplacementNumber =
-                                ( (float) (new Float( numberString.substring(prevSpaceBefore_e, ePos) )) )
-                                        * Math.pow(10, (int) (new Integer(exponentString)) );
-                        // At < 1/1000th, it might be more efficient as 0.
-                        if ( Math.abs(newReplacementNumber) < .001 ) newReplacementNumber = 0;
-                        newReplacementString += " " + newReplacementNumber + " ";
-                    }
-                    catch (java.lang.NumberFormatException exception) {
-                        Log.e(TAG, "NumberFormatException in " + numberString.substring(prevSpaceBefore_e, nextSpaceAfter_e) + "; " + exception);
-                    }
-                    catch (Exception exception) {
-                        Log.e(TAG, "Exception in " + numberString.substring(prevSpaceBefore_e, nextSpaceAfter_e) + "; " + exception);
-                    }
-                    stringPos = nextSpaceAfter_e;
-                }
-                // Add any remainder of a string
-                numberString = newReplacementString + numberString.substring(stringPos, numberString.length());
-            }
-            StringReader sr = new StringReader(numberString);
-            StreamTokenizer st = new StreamTokenizer(sr);
-            st.parseNumbers();
-            int tokenType;
-            short componentShort[] = new short[componentCount];
-            float componentFloat[] = new float[componentCount];
-            try {
-                int index = 0;
-                while ((tokenType = st.nextToken()) != StreamTokenizer.TT_EOF) {
-                    if (tokenType == StreamTokenizer.TT_NUMBER) {
-
-                        // first componentType's parse for short values
-                        // (integers) and will have no exponents
-
-                        if (componentType == X3Dobject.indexedFaceSetComponent) {
-                            if ((int) st.nval != -1) {
-                                meshCreator.addPositionIndex((int) st.nval);
-                                index++;
-                                if (index == componentCount) {
-                                    index = 0;
-                                }
-                            }
-                        } else if (componentType == X3Dobject.textureIndexComponent) {
-                            if ((int) st.nval != -1) {
-                                meshCreator.addTexcoordIndex((int) st.nval);
-                                index++;
-                                if (index == componentCount) {
-                                    index = 0;
-                                }
-                            }
-                        } else if (componentType == X3Dobject.normalIndexComponent) {
-                            if ((int) st.nval != -1) {
-                                meshCreator.addNormalIndex((int) st.nval);
-                                index++;
-                                if (index == componentCount) {
-                                    index = 0;
-                                }
-                            }
-                        }
-
-                        // The rest of these will be parsing floats that could
-                        // have 'e' exponent value.  3DSMax will export X3D/VRML
-                        // with the 'e' exponent
-                        //TODO: check for 'e' exponent values.
-
-                        else if (componentType == X3Dobject.verticesComponent) {
-                            componentFloat[index] = (float) (st.nval);
-                            index++;
-                            if (index == componentCount) {
-                                    meshCreator.addInputPosition(componentFloat);
-                                index = 0;
-                            }
-                        } else if (componentType == X3Dobject.textureCoordComponent) {
-                            componentFloat[index] = (float) st.nval;
-                            index++;
-                            if (index == componentCount) {
-                                    meshCreator.addInputTexcoord(componentFloat);
-                                index = 0;
-                            }
-                        } else if (componentType == X3Dobject.normalsComponent) {
-                            componentFloat[index] = (float) st.nval;
-                            index++;
-                            if (index == componentCount) {
-                                    meshCreator.addInputNormal(componentFloat);
-                                index = 0;
-                            }
-                        } else if (componentType == X3Dobject.interpolatorKeyComponent) {
-                            componentFloat[index] = (float) st.nval;
-                            index++;
-                            if (index == componentCount) {
-                                AddKeys(componentFloat[0]);
-                                index = 0;
-                            }
-                        } else if (componentType == X3Dobject.interpolatorKeyValueComponent) {
-                            componentFloat[index] = (float) st.nval;
-                            index++;
-                            if (index == componentCount) {
-                                AddKeyValues(componentFloat);
-                                index = 0;
-                            }
-                        } else if (componentType == X3Dobject.LODComponent) {
-                            componentFloat[index] = (float) st.nval;
-                            AddKeys(componentFloat[0]);
-                        } else if (componentType == X3Dobject.elevationGridHeight) {
-                            floatArray.add(new Float((float) st.nval));
-                        }
-
-                    } // end if token = number
-                } // end while loop
-            } // end try statement
-            catch (IOException e) {
-                Log.e(TAG, "Error: parseNumbersString - " + e);
-            }
-        } // parseNumbersString
-*/
 
         private void ReplicateGVRSceneObjStructure(String attributeValue) {
             // TODO: needs to complete implementation.  May instead
@@ -1793,22 +877,15 @@ public class X3Dobject {
                     if (lodManager.isActive()) lodManager.AddLODSceneObject( currentSceneObject );
 
                     if ( proto != null) {
-                        Log.e("X3DDBG", "Proto with Transform");
                         if ( proto.isProtoStateProtoBody()) {
-                            if ( proto.getTransform() == null) {
-                                Log.e("X3DDBG", "   transform == null");
+                                if ( proto.getTransform() == null) {
                                 Transform transform = new Transform(center, rotation,
                                         scale, scaleOrientation, translation, name );
                                 proto.setTransform( transform );
-                                Log.e("X3DDBG", "   did proto.setTransform() " +
-                                        transform.getDEF().getValue());
                             }
-                            Log.e("X3DDBG", "Proto - Transform");
                         }
                     }
-
                 } // not a 'Transform USE="..."' node
-
             } // end <Transform> node
 
 
@@ -1897,23 +974,17 @@ public class X3Dobject {
                         // Clones objects with USE
                     }
                     if ( proto != null) {
-                        Log.e("X3DDBG", "Proto with Shape");
                         if ( proto.isProtoStateProtoBody()) {
                             if ( proto.getShape() == null) {
-                                Log.e("X3DDBG", "   proto.getShape() == null, attributeValue " + attributeValue);
                                 Shape shape = new Shape(proto, attributeValue);
                                 proto.setShape( shape );
                                 if ( proto.getTransform() != null) {
                                     proto.getTransform().setShape( shape );
-                                    Log.e("X3DDBG", "      transform.setShape()");
                                 }
-                                Log.e("X3DDBG", "   did proto.setShape()");
                             }
-                            Log.e("X3DDBG", "   Proto - Shape, name " + attributeValue);
                         }
-                    }
+                    }  //  end if proto != null
                 }
-
             } // end <Shape> node
 
 
@@ -1944,18 +1015,15 @@ public class X3Dobject {
                         shaderSettings.setAppearanceName(attributeValue);
                     }
                     if ( proto != null ) {
-                        Log.e("X3DDBG", "Appearance: proto != null");
                         if ( proto.getAppearance() == null) {
                             Appearance appearance = new Appearance(attributeValue);
                             proto.setAppearance(appearance);
-                            Log.e("X3DDBG", "   was null; added proto.setAppearance(appearance)");
                         }
                     }
                     else if ( protoInstance != null ) {
-                        Log.e("X3DDBG", "Appearance protoInstance != null");
+                        Log.e(TAG, "Appearance protoInstance != null");
                     }
                 }
-
             } // end <Appearance> node
 
 
@@ -2025,29 +1093,23 @@ public class X3Dobject {
                                         true, false));
                     }
                     if ( proto != null ) {
-                        Log.e("X3DDBG", "Material proto != null");
-                        //if (proto.getShape() != null ) {
-                            if ( proto.getAppearance() != null) {
-                                if ( proto.getAppearance().getMaterial() == null) {
-                                    Material material = new Material(shaderSettings.ambientIntensity,
+                        if ( proto.getAppearance() != null) {
+                            if ( proto.getAppearance().getMaterial() == null) {
+                                Material material = new Material(shaderSettings.ambientIntensity,
                                             shaderSettings.diffuseColor, shaderSettings.emissiveColor,
                                             shaderSettings.shininess, shaderSettings.specularColor,
                                             shaderSettings.getTransparency());
-                                    proto.getAppearance().setMaterial(material);
-                                }
-                                else {
-                                    Log.e("X3DDBG", "Proto error: Material not starting null inside Appearance node");
-                                    Log.e(TAG, "Proto error: Material not starting null inside Appearance node");
-                                }
+                                proto.getAppearance().setMaterial(material);
                             }
                             else {
-                                Log.e("X3DDBG", "Proto error: Material set without Appearance");
-                                Log.e(TAG, "Proto error: Material set without Appearance");
+                                Log.e(TAG, "Proto error: Material not starting null inside Appearance node");
                             }
-                        //}
+                        }
+                        else {
+                            Log.e(TAG, "Proto error: Material set without Appearance");
+                        }
                     }
                 } // end ! USE attribute
-
             } // end <Material> node
 
 
@@ -2113,7 +1175,6 @@ public class X3Dobject {
                             }
                         }  //  end url
                         if ( proto != null ) {
-                            Log.e("X3DDBG", "PROTO <ImageTexture>");
                             Appearance appearance = proto.getAppearance();
                             if (appearance != null) {
                                 if (proto.getAppearance().getTexture() == null) {
@@ -2121,15 +1182,10 @@ public class X3Dobject {
                                     urls[0] = urlAttribute;
                                     ImageTexture imageTexture = new ImageTexture(urls, true, true);
                                     proto.getAppearance().setTexture(imageTexture);
-                                    if (proto.getAppearance().getTexture() != null) {
-                                        Log.e("X3DDBG", "   proto.getAppearance().getTexture() != null");
-                                    }
                                 } else {
-                                    Log.e("X3DDBG", "Proto error: ImageTexture not starting null inside Appearance node");
                                     Log.e(TAG, "Proto error: ImageTexture not starting null inside Appearance node");
                                 }
                             } else {
-                                Log.e("X3DDBG", "PROTO: <Appearance> not set.");
                                 Log.e(TAG, "PROTO:  <Appearance> not set.");
                             }  // end appearance != null
                         } // end proto != null
@@ -2170,25 +1226,18 @@ public class X3Dobject {
                     shaderSettings.setTextureTranslation(translation);
                 }
                 if ( proto != null ) {
-                    Log.e("X3DDBG", "PROTO <TextureTransform>");
                     Appearance appearance = proto.getAppearance();
                     if (appearance != null) {
-                        Log.e("X3DDBG", "   appearance != null");
                         if (proto.getAppearance().getTextureTransform() == null) {
                             TextureTransform textureTransform = new TextureTransform(
                                     shaderSettings.getTextureCenter().getValue(), shaderSettings.getTextureRotation().getValue(),
                                     shaderSettings.getTextureScale().getValue(), shaderSettings.getTextureTranslation().getValue()
                             );
                             proto.getAppearance().setTextureTransform(textureTransform);
-                            if (proto.getAppearance().getTextureTransform() != null) {
-                                Log.e("X3DDBG", "   proto.getAppearance().getTextureTransform() != null: looks good");
-                            }
                         } else {
-                            Log.e("X3DDBG", "Proto error: TextureTransform not starting null inside Appearance node");
                             Log.e(TAG, "Proto error: TextureTransform not starting null inside Appearance node");
                         }
                     } else {
-                        Log.e("X3DDBG", "PROTO: <Appearance> not set.");
                         Log.e(TAG, "PROTO:  <Appearance> not set.");
                     }  // end appearance != null
                 } // end proto != null
@@ -2256,7 +1305,6 @@ public class X3Dobject {
                     }
                 }
                 if ( proto != null ) {
-                    Log.e("X3DDBG", "<IndexedFaceSet>, proto != null");
                     Geometry geometry = proto.getGeometry();
                     if (geometry == null) {
                         geometry = new Geometry();
@@ -2264,9 +1312,6 @@ public class X3Dobject {
                     }
                     IndexedFaceSet indexedFaceSet = new IndexedFaceSet();
                     geometry.setIndexedFaceSet( indexedFaceSet );
-                    Log.e("X3DDBG", "   COMPLETE <IndexedFaceSet>, proto != null");
-
-                    Log.e("X3DDBG", "   COMPLETE coordIndices = meshCreator.mPositionIndices.array()");
 
                     indexedFaceSet.setCoordIndex( utility.meshCreator.mPositionIndices.array() );
                     indexedFaceSet.setTexCoordIndex( utility.meshCreator.mTexcoordIndices.array() );
@@ -2311,7 +1356,6 @@ public class X3Dobject {
                         utility.parseNumbersString(pointAttribute, X3Dobject.verticesComponent, 3);
                     }
                     if ( proto != null ) {
-                        Log.e("X3DDBG", "<Coordinate>, proto != null");
                         Geometry geometry = proto.getGeometry();
                         if (geometry != null) {
                             IndexedFaceSet indexedFaceSet = geometry.getIndexedFaceSet();
@@ -2324,12 +1368,10 @@ public class X3Dobject {
 
                             }
                             else {
-                                Log.e("X3DDBG", "PROTO: <Coordinate> not inside <IndexedFaceSet>");
                                 Log.e(TAG, "PROTO: <Coordinate> not inside <IndexedFaceSet>");
                             }
                         }
                         else {
-                            Log.e("X3DDBG", "PROTO: <Coordinate> not inside <IndexedFaceSet>");
                             Log.e(TAG, "PROTO: <Coordinate> not inside <IndexedFaceSet>");
                         }  // end geometry != null
                     }  // end proto != null
@@ -2376,7 +1418,6 @@ public class X3Dobject {
                         utility.parseNumbersString(pointAttribute, X3Dobject.textureCoordComponent, 2);
                     }
                     if ( proto != null ) {
-                        Log.e("X3DDBG", "<TextureCoordinate>, proto != null");
                         Geometry geometry = proto.getGeometry();
                         if (geometry != null) {
                             IndexedFaceSet indexedFaceSet = geometry.getIndexedFaceSet();
@@ -2384,17 +1425,13 @@ public class X3Dobject {
                                 TextureCoordinate textureCoordinate = new TextureCoordinate();
                                 indexedFaceSet.setTetureCoordinate( textureCoordinate );
                                 float[] textureCoordinateValues = utility.meshCreator.mInputTexCoords.array();
-
                                 textureCoordinate.setMeshCreatorInputTexCoords( textureCoordinateValues );
-
                             }
                             else {
-                                Log.e("X3DDBG", "PROTO: <TextureCoordinate> not inside <IndexedFaceSet>");
                                 Log.e(TAG, "PROTO: <TextureCoordinate> not inside <IndexedFaceSet>");
                             }
                         }
                         else {
-                            Log.e("X3DDBG", "PROTO: <TextureCoordinate> not inside <IndexedFaceSet>");
                             Log.e(TAG, "PROTO: <TextureCoordinate> not inside <IndexedFaceSet>");
                         }  // end geometry != null
                     }  // end proto != null
@@ -2439,7 +1476,6 @@ public class X3Dobject {
                         utility.parseNumbersString(vectorAttribute, X3Dobject.normalsComponent, 3);
                     }
                     if ( proto != null ) {
-                        Log.e("X3DDBG", "<Normal>, proto != null");
                         Geometry geometry = proto.getGeometry();
                         if (geometry != null) {
                             IndexedFaceSet indexedFaceSet = geometry.getIndexedFaceSet();
@@ -2447,29 +1483,13 @@ public class X3Dobject {
                                 Normal normal = new Normal();
                                 indexedFaceSet.setNormal( normal );
                                 float[] normalValues = utility.meshCreator.mInputNormals.array();
-
-                                //String normalValuesString = null;
-                                //for (int i = 0; i < normalValues.length; i++ ) {
-                                //    normalValuesString += " " + normalValues[i] + ",";
-                                //}
-                                //Log.e("X3DDBG", "      normalValues[] = " + normalValuesString );
-
                                 normal.setMeshCreatorInputNormals( normalValues );
-
-                                //float[] normals = normal.getMeshCreatorInputNormals();
-                                //String normalsString = null;
-                                //for (int i = 0; i < normals.length; i++ ) {
-                                //    normalsString += " " + normals[i] + ",";
-                                //}
-                                //Log.e("X3DDBG", "      normalsString[] = " + normalsString );
                             }
                             else {
-                                Log.e("X3DDBG", "PROTO: <Normal> not inside <IndexedFaceSet>");
                                 Log.e(TAG, "PROTO: <Normal> not inside <IndexedFaceSet>");
                             }
                         }
                         else {
-                            Log.e("X3DDBG", "PROTO: <Normal> not inside <IndexedFaceSet>");
                             Log.e(TAG, "PROTO: <Normal> not inside <IndexedFaceSet>");
                         }  // end geometry != null
                     }
@@ -3138,7 +2158,6 @@ public class X3Dobject {
                     gvrCubeSceneObject.getRenderData().setMaterial(new GVRMaterial(gvrContext, x3DShader));
 
                     if ( proto != null ) {
-                        Log.e("X3DDBG", "proto != null; Got Box");
                         if (proto.getGeometry() == null) {
                             Geometry geometry = new Geometry();
                             proto.setGeometry( geometry );
@@ -3192,12 +2211,6 @@ public class X3Dobject {
                             params);
 
                     if ( proto != null ) {
-                        Log.e("X3DDBG", "proto != null; Got Cone");
-                        //GVRSceneObject gvrSceneObject = new GVRSceneObject(gvrContext);
-                        //proto.setGVRSceneObject(gvrSceneObject);
-                        //proto.getGVRSceneObject().addChildObject(gvrConeSceneObject);
-                        //Log.e("X3DDBG", "   Added Cone to Proto's mGVRSceneObject");
-
                         if (proto.getGeometry() == null) {
                             Geometry geometry = new Geometry();
                             proto.setGeometry( geometry );
@@ -3256,12 +2269,6 @@ public class X3Dobject {
                     GVRCylinderSceneObject gvrCylinderSceneObject = new GVRCylinderSceneObject(
                             gvrContext, params);
                     if ( proto != null ) {
-                        Log.e("X3DDBG", "proto != null; Got Cylinder");
-                        //GVRSceneObject gvrSceneObject = new GVRSceneObject(gvrContext);
-                        //proto.setGVRSceneObject(gvrSceneObject);
-                        //proto.getGVRSceneObject().addChildObject(gvrCylinderSceneObject);
-                        //Log.e("X3DDBG", "   Added Cylinder to Proto's mGVRSceneObject");
-
                         if (proto.getGeometry() == null) {
                             Geometry geometry = new Geometry();
                             proto.setGeometry( geometry );
@@ -3291,7 +2298,6 @@ public class X3Dobject {
                             gvrContext, solid, new GVRMaterial(gvrContext, x3DShader), radius);
 
                     if ( proto != null ) {
-                        Log.e("X3DDBG", "proto != null; Got Sphere");
                          if (proto.getGeometry() == null) {
                             Geometry geometry = new Geometry();
                             proto.setGeometry( geometry );
@@ -3432,7 +2438,6 @@ public class X3Dobject {
                     }
 
                     if ( proto != null ) {
-                        Log.e("X3DDBG", "proto != null; Got Text");
                         if (proto.getGeometry() == null) {
                             Geometry geometry = new Geometry();
                             proto.setGeometry( geometry );
@@ -3540,13 +2545,11 @@ public class X3Dobject {
                         }
 
                         if ( proto != null ) {
-                            Log.e("X3DDBG", "proto != null; Got FontStyle");
                             if (proto.getGeometry() != null) {
                                 if ( proto.getGeometry().getText() != null) {
                                     Text text = proto.getGeometry().getText();
                                     FontStyle fontStyle = text.getFontStyle();
                                     if (justifyMFString != null) fontStyle.setJustify( justifyMFString );
-                                    Log.e("X3DDBG", "proto.getGeometry().getText() != null " + justifyMFString);
                                 }
                             }
                         }
@@ -3958,9 +2961,7 @@ public class X3Dobject {
                     else if ( proto != null ) {
                         if ( proto.isProtoStateProtoInterface() ) {
                             // Add this field to the list of Proto field's
-                            Log.e("X3DDBG", "   call proto.AddField(,,,'"+value+"')");
                             proto.AddField(accessType, name, type, value);
-                            Log.e("X3DDBG", "      return from proto.AddField()");
                         }
                     }
                 }  //  end <field> node
@@ -4015,9 +3016,7 @@ public class X3Dobject {
                         shaderSettings.setMovieTextureName(attributes.getValue("DEF") );
 
                         if ( proto != null ) {
-                            Log.e("X3DDBG", "Movie proto != null");
                             if ( proto.getAppearance() != null) {
-                                Log.e("X3DDBG", "   Movie proto.getAppearance() != null");
 
                                 if ( proto.getAppearance().getMovieTexture() == null) {
                                     String[] movieTextures = new String[1];
@@ -4025,16 +3024,12 @@ public class X3Dobject {
                                     MovieTexture movieTexture = new MovieTexture(loop, 1.0f, 1.0f,
                                             movieTextures);
                                     proto.getAppearance().setMovieTexture( movieTexture );
-                                    Log.e("X3DDBG", "      MovieTexture SET");
                                 }
                                 else {
-                                    Log.e("X3DDBG", "Proto error: MovieTexture not starting null inside Appearance node");
                                     Log.e(TAG, "Proto error: MovieTexture not starting null inside Appearance node");
                                 }
-
                             }
                             else {
-                                Log.e("X3DDBG", "Proto error: MovieTexture set without Appearance");
                                 Log.e(TAG, "Proto error: MovieTexture set without Appearance");
                             }
                         }
@@ -4469,7 +3464,6 @@ public class X3Dobject {
 
                 /********** PROTO Node: ProtoDeclare **********/
                 else if (qName.equalsIgnoreCase("ProtoDeclare")) {
-                    Log.e("X3DDBG", "PROTODelcare found.");
                     proto = new Proto( X3Dobject.this );
                     proto.setProtoStateProtoDeclare();
                     attributeValue = attributes.getValue("name");
@@ -4479,7 +3473,6 @@ public class X3Dobject {
                 }
                 /********** PROTO Node: ProtoInterface **********/
                 else if (qName.equalsIgnoreCase("ProtoInterface")) {
-                    Log.e("X3DDBG", "ProtoInterface found.");
                     if ( proto != null ) {
                         if ( proto.isProtoStateProtoDeclare()) {
                             proto.setProtoStateProtoInterface();
@@ -4526,16 +3519,12 @@ public class X3Dobject {
                                         proto.setNodeField(field, attributeValue);
                                     }
                                     if (proto.getAppearance() != null) {
-                                        Log.e("X3DDBG", "   proto.getAppearance() != null");
                                         if (proto.getAppearance().getTexture() != null) {
-                                            Log.e("X3DDBG", "      proto.getAppearance().getTexture() != null");
                                             if (proto.getNodeField(field).equalsIgnoreCase("url")) {
-                                                Log.e("X3DDBG", "         proto.getField_MFString(field) " + proto.getField_MFString(field)[0]);
                                                 proto.getAppearance().getTexture().setUrl(proto.getField_MFString(field));
                                             }
                                         }
                                         if (proto.getAppearance().getTextureTransform() != null) {
-                                            Log.e("X3DDBG", "      proto.getAppearance().getTextureTransform() != null");
                                             if (proto.getNodeField(field).equalsIgnoreCase("scale")) {
                                                 proto.getAppearance().getTextureTransform().setScale(proto.getField_SFVec2f(field));
                                             } else if (proto.getNodeField(field).equalsIgnoreCase("rotation")) {
@@ -4547,9 +3536,7 @@ public class X3Dobject {
                                             }
                                         }  //  end if TextureTransform
                                         if (proto.getAppearance().getMovieTexture() != null) {
-                                            Log.e("X3DDBG", "      proto.getAppearance().getMovieTexture() != null");
                                             if (proto.getNodeField(field).equalsIgnoreCase("url")) {
-                                                Log.e("X3DDBG", "         proto.getField_MFString(field) " + proto.getField_MFString(field)[0]);
                                                 proto.getAppearance().getMovieTexture().setUrl(proto.getField_MFString(field));
                                             }
                                         }  //  end if MovieTexture
@@ -4565,7 +3552,6 @@ public class X3Dobject {
                                         } // end Box
                                         Cone cone = proto.getGeometry().getCone();
                                         if (cone != null) {
-                                            Log.e("X3DDBG", "      Proto connect: got a cone");
                                             if (proto.getNodeField(field).equalsIgnoreCase("bottom")) {
                                                 cone.setBottom(proto.getField_SFBool(field));
                                             } else if (proto.getNodeField(field).equalsIgnoreCase("bottomRadius")) {
@@ -4592,7 +3578,6 @@ public class X3Dobject {
                                                 cylinder.setSolid(proto.getField_SFBool(field));
                                             } else if (proto.getNodeField(field).equalsIgnoreCase("top")) {
                                                 cylinder.setTop(proto.getField_SFBool(field));
-                                                Log.e("X3DDBG", "   cylinder top = " + cylinder.getTop());
                                             }
                                         } // end Cylinder
                                         Sphere sphere = proto.getGeometry().getSphere();
@@ -4605,33 +3590,26 @@ public class X3Dobject {
                                         } // end Sphere
                                         IndexedFaceSet indexedFaceSet = proto.getGeometry().getIndexedFaceSet();
                                         if (indexedFaceSet != null) {
-                                            Log.e("X3DDBG", "<connect> indexedFaceSet set fields");
+                                            Log.e(TAG, "<connect> <IndexedFaceSet> not allowing fields to be set");
                                         } // end indexedFaceSet
                                         Text text = proto.getGeometry().getText();
                                         if (text != null) {
-                                            Log.e("X3DDBG", "<connect> text set fields");
                                             FontStyle fontStyle = text.getFontStyle();
                                             if (proto.getNodeField(field).equalsIgnoreCase("string")) {
-                                                Log.e("X3DDBG", "   <connect> text set string: " + proto.getNodeField(field));
                                                 text.setString(proto.getField_MFString(field));
                                             } else if (proto.getNodeField(field).equalsIgnoreCase("family")) {
-                                                Log.e("X3DDBG", "      <connect> text family[0]: " + proto.getField_MFString(field)[0]);
                                                 if (fontStyle != null)
                                                     fontStyle.setFamily(proto.getField_MFString(field));
                                             } else if (proto.getNodeField(field).equalsIgnoreCase("justify")) {
-                                                Log.e("X3DDBG", "      <connect> text justify[0]: " + proto.getField_MFString(field)[0]);
                                                 if (fontStyle != null)
                                                     fontStyle.setJustify(proto.getField_MFString(field));
                                             } else if (proto.getNodeField(field).equalsIgnoreCase("size")) {
-                                                Log.e("X3DDBG", "      <connect> text size: " + proto.getField_SFFloat(field)[0]);
                                                 if (fontStyle != null)
                                                     fontStyle.setSize(proto.getField_SFFloat(field)[0] * 10);
                                             } else if (proto.getNodeField(field).equalsIgnoreCase("spacing")) {
-                                                Log.e("X3DDBG", "      <connect> text spacing: " + proto.getField_SFFloat(field)[0]);
                                                 if (fontStyle != null)
                                                     fontStyle.setSpacing( proto.getField_SFFloat(field)[0] );
                                             } else if (proto.getNodeField(field).equalsIgnoreCase("style")) {
-                                                Log.e("X3DDBG", "      <connect> text style[0]: " + proto.getField_SFString(field) );
                                                 if (fontStyle != null)
                                                     fontStyle.setStyle(proto.getField_SFString(field));
                                             }
@@ -4665,11 +3643,9 @@ public class X3Dobject {
                                         geometryInstance.setBox( cloneBox );
                                     }
                                     catch (CloneNotSupportedException ex) {
-                                        Log.e("X3DDBG", "Proto Box exception: " + ex);
                                         Log.e(TAG, "Proto Box exception: " + ex);
                                     }
                                     catch (Exception ex) {
-                                        Log.e("X3DDBG", "Proto <IndexedFaceSet> exception: " + ex);
                                         Log.e(TAG, "Proto <IndexedFaceSet> exception: " + ex);
                                     }
                                 }
@@ -4679,11 +3655,9 @@ public class X3Dobject {
                                         geometryInstance.setCone( cloneCone );
                                     }
                                     catch (CloneNotSupportedException ex) {
-                                        Log.e("X3DDBG", "Proto Cone exception: " + ex);
                                         Log.e(TAG, "Proto Cone exception: " + ex);
                                     }
                                     catch (Exception ex) {
-                                        Log.e("X3DDBG", "Proto <IndexedFaceSet> exception: " + ex);
                                         Log.e(TAG, "Proto <IndexedFaceSet> exception: " + ex);
                                     }
                                 }
@@ -4693,11 +3667,9 @@ public class X3Dobject {
                                         geometryInstance.setCylinder( cloneCylinder );
                                     }
                                     catch (CloneNotSupportedException ex) {
-                                        Log.e("X3DDBG", "Proto Cylinder exception: " + ex);
                                         Log.e(TAG, "Proto Cylinder exception: " + ex);
                                     }
                                     catch (Exception ex) {
-                                        Log.e("X3DDBG", "Proto <IndexedFaceSet> exception: " + ex);
                                         Log.e(TAG, "Proto <IndexedFaceSet> exception: " + ex);
                                     }
                                 }
@@ -4707,11 +3679,9 @@ public class X3Dobject {
                                         geometryInstance.setSphere( cloneSphere );
                                     }
                                     catch (CloneNotSupportedException ex) {
-                                        Log.e("X3DDBG", "Proto Sphere exception: " + ex);
                                         Log.e(TAG, "Proto Sphere exception: " + ex);
                                     }
                                     catch (Exception ex) {
-                                        Log.e("X3DDBG", "Proto <IndexedFaceSet> exception: " + ex);
                                         Log.e(TAG, "Proto <IndexedFaceSet> exception: " + ex);
                                     }
                                 }
@@ -4734,45 +3704,36 @@ public class X3Dobject {
                                 }
                                 else if ( text != null ) {
                                     try {
-                                        Log.e("X3DDBG", "Proto <Text> begin clone");
                                         FontStyle fontStyle = text.getFontStyle();
                                         FontStyle cloneFontStyle = (FontStyle) fontStyle.clone();
                                         Text cloneText = (Text) text.clone();
                                         cloneText.setFontStyle( cloneFontStyle );
                                         geometryInstance.setText( cloneText );
-                                        Log.e("X3DDBG", "   complete clone Text");
                                     }
                                     catch (CloneNotSupportedException ex) {
-                                        Log.e("X3DDBG", "Proto <Text> exception: " + ex);
                                         Log.e(TAG, "Proto <Text> exception: " + ex);
                                     }
                                     catch (Exception ex) {
-                                        Log.e("X3DDBG", "Proto <IndexedFaceSet> exception: " + ex);
                                         Log.e(TAG, "Proto <IndexedFaceSet> exception: " + ex);
                                     }
                                 }
 
                                 protoInstance.setGeometryInstance( geometryInstance );
-                                Log.e("X3DDBG", "After clone");
 
                                 // Set the default material values
                                 if (protoInstance.getShape() != null ) {
-                                    Log.e("X3DDBG", "<ProtoInstance> with Shape != null");
                                     if (gvrRenderData == null) gvrRenderData = new GVRRenderData(gvrContext);
                                     gvrRenderData.setAlphaToCoverage(true);
                                     gvrRenderData.setRenderingOrder(GVRRenderingOrder.GEOMETRY);
                                     gvrRenderData.setCullFace(GVRCullFaceEnum.Back);
                                     shaderSettings.initializeTextureMaterial(new GVRMaterial(gvrContext, x3DShader));
 
-
                                     if (protoInstance.getShape().getAppearance() != null ) {
-                                        Log.e("X3DDBG", "   <ProtoInstance> getAppearance != null");
                                         Material material = protoInstance.getAppearance().getMaterial();
                                         ImageTexture imageTexture = protoInstance.getAppearance().getTexture();
                                         TextureTransform textureTransform = protoInstance.getAppearance().getTextureTransform();
                                         MovieTexture movieTexture = protoInstance.getAppearance().getMovieTexture();
                                         if (material != null) {
-                                            Log.e("X3DDBG", "   <ProtoInstance> material != null SETTING");
                                             shaderSettings.ambientIntensity = material.getAmbientIntensity();
                                             shaderSettings.diffuseColor = material.getDiffuseColor();
                                             shaderSettings.emissiveColor = material.getEmissiveColor();
@@ -4781,7 +3742,6 @@ public class X3Dobject {
                                             shaderSettings.setTransparency(material.getTransparency());
                                         }
                                         if ( imageTexture != null ) {
-                                            Log.e("X3DDBG", "   <ProtoInstance> imageTexture != null SETTING");
                                             gvrTextureParameters = new GVRTextureParameters(gvrContext);
                                             gvrTextureParameters.setWrapSType(TextureWrapType.GL_REPEAT);
                                             gvrTextureParameters.setWrapTType(TextureWrapType.GL_REPEAT);
@@ -4794,8 +3754,6 @@ public class X3Dobject {
 
                                             assetRequest.loadTexture(request);
                                             shaderSettings.setTexture(gvrTexture);
-                                            Log.e("X3DDBG", "         <ProtoInstance> shaderSettings");
-
                                         }
                                         if (textureTransform != null ){
                                             Log.e("X3DDBG", "   <ProtoInstance> textureTransform != null SETTING");
@@ -4806,30 +3764,24 @@ public class X3Dobject {
                                             Log.e("X3DDBG", "   <ProtoInstance> textureTransform SET");
                                         }
                                         if (movieTexture != null ){
-                                            Log.e("X3DDBG", "      <ProtoInstance> movieTexture != null SETTING");
+                                            Log.e(TAG, "   <Proto> <MovieTexture> not currently supported.");
                                             shaderSettings.movieTextures.add(movieTexture.getUrl()[0]);
-                                            Log.e("X3DDBG", "      <ProtoInstance> movieTexture " + movieTexture.getUrl()[0]);
                                         }
                                     }
                                     else {
                                         Log.e(TAG, "Appearance missing from ProtoInstance");
-                                        Log.e("X3DDBG", "Appearance missing from ProtoInstance");
                                     }
                                 }
                                 else {
                                     Log.e(TAG, "Shape missing from ProtoInstance");
-                                    Log.e("X3DDBG", "Shape missing from ProtoInstance");
-                                }
-
+                               }
                             }
                         }
                         if ( protoInstance == null ) {
-                            Log.e("X3DDBG", "<ProtoInstance name='" + attributeValue + "'> not matched with a <ProtoDeclare> ");
                             Log.e(TAG, "<ProtoInstance name='" + attributeValue + "'> not matched with a <ProtoDeclare> ");
                         }
                     }
                     else {
-                        Log.e("X3DDBG", "<ProtoInstance> does not contain a name.");
                         Log.e(TAG, "<ProtoInstance> does not contain a name.");
                     }
                 }  // end if PROTO Node: ProtoInstance
@@ -4838,27 +3790,20 @@ public class X3Dobject {
                 else if (qName.equalsIgnoreCase("fieldValue")) {
                     attributeValue = attributes.getValue("name");
                     if (attributeValue != null) {
-                        Log.e("X3DDBG", "fieldValue name " + attributeValue);
                         Proto.Field field = protoInstance.getField( attributeValue );
-                        Log.e("X3DDBG", "   node field: " + protoInstance.getNodeField(field) );
 
                         if ( protoInstance.getData_type(field) == Proto.data_types.SFNode) {
-                            Log.e("X3DDBG", "      Got SFNode.");
                             if ( protoInstance.getAppearance() != null ) {
                                 if ( protoInstance.getAppearance().getMaterial() != null) {
-                                    Log.e("X3DDBG", "         Got an <Appearance><Material/>.");
-
+                                    //TODO: Handle SFNode
                                 }
                             }
                         }
                         attributeValue = attributes.getValue("value");
                         if (attributeValue != null) {
-                            Log.e("X3DDBG", "   <fieldValue value = " + attributeValue);
                             if ( protoInstance.getAppearance() != null) {
-                                Log.e("X3DDBG", "      <fieldValue: protoInstance.getAppearance() != null");
                                 Appearance appearance = protoInstance.getAppearance();
                                 if ( appearance.getTexture() != null ) {
-                                    Log.e("X3DDBG", "         <fieldValue: appearance.getTexture() != null");
                                     if (  protoInstance.getNodeField(field).equalsIgnoreCase("url")) {
                                         gvrTextureParameters = new GVRTextureParameters(gvrContext);
                                         gvrTextureParameters.setWrapSType(TextureWrapType.GL_REPEAT);
@@ -4866,17 +3811,13 @@ public class X3Dobject {
                                         gvrTextureParameters.setMinFilterType(GVRTextureParameters.TextureFilterType.GL_LINEAR_MIPMAP_NEAREST);
 
                                         GVRTexture gvrTexture = new GVRTexture(gvrContext, gvrTextureParameters);
-                                        Log.e("X3DDBG", "      <fieldValue  imageTexture, set gvrTexture");
                                         GVRAssetLoader.TextureRequest request = new GVRAssetLoader.TextureRequest(assetRequest, gvrTexture, attributeValue);
-                                        Log.e("X3DDBG", "         <fieldValue  imageTexture, request");
 
                                         assetRequest.loadTexture(request);
                                         shaderSettings.setTexture(gvrTexture);
-                                        Log.e("X3DDBG", "         <fieldValue  shaderSettings");
                                     }
                                 }
                                 if ( appearance.getMaterial() != null) {
-                                    Log.e("X3DDBG", "   <fieldValue appearance.getMaterial() != null SETTING");
                                     Material material = appearance.getMaterial();
                                     if (  protoInstance.getNodeField(field).equalsIgnoreCase("ambientIntensity"))
                                         shaderSettings.ambientIntensity = utility.parseSingleFloatString(attributeValue, true, false);
@@ -4890,7 +3831,6 @@ public class X3Dobject {
                                         shaderSettings.specularColor = utility.parseFixedLengthFloatString(attributeValue, 3, true, false);
                                     else if (  protoInstance.getNodeField(field).equalsIgnoreCase("transparency"))
                                         shaderSettings.setTransparency(utility.parseSingleFloatString(attributeValue, true, false) );
-                                    Log.e("X3DDBG", "      <fieldValue Material SET");
                                 }
                                 if ( appearance.getTextureTransform() != null ) {
                                     TextureTransform textureTransform = appearance.getTextureTransform();
@@ -4987,35 +3927,28 @@ public class X3Dobject {
                                 }
                                 if ( text != null ) {
                                     FontStyle fontStyle = text.getFontStyle();
-                                    Log.e("X3DDBG", "   *** protoInstance.getNodeField(field) = " + protoInstance.getNodeField(field));
                                     if (protoInstance.getNodeField(field).equalsIgnoreCase("string")) {
                                         String[] strArray = utility.parseMFString(attributeValue);
-                                        Log.e("X3DDBG", "      *** strArray[0], length = " + strArray[0] +", " + strArray.length);
                                         text.setString( strArray );
                                     }
                                     if (protoInstance.getNodeField(field).equalsIgnoreCase("family")) {
                                         String[] strArray = utility.parseMFString(attributeValue);
-                                        Log.e("X3DDBG", "      *** family strArray[0], length = " + strArray[0] +", " + strArray.length);
                                         if (fontStyle != null) fontStyle.setFamily( strArray );
                                     }
                                     if (protoInstance.getNodeField(field).equalsIgnoreCase("justify")) {
                                         String[] strArray = utility.parseMFString(attributeValue);
-                                        Log.e("X3DDBG", "      *** justify strArray[0], length = " + strArray[0] +", " + strArray.length);
                                         if (fontStyle != null) fontStyle.setJustify( strArray );
                                     }
                                     if (protoInstance.getNodeField(field).equalsIgnoreCase("size")) {
                                         float size = utility.parseSingleFloatString(attributeValue, false, true);
-                                        Log.e("X3DDBG", "      *** text size = " + size);
                                         if (fontStyle != null) fontStyle.setSize( size*10);
                                     }
                                     if (protoInstance.getNodeField(field).equalsIgnoreCase("spacing")) {
                                         float spacing = utility.parseSingleFloatString(attributeValue, false, true);
-                                        Log.e("X3DDBG", "      *** text spacing = " + spacing);
                                         if (fontStyle != null) fontStyle.setSpacing( spacing );
                                     }
                                     if (protoInstance.getNodeField(field).equalsIgnoreCase("style")) {
                                         String[] strArray = utility.parseMFString(attributeValue);
-                                        Log.e("X3DDBG", "      *** style strArray[0], length = " + strArray[0] +", " + strArray.length);
                                         if (fontStyle != null) fontStyle.setStyle(strArray[0]);
                                     }
                                 }  // end if text != null
@@ -5300,7 +4233,6 @@ public class X3Dobject {
                 ;
             }
             else if (qName.equalsIgnoreCase("ProtoInstance")) {
-                Log.e("X3DDBG", "</ProtoInstance>" );
                 if ( protoInstance.getGeometryInstance() != null) {
                     Box box = protoInstance.getGeometryInstance().getBox();
                     Cylinder cylinder = protoInstance.getGeometryInstance().getCylinder();
@@ -5407,19 +4339,6 @@ public class X3Dobject {
                         Log.e("X3DDBG", "</ProtoInstance> <IndexedFaceSet>, currentSceneObject.addChildObject(gvrSceneObject)");
                     }
                     if ( text != null ) {
-                        Log.e("X3DDBG", "</ProtoInstance> protoInstance.getGeometryInstance().getText()" );
-                        if ( gvrRenderData == null) Log.e("X3DDBG", "   @@@ gvrRenderData == null @@@" );
-                        else Log.e("X3DDBG", "   @@@ gvrRenderData NOT EQ null  @@@" );
-/*
-if ( gvrRenderData == null) {
-                gvrRenderData = new GVRRenderData(gvrContext);
-                gvrRenderData.setAlphaToCoverage(true);
-                gvrRenderData.setRenderingOrder(GVRRenderingOrder.GEOMETRY);
-                gvrRenderData.setCullFace(GVRCullFaceEnum.Back);
-                shaderSettings.initializeTextureMaterial(new GVRMaterial(gvrContext, x3DShader));
-                }
-
- */
                         Init_Text_FontParams();
 
                         FontStyle fontStyle = text.getFontStyle();
@@ -5432,14 +4351,12 @@ if ( gvrRenderData == null) {
                                 textString += '\n';
                             }
                         }
-                        Log.e("X3DDBG", "      textString: " + textString);
 
                         GVRTextViewSceneObject.justifyTypes jutifyType = GVRTextViewSceneObject.justifyTypes.BEGIN;
                         if ( fontStyle.getJustify()[0].equalsIgnoreCase("MIDDLE")) jutifyType = GVRTextViewSceneObject.justifyTypes.MIDDLE;
                         else if ( fontStyle.getJustify()[0].equalsIgnoreCase("END")) jutifyType = GVRTextViewSceneObject.justifyTypes.END;
 
                         String fontFamily = Text_FontParams.family;
-                        Log.e("X3DDBG", "   </ProtoInstance> Text FontStyle fontFamily, getFamily() " + fontFamily + ", " + fontStyle.getFamily()[0]);
                         if (fontStyle.getFamily() != null) fontFamily = fontStyle.getFamily()[0];
 
                         GVRTextViewSceneObject.fontStyleTypes fontStyleType = GVRTextViewSceneObject.fontStyleTypes.PLAIN;
@@ -5455,7 +4372,6 @@ if ( gvrRenderData == null) {
                                 fontStyle.getSpacing(),
                                 fontStyle.getSize(),
                                 fontStyleType);
-                        //gvrTextViewSceneObject.setName("my_text_string");
 
                         gvrTextViewSceneObject.setTextColor(Color.WHITE); // default
                         gvrTextViewSceneObject.setBackgroundColor(Color.TRANSPARENT); // default
@@ -5463,21 +4379,13 @@ if ( gvrRenderData == null) {
                         if (currentSceneObject == null) root.addChildObject(gvrTextViewSceneObject);
                         else currentSceneObject.addChildObject(gvrTextViewSceneObject);
 
-                        //GVRRenderData gvrRenderData = gvrTextViewSceneObject.getRenderData();
                         gvrRenderData.setRenderingOrder(GVRRenderData.GVRRenderingOrder.TRANSPARENT);
 
-/*
-                        currentSceneObject = AddGVRSceneObject();
-                        currentSceneObject.setName("parent_of_gvrText");
-                        currentSceneObject.addChildObject(gvrTextViewSceneObject);
-*/
                     }  //  end text != null
                 }  //  end if ( protoInstance.getGeometryInstance() != null)
 
                 protoInstance = null;
-                Log.e("X3DDBG", "   </ProtoInstance> call ShapePostParsing()" );
                 ShapePostParsing();
-                Log.e("X3DDBG", "   </ProtoInstance> return from ShapePostParsing()" );
             }  //  end ProtoInstance
             else if (qName.equalsIgnoreCase("fieldValue")) {
                 ;

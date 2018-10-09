@@ -363,9 +363,9 @@ public class Utility
             Log.e(TAG, "Error: parseNumbersString - " + e);
         }
     } // parseNumbersString
-/*
-    private void AddKeys(float key)
 
+    /*
+    private void AddKeys(float key)
     {
         Key newKey = new Key(key);
         X3Dobject.keys.add(newKey);
@@ -379,9 +379,6 @@ public class Utility
         keyValues.add(newKeyValue);
     }
     */
-
-
-
 
 
 

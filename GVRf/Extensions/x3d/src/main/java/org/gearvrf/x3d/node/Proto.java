@@ -260,7 +260,6 @@ public class Proto
         }
         else if  (type.equalsIgnoreCase("SFNode")) {
             field.mType = data_types.SFNode;
-            Log.e("X3DDBG", "Proto, got SFNode");
             if ( !value.isEmpty() ) {
                 //TODO: not implemented in Utility.
             }
