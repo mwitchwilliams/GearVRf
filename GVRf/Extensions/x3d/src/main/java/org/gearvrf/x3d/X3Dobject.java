@@ -1020,9 +1020,6 @@ public class X3Dobject {
                             proto.setAppearance(appearance);
                         }
                     }
-                    else if ( protoInstance != null ) {
-                        Log.e(TAG, "Appearance protoInstance != null");
-                    }
                 }
             } // end <Appearance> node
 
@@ -3106,149 +3103,6 @@ public class X3Dobject {
                 /********** ElevationGrid **********/
                 else if (qName.equalsIgnoreCase("ElevationGrid")) {
                     Log.e(TAG, "X3D ElevationGrid not currently implemented. ");
-                    /*
-                    String name = "";
-                    float creaseAngle = 0;
-                    float[] height = null;
-                    boolean solid = true;
-                    int xDimension = 0;
-                    float xSpacing = 1;
-                    int zDimension = 0;
-                    float zSpacing = 1;
-
-                    attributeValue = attributes.getValue("DEF");
-                    if (attributeValue != null) {
-                        name = attributeValue;
-                    }
-                    attributeValue = attributes.getValue("xDimension");
-                    if (attributeValue != null) {
-                        xDimension = (int) utility.parseSingleFloatString(attributeValue, false,
-                                true);
-                    }
-                    attributeValue = attributes.getValue("xSpacing");
-                    if (attributeValue != null) {
-                        xSpacing = (int) utility.parseSingleFloatString(attributeValue, false, true);
-                    }
-                    attributeValue = attributes.getValue("zDimension");
-                    if (attributeValue != null) {
-                        zDimension = (int) utility.parseSingleFloatString(attributeValue, false,
-                                true);
-                    }
-                    attributeValue = attributes.getValue("zSpacing");
-                    if (attributeValue != null) {
-                        zSpacing = utility.parseSingleFloatString(attributeValue, false, true);
-                    }
-                    attributeValue = attributes.getValue("height");
-                    if (attributeValue != null) {
-                        parseNumbersString(attributeValue, X3Dobject.elevationGridHeight,
-                                xDimension * zDimension);
-                        height = new float[(xDimension + 1) * (zDimension + 1)];
-                        for (int i = 0; i < height.length; i++) {
-                            height[i] = floatArray.get(i);
-                        }
-                        floatArray.clear();
-                    }
-
-                    if (height != null) {
-
-                        float[][] vertices = new float[height.length][3];
-
-                        for (int i = 0; i < (zDimension + 1); i++) {
-                            for (int j = 0; j < (xDimension + 1); j++) {
-                                vertices[i * (xDimension + 1) + j][0] = (j * xSpacing); // vertex
-                                // x value
-                                vertices[i * (xDimension + 1)
-                                        + j][1] = (height[i * (xDimension + 1) + j]); // vertex y
-                                // value
-                                vertices[i * (xDimension + 1) + j][2] = (i * zSpacing); // vertex
-                                // z value
-                            }
-                        }
-                        // char[] ifs = new char[(xDimension-1)*(zDimension-1)*6]; //
-                        // dimensions * 2 polygons per 4 vertices * 3 for x,y,z vertices per
-                        // polygon to create a face.
-                        Vector3f[] polygonNormals = new Vector3f[xDimension * zDimension * 2];
-                        for (int i = 0; i < xDimension * zDimension * 2; i++) {
-                            polygonNormals[i] = new Vector3f();
-                        }
-                        Vector3f[] vertexNormals = new Vector3f[(xDimension + 1)
-                                * (zDimension + 1)];
-                        for (int i = 0; i < (xDimension + 1) * (zDimension + 1); i++) {
-                            vertexNormals[i] = new Vector3f();
-                        }
-
-                        // Polygon Normal found by cross product using 2 of the 3 sides of a
-                        // polygon
-                        // we know vertices are: (i*xSpacing, height, j*zSpacing),
-                        // ((i+1)*xSpacing, height+1, (j+1)*zSpacing),
-                        // (i*xSpacing, height, j*zSpacing), ((i+1)*xSpacing, height+1,
-                        // (j+1)*zSpacing)
-                        Vector3f[] vLine = new Vector3f[3];
-                        for (int i = 0; i < 3; i++) {
-                            vLine[i] = new Vector3f();
-                        }
-                        Vector3f[] crossProduct = new Vector3f[2];
-                        crossProduct[0] = new Vector3f();
-                        crossProduct[1] = new Vector3f();
-
-                        for (int i = 0; i < zDimension; i++) {
-                            for (int j = 0; j < xDimension; j++) {
-                                // line 0 is the 'top' line, and line 1 is the 'bottom' line of
-                                // the rectangle
-                                vLine[0].set(
-                                        vertices[i * (xDimension + 1) + j + 1][0]
-                                                - vertices[i * (xDimension + 1) + j][0],
-                                        vertices[i * (xDimension + 1) + j + 1][1]
-                                                - vertices[i * (xDimension + 1) + j][1],
-                                        vertices[i * (xDimension + 1) + j + 1][2]
-                                                - vertices[i * (xDimension + 1) + j][2]);
-                                vLine[1]
-                                        .set(vertices[i * (xDimension + 1) + j + xDimension + 2][0]
-                                                        - vertices[i * (xDimension + 1) + j + xDimension + 1][0],
-                                                vertices[i * (xDimension + 1) + j + xDimension + 2][1]
-                                                        - vertices[i * (xDimension + 1) + j + xDimension
-                                                        + 1][1],
-                                                vertices[i * (xDimension + 1) + j + xDimension + 2][2]
-                                                        - vertices[i * (xDimension + 1) + j + xDimension
-                                                        + 1][2]);
-                                // hypotenuse of the 4 vertices that create a rectangle
-                                vLine[2].set(
-                                        vertices[i * (xDimension + 1) + j + 1][0]
-                                                - vertices[i * (xDimension + 1) + j + xDimension
-                                                + 1][0],
-                                        vertices[i * (xDimension + 1) + j + 1][1]
-                                                - vertices[i * (xDimension + 1) + j + xDimension
-                                                + 1][1],
-                                        vertices[i * (xDimension + 1) + j + 1][2]
-                                                - vertices[i * (xDimension + 1) + j + xDimension
-                                                + 1][2]);
-
-                                // cross product to determine normal and save the value: line0 x
-                                // hypotenuse, line1 x hypotenuse
-                                vLine[0].cross(vLine[2], crossProduct[0]);
-                                vLine[1].cross(vLine[2], crossProduct[1]);
-                                polygonNormals[(i * xDimension + j) * 2]
-                                        .set(crossProduct[0].normalize());
-                                polygonNormals[(i * xDimension + j) * 2 + 1]
-                                        .set(crossProduct[1].normalize());
-                            }
-                        } // end getting the polygon normals
-
-                        // calculate the vertex normals
-                        Vector3f accumNormal = new Vector3f();
-                        // for (int i = 0; i < vertexNormals.length; i++) {
-                        for (int i = 0; i < 3; i++) {
-                            accumNormal.set(0, 0, 0);
-                            if (i > 1)
-                                accumNormal.add(polygonNormals[i - 1]);
-                            accumNormal.add(polygonNormals[i]);
-
-                        }
-                        //
-                        //TODO: ElevationGrid not completed
-                        // gvrMesh = new GVRMesh(gvrContext);
-                    }
-                    */
                 } // end <ElevationGrid> node
 
 
@@ -3481,8 +3335,6 @@ public class X3Dobject {
                 }
                 /********** PROTO Node: ProtoBody **********/
                 else if (qName.equalsIgnoreCase("ProtoBody")) {
-                    Log.e("X3DDBG", "++++++++++++++++++++");
-                    Log.e("X3DDBG", "ProtoBody found.");
                     if ( proto != null ) {
                         if ( proto.isProtoStateProtoDeclare()) {
                             proto.setProtoStateProtoBody();
@@ -3491,7 +3343,6 @@ public class X3Dobject {
                 }
                 /********** PROTO Node: IS **********/
                 else if (qName.equalsIgnoreCase("IS")) {
-                    Log.e("X3DDBG", "<IS> found.");
                     if ( proto != null ) {
                         if ( proto.isProtoStateProtoBody()) {
                             proto.setProtoStateProtoIS();
@@ -3500,22 +3351,18 @@ public class X3Dobject {
                 }
                 /********** PROTO Node: connect **********/
                 else if (qName.equalsIgnoreCase("connect")) {
-                    Log.e("X3DDBG", "<connect> found.");
                     if ( proto != null ) {
                         if ( proto.isProtoStateProtoIS()) {
                             attributeValue = attributes.getValue("protoField");
                             if (attributeValue != null) {
                                 // relate the protoField variable name to the item's property.
-                                Log.e("X3DDBG", "   Inside Proto IS protoField = " + attributeValue);
                                 Proto.Field field = proto.getField(attributeValue);
                                 if (field == null) {
-                                    Log.e("X3DDBG", "Error: possibly undefined Proto Interface value: " + attributeValue);
                                     Log.e(TAG, "Error: possibly undefined Proto Interface value: " + attributeValue);
                                 }
                                 else {
                                     attributeValue = attributes.getValue("nodeField");
                                     if (attributeValue != null) {
-                                        Log.e("X3DDBG", "   Set Proto connect nodeField = " + attributeValue);
                                         proto.setNodeField(field, attributeValue);
                                     }
                                     if (proto.getAppearance() != null) {
@@ -3620,15 +3467,13 @@ public class X3Dobject {
                         }  //  end if ( proto.isProtoStateProtoIS())
                     }  //  end if proto != null
                 }  // end else if Proto connect
+
                 /********** PROTO Node: ProtoInstance **********/
                 else if (qName.equalsIgnoreCase("ProtoInstance")) {
-                    Log.e("X3DDBG", "===========================");
                     attributeValue = attributes.getValue("name");
                     if (attributeValue != null) {
-                        Log.e("X3DDBG", "ProtoInstance: name = '" + attributeValue +"'");
                         for (Proto _proto : protos) {
                             if (_proto.getName().equalsIgnoreCase(attributeValue)) {
-                                Log.e("X3DDBG", "   ProtoInstance: Match found '" + attributeValue + "' in protos array");
                                 protoInstance = _proto;
                                 Geometry geometryInstance = new Geometry();
                                 Box box = _proto.getGeometry().getBox();
@@ -3643,10 +3488,10 @@ public class X3Dobject {
                                         geometryInstance.setBox( cloneBox );
                                     }
                                     catch (CloneNotSupportedException ex) {
-                                        Log.e(TAG, "Proto Box exception: " + ex);
+                                        Log.e(TAG, "Proto <Box> exception: " + ex);
                                     }
                                     catch (Exception ex) {
-                                        Log.e(TAG, "Proto <IndexedFaceSet> exception: " + ex);
+                                        Log.e(TAG, "Proto <Box> exception: " + ex);
                                     }
                                 }
                                 else if ( cone != null ) {
@@ -3655,10 +3500,10 @@ public class X3Dobject {
                                         geometryInstance.setCone( cloneCone );
                                     }
                                     catch (CloneNotSupportedException ex) {
-                                        Log.e(TAG, "Proto Cone exception: " + ex);
+                                        Log.e(TAG, "Proto <Cone> exception: " + ex);
                                     }
                                     catch (Exception ex) {
-                                        Log.e(TAG, "Proto <IndexedFaceSet> exception: " + ex);
+                                        Log.e(TAG, "Proto <Cone> exception: " + ex);
                                     }
                                 }
                                 else if ( cylinder != null ) {
@@ -3667,10 +3512,10 @@ public class X3Dobject {
                                         geometryInstance.setCylinder( cloneCylinder );
                                     }
                                     catch (CloneNotSupportedException ex) {
-                                        Log.e(TAG, "Proto Cylinder exception: " + ex);
+                                        Log.e(TAG, "Proto <Cylinder> exception: " + ex);
                                     }
                                     catch (Exception ex) {
-                                        Log.e(TAG, "Proto <IndexedFaceSet> exception: " + ex);
+                                        Log.e(TAG, "Proto <Cylinder> exception: " + ex);
                                     }
                                 }
                                 else if ( sphere != null ) {
@@ -3679,26 +3524,21 @@ public class X3Dobject {
                                         geometryInstance.setSphere( cloneSphere );
                                     }
                                     catch (CloneNotSupportedException ex) {
-                                        Log.e(TAG, "Proto Sphere exception: " + ex);
+                                        Log.e(TAG, "Proto <Sphere> exception: " + ex);
                                     }
                                     catch (Exception ex) {
-                                        Log.e(TAG, "Proto <IndexedFaceSet> exception: " + ex);
+                                        Log.e(TAG, "Proto <Sphere> exception: " + ex);
                                     }
                                 }
                                 else if ( indexedFaceSet != null ) {
                                     try {
-                                        Log.e("X3DDBG", "   Proto <IndexedFaceSet> begin clone");
                                         IndexedFaceSet cloneIndexedFaceSet = (IndexedFaceSet) indexedFaceSet.clone();
                                         geometryInstance.setIndexedFaceSet( cloneIndexedFaceSet );
-                                        Log.e("X3DDBG", "      clone IFS complete");
-
                                     }
                                     catch (CloneNotSupportedException ex) {
-                                        Log.e("X3DDBG", "Proto <IndexedFaceSet> Clone exception: " + ex);
                                         Log.e(TAG, "Proto <IndexedFaceSet> Clone exception: " + ex);
                                     }
                                     catch (Exception ex) {
-                                        Log.e("X3DDBG", "Proto <IndexedFaceSet> exception: " + ex);
                                         Log.e(TAG, "Proto <IndexedFaceSet> exception: " + ex);
                                     }
                                 }
@@ -3714,7 +3554,7 @@ public class X3Dobject {
                                         Log.e(TAG, "Proto <Text> exception: " + ex);
                                     }
                                     catch (Exception ex) {
-                                        Log.e(TAG, "Proto <IndexedFaceSet> exception: " + ex);
+                                        Log.e(TAG, "Proto <Text> exception: " + ex);
                                     }
                                 }
 
@@ -3748,20 +3588,16 @@ public class X3Dobject {
                                             gvrTextureParameters.setMinFilterType(GVRTextureParameters.TextureFilterType.GL_LINEAR_MIPMAP_NEAREST);
 
                                             GVRTexture gvrTexture = new GVRTexture(gvrContext, gvrTextureParameters);
-                                            Log.e("X3DDBG", "      <ProtoInstance> imageTexture, set gvrTexture");
                                             GVRAssetLoader.TextureRequest request = new GVRAssetLoader.TextureRequest(assetRequest, gvrTexture, imageTexture.getUrl()[0]);
-                                            Log.e("X3DDBG", "         <ProtoInstance> imageTexture, request");
 
                                             assetRequest.loadTexture(request);
                                             shaderSettings.setTexture(gvrTexture);
                                         }
                                         if (textureTransform != null ){
-                                            Log.e("X3DDBG", "   <ProtoInstance> textureTransform != null SETTING");
                                             shaderSettings.setTextureCenter( textureTransform.getCenter() );
                                             shaderSettings.setTextureRotation( textureTransform.getRotation() );
                                             shaderSettings.setTextureScale( textureTransform.getScale() );
                                             shaderSettings.setTextureTranslation( textureTransform.getTranslation() );
-                                            Log.e("X3DDBG", "   <ProtoInstance> textureTransform SET");
                                         }
                                         if (movieTexture != null ){
                                             Log.e(TAG, "   <Proto> <MovieTexture> not currently supported.");
@@ -3834,7 +3670,6 @@ public class X3Dobject {
                                 }
                                 if ( appearance.getTextureTransform() != null ) {
                                     TextureTransform textureTransform = appearance.getTextureTransform();
-                                    Log.e("X3DDBG", "   <fieldValue textureTransform != null SETTING");
                                     if (  protoInstance.getNodeField(field).equalsIgnoreCase("center"))
                                         shaderSettings.setTextureCenter( utility.parseFixedLengthFloatString(attributeValue, 2, false, false) );
                                     else if (  protoInstance.getNodeField(field).equalsIgnoreCase("rotation"))
@@ -3843,7 +3678,6 @@ public class X3Dobject {
                                         shaderSettings.setTextureScale( utility.parseFixedLengthFloatString(attributeValue, 2, false, false) );
                                     else if (  protoInstance.getNodeField(field).equalsIgnoreCase("translation"))
                                         shaderSettings.setTextureTranslation( utility.parseFixedLengthFloatString(attributeValue, 2, false, false) );
-                                    Log.e("X3DDBG", "      <fieldValue textureTransform SET");
                                 }
                             }  //  protoInstance.getAppearance() != null
 
@@ -3911,7 +3745,6 @@ public class X3Dobject {
                                     else if (protoInstance.getNodeField(field).equalsIgnoreCase("top")) {
                                         cylinder.setTop(
                                                 utility.parseBooleanString( attributeValue ) );
-                                        Log.e("X3DDBG", "         Cylinder top = " + cylinder.getTop() );
                                     }
                                 }  //  end Cylinder
                                 if ( sphere != null ) {
@@ -3923,7 +3756,7 @@ public class X3Dobject {
                                     }
                                 }  //  end Sphere
                                 if ( indexedFaceSet != null ) {
-                                    Log.e("X3DDBG", "   IndexedFaceSet field not yet implemented");
+                                    //TODO: <PROTO> <fieldValue> for <IndexedFaceSet> field not implemented.
                                 }
                                 if ( text != null ) {
                                     FontStyle fontStyle = text.getFontStyle();
@@ -4203,7 +4036,6 @@ public class X3Dobject {
                 ;
             }
             else if (qName.equalsIgnoreCase("ProtoDeclare")) {
-                Log.e("X3DDBG", "</ProtoDeclare>");
                 if (proto != null) {
                     proto.setProtoStateNone();
                     protos.add(proto);
@@ -4216,20 +4048,16 @@ public class X3Dobject {
                 else Log.e(TAG, "Error with </ProtoInterface>");
             }
             else if (qName.equalsIgnoreCase("ProtoBody")) {
-                Log.e("X3DDBG", "</ProtoBody>");
                 if (proto != null) proto.setProtoStateProtoDeclare();
                 else Log.e(TAG, "Error with </ProtoBody>");
             }
             else if (qName.equalsIgnoreCase("IS")) {
-                Log.e("X3DDBG", "Ending Proto </IS>");
                 if (proto != null) proto.setProtoStateProtoBody();
                 else {
                     Log.e(TAG, "Error with Proto </IS>");
-                    Log.e("X3DDBG", "Error with Proto </IS>");
                 }
             }
             else if (qName.equalsIgnoreCase("connect")) {
-                Log.e("X3DDBG", "Ending Proto </connect>");
                 ;
             }
             else if (qName.equalsIgnoreCase("ProtoInstance")) {
@@ -4287,7 +4115,6 @@ public class X3Dobject {
                         meshAttachedSceneObject = gvrSphereSceneObject;
                     }
                     if ( indexedFaceSet != null ) {
-                        Log.e("X3DDBG", "</ProtoInstance> indexedFaceSet != null" );
 
                         int[] coordIndex = indexedFaceSet.getCoordIndex();
                         for (int i = 0; i < coordIndex.length; i++) {
@@ -4314,8 +4141,6 @@ public class X3Dobject {
                         utility.meshCreator.addInputTexcoord(texCoords);
                         gvrVertexBuffer = utility.meshCreator.organizeVertices(gvrIndexBuffer);
 
-                        Log.e("X3DDBG", "</ProtoInstance> <IndexedFaceSet>, got arrays of N, C and TC");
-
                         GVRMesh mesh = new GVRMesh(gvrContext, gvrVertexBuffer.getDescriptor());
 
                         // set up of GVRRenderDate from <Shape>
@@ -4330,13 +4155,10 @@ public class X3Dobject {
                         mesh.setIndexBuffer(gvrIndexBuffer);
                         mesh.setVertexBuffer(gvrVertexBuffer);
 
-                        Log.e("X3DDBG", "</ProtoInstance> <IndexedFaceSet>, generated mesh");
-
                         gvrRenderData.setMesh( mesh );
                         GVRSceneObject gvrSceneObject = new GVRSceneObject(gvrContext);
                         gvrSceneObject.attachRenderData(gvrRenderData);
                         currentSceneObject.addChildObject(gvrSceneObject);
-                        Log.e("X3DDBG", "</ProtoInstance> <IndexedFaceSet>, currentSceneObject.addChildObject(gvrSceneObject)");
                     }
                     if ( text != null ) {
                         Init_Text_FontParams();
