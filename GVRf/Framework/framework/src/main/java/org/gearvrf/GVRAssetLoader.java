@@ -1054,6 +1054,7 @@ public final class GVRAssetLoader {
         assetRequest.setImportSettings(GVRImportSettings.getRecommendedSettings());
         model.setName(assetRequest.getBaseName());
         if (ext.equals("x3d"))
+        //if (ext.equals("x3d") || ext.equals("ply"))
         {
             loadX3DModel(assetRequest, model);
         }

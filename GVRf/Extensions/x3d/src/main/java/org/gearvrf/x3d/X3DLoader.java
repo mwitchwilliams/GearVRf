@@ -23,6 +23,7 @@ import org.gearvrf.GVRMaterial;
 import org.gearvrf.GVRResourceVolume;
 import org.gearvrf.GVRSceneObject;
 import org.gearvrf.animation.GVRAnimator;
+import org.gearvrf.ply.PLYobject;
 import org.gearvrf.utility.Log;
 
 import java.io.FileNotFoundException;
@@ -36,46 +37,62 @@ final class X3DLoader {
         final GVRAndroidResource resource = volume.openResource(fileName);
         root.setName(fileName);
 
-        X3Dobject x3dObject = new org.gearvrf.x3d.X3Dobject(assetRequest, root);
-        try
+        String ext = fileName.substring(fileName.length() - 3).toLowerCase();
+
+        InputStream inputStream;
+        if (ext.equals("ply"))
         {
-            InputStream inputStream;
-            ShaderSettings shaderSettings = new ShaderSettings(new GVRMaterial(context));
-            if (!X3Dobject.UNIVERSAL_LIGHTS)
-            {
-                X3DparseLights x3dParseLights = new X3DparseLights(context, root);
-                inputStream = resource.getStream();
-                if (inputStream == null)
-                {
-                    throw new FileNotFoundException(fileName + " not found");
-                }
-                Log.d("X3DLoader", "Parse: " + fileName);
-                x3dParseLights.Parse(inputStream, shaderSettings);
-                inputStream.close();
-            }
+            Log.e("X3DDBG", "got .ply " + fileName + ", ext " + ext);
+            PLYobject plyObject = new org.gearvrf.ply.PLYobject(assetRequest, root);
             inputStream = resource.getStream();
             if (inputStream == null)
             {
-                throw new FileNotFoundException(fileName + " not found");
+                throw new FileNotFoundException("PLY " + fileName + " not found");
             }
-
             try {
-                x3dObject.Parse(inputStream, shaderSettings);
-                assetRequest.onModelLoaded(context, root, fileName);
-                GVRAnimator animator = (GVRAnimator) root.getComponent(GVRAnimator.getComponentType());
+                plyObject.Parse(inputStream);
+                //assetRequest.onModelLoaded(context, root, fileName);
 
-                if ((animator != null) && assetRequest.getImportSettings().contains(GVRImportSettings.NO_ANIMATION))
-                {
-                    root.detachComponent(GVRAnimator.getComponentType());
-                }
             } finally {
                 inputStream.close();
             }
-        }
-        catch (Exception ex)
-        {
-            assetRequest.onModelError(context, ex.getMessage(), fileName);
-            throw ex;
+        }  // end PLY file
+
+        else {
+            X3Dobject x3dObject = new org.gearvrf.x3d.X3Dobject(assetRequest, root);
+            try {
+                //InputStream inputStream;
+                ShaderSettings shaderSettings = new ShaderSettings(new GVRMaterial(context));
+                if (!X3Dobject.UNIVERSAL_LIGHTS) {
+                    X3DparseLights x3dParseLights = new X3DparseLights(context, root);
+                    inputStream = resource.getStream();
+                    if (inputStream == null) {
+                        throw new FileNotFoundException(fileName + " not found");
+                    }
+                    Log.d("X3DLoader", "Parse: " + fileName);
+                    x3dParseLights.Parse(inputStream, shaderSettings);
+                    inputStream.close();
+                }
+                inputStream = resource.getStream();
+                if (inputStream == null) {
+                    throw new FileNotFoundException(fileName + " not found");
+                }
+
+                try {
+                    x3dObject.Parse(inputStream, shaderSettings);
+                    assetRequest.onModelLoaded(context, root, fileName);
+                    GVRAnimator animator = (GVRAnimator) root.getComponent(GVRAnimator.getComponentType());
+
+                    if ((animator != null) && assetRequest.getImportSettings().contains(GVRImportSettings.NO_ANIMATION)) {
+                        root.detachComponent(GVRAnimator.getComponentType());
+                    }
+                } finally {
+                    inputStream.close();
+                }
+            } catch (Exception ex) {
+                assetRequest.onModelError(context, ex.getMessage(), fileName);
+                throw ex;
+            }
         }
         return root;
     }
