@@ -161,6 +161,7 @@ public class X3Dobject {
     private static final String TRANSFORM_SCALE_ORIENTATION_ = "_Transform_Scale_Orientation_";
     private static final String TRANSFORM_NEGATIVE_SCALE_ORIENTATION_ = "_Transform_Neg_Scale_Orientation_";
 
+    private final String VIEWPOINT_AR_CAMERA = "camera";
     // Append this incremented value to GVRScene names to insure unique
     // GVRSceneObjects
     // when new GVRScene objects are generated to support animation
@@ -2327,6 +2328,7 @@ public class X3Dobject {
                             {
                                     0, 0, 10
                             };
+                    boolean camera = false;
                     boolean retainUserOffsets = false;
 
                     attributeValue = attributes.getValue("DEF");
@@ -2364,6 +2366,10 @@ public class X3Dobject {
                         position = utility.parseFixedLengthFloatString(attributeValue, 3, false,
                                 false);
                     }
+                    if (attributes.getValue(VIEWPOINT_AR_CAMERA) != null) {
+                        camera = utility.parseBooleanString( attributes.getValue(VIEWPOINT_AR_CAMERA) );
+                        Log.e(TAG, "Viewpoint camera boolean supporting AR not implemented. ");
+                    }
                     attributeValue = attributes.getValue("retainUserOffsets");
                     if (attributeValue != null) {
                         retainUserOffsets = utility.parseBooleanString(attributeValue);
@@ -2372,8 +2378,8 @@ public class X3Dobject {
                     // Add viewpoint to the list.
                     // Since viewpoints can be under a Transform, save the parent.
                     Viewpoint viewpoint = new Viewpoint(centerOfRotation, description,
-                            fieldOfView, jump, name, orientation, position, retainUserOffsets,
-                            currentSceneObject);
+                            fieldOfView, jump, name, orientation, position, camera,
+                            retainUserOffsets, currentSceneObject);
                     viewpoints.add(viewpoint);
 
                     if ( !name.equals("") ) {

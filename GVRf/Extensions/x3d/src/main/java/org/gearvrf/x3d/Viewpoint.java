@@ -46,6 +46,7 @@ public class Viewpoint
   };
   private boolean retainUserOffsets = false;
   private boolean isBound = false;
+  private boolean camera = false;
   GVRSceneObject parent = null;
 
   public Viewpoint()
@@ -54,7 +55,7 @@ public class Viewpoint
 
   public Viewpoint(float[] centerOfRotation, String description,
       float fieldOfView, boolean jump, String name, float[] orientation,
-      float[] position, boolean retainUserOffsets, GVRSceneObject parent)
+      float[] position, boolean camera, boolean retainUserOffsets, GVRSceneObject parent)
   {
     this.description = description;
     this.fieldOfView = fieldOfView;
@@ -68,6 +69,7 @@ public class Viewpoint
       this.position[i] = position[i];
     }
     this.orientation[3] = orientation[3];
+    this.camera = camera;
     this.parent = parent;
   }
 
@@ -105,6 +107,11 @@ public class Viewpoint
   {
     return this.position;
   }
+
+    public boolean getCamera()
+    {
+        return this.camera;
+    }
 
   public boolean getRetainUserOffsets()
   {
