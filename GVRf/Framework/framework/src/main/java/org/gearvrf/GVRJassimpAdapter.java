@@ -49,6 +49,7 @@ import org.gearvrf.jassimp.GVRNewWrapperProvider;
 import org.gearvrf.jassimp.Jassimp;
 import org.gearvrf.jassimp.JassimpConfig;
 import org.gearvrf.shaders.GVRPBRShader;
+import org.gearvrf.shaders.GVRVertexColorShader;
 import org.gearvrf.utility.Log;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
@@ -67,6 +68,9 @@ class  GVRJassimpAdapter
 
     private static final int MAX_TEX_COORDS = JassimpConfig.MAX_NUMBER_TEXCOORDS;
     private static final int MAX_VERTEX_COLORS = JassimpConfig.MAX_NUMBER_COLORSETS;
+
+    private String vertexDescriptor = "float3 a_position";
+
 
     /*
      * Maps the name of the GVRSceneObject / AiNode to the GVRBone
@@ -99,7 +103,7 @@ class  GVRJassimpAdapter
 
     public GVRMesh createMesh(GVRContext ctx, AiMesh aiMesh, EnumSet<GVRImportSettings> settings)
     {
-        String vertexDescriptor = "float3 a_position";
+        vertexDescriptor = "float3 a_position";
         float[] verticesArray = null;
         float[] tangentsArray = null;
         float[] bitangentsArray = null;
@@ -1093,6 +1097,12 @@ class  GVRJassimpAdapter
             mMaterials[aiMesh.getMaterialIndex()] = gvrMaterial;
         }
         GVRRenderData renderData = new GVRRenderData(mContext, gvrMaterial);
+
+        // Primarily handles .ply files with a color per vertex attribute
+        if (vertexDescriptor.contains("float4 a_color")) {
+            GVRMaterial vertexColorMtl = new GVRMaterial(mContext, new GVRShaderId(GVRVertexColorShader.class));
+            renderData.setMaterial(vertexColorMtl);
+        }
 
         renderData.setMesh(mesh);
         if (settings.contains(GVRImportSettings.NO_LIGHTING))
